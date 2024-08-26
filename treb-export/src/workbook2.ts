@@ -39,10 +39,15 @@ import { ZipWrapper } from './zip-wrapper';
 import type { CellStyle, ThemeColor } from 'treb-base-types';
 import type { SerializedNamed } from 'treb-data-model';
 
+/**
+ * @privateRemarks -- FIXME: not sure about the equal/equals thing. need to check.
+ */
 export const ConditionalFormatOperators: Record<string, string> = {
   greaterThan: '>',
+  greaterThanOrEqual: '>=',
   greaterThanOrEquals: '>=',
   lessThan: '<',
+  lessThanOrEqual: '<=',
   lessThanOrEquals: '<=',
   equal: '=',
   notEqual: '<>',

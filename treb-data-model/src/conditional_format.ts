@@ -139,6 +139,7 @@ export interface ConditionalFormatCellMatch extends ConditionalFormatCellMatchOp
 export interface ConditionalFormatCellMatchOptions {
   style: CellStyle;
   expression: string;
+  between?: [number, number];
   options?: EvaluateOptions;
 }
 
@@ -178,8 +179,10 @@ export interface ConditionalFormatDuplicateValues extends ConditionalFormatDupli
  * 
  * ...everybody has a vertex now, we could standardize it
  * 
+ * update: adding a priority field, optional
+ * 
  */
-export type ConditionalFormat = { internal?: unknown } & (
+export type ConditionalFormat = { internal?: unknown, priority?: number } & (
     ConditionalFormatDuplicateValues |
     ConditionalFormatExpression |
     ConditionalFormatCellMatch |

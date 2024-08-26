@@ -2383,6 +2383,9 @@ export class Calculator extends Graph {
     // is it also (3) adding unecessary calculations (building the expression,
     // below)?
 
+    // NOTE: moving all conditional formats into EN-US (i.e. dot-separated).
+    // make sure to evaluate them in this format.
+
     if (!list) {
 
       // we could in theory remove all of the leaves (the ones we know to
@@ -2416,8 +2419,15 @@ export class Calculator extends Graph {
       let expression = '';
 
       switch (entry.type) {
+
         case 'cell-match':
-          expression = this.Unresolve(entry.area, context, true, false) + ' ' + entry.expression;
+          if (entry.between) {
+            const addr = this.Unresolve(entry.area, context, true, false);
+            expression = `BETWEEN(${[addr, ...entry.between].join(', ')})`;
+          }
+          else {
+            expression = this.Unresolve(entry.area, context, true, false) + ' ' + entry.expression;
+          }
           break;
 
         case 'expression':
@@ -2440,7 +2450,7 @@ export class Calculator extends Graph {
               entry.min ?? '',
               entry.max ?? '',
 
-            ].join(this.parser.argument_separator)
+            ].join(',')
           })`;
           break;
 
@@ -2464,13 +2474,17 @@ export class Calculator extends Graph {
 
         entry.internal.vertex = vertex;
 
-        let options: EvaluateOptions|undefined;
+        let options: EvaluateOptions = {
+          argument_separator: ',', 
+        };
+
         if (entry.type !== 'gradient' && entry.type !== 'duplicate-values') {
-          options = entry.options;
+          options = {...entry.options, ...options};
         }
 
         // first pass, run the calculation
         const check = this.Evaluate(expression, context, options, true);
+        
         entry.internal.vertex.result = check;
         entry.internal.vertex.updated = true;
 
@@ -2478,7 +2492,7 @@ export class Calculator extends Graph {
 
       const vertex = entry.internal.vertex as LeafVertex;
       this.AddLeafVertex(vertex);
-      this.UpdateLeafVertex(vertex, expression, context);
+      this.UpdateLeafVertex(vertex, expression, context, DecimalMarkType.Period); // force en-us 
 
     }
 
@@ -2846,9 +2860,14 @@ export class Calculator extends Graph {
     return dependencies;
   }
 
-  protected UpdateLeafVertex(vertex: LeafVertex, formula: string, context: Sheet): void {
+  protected UpdateLeafVertex(vertex: LeafVertex, formula: string, context: Sheet, decimal_mark?: DecimalMarkType): void {
 
     vertex.Reset();
+
+    if (decimal_mark) {
+      this.parser.Save();
+      this.parser.SetLocaleSettings(decimal_mark);
+    }
 
     const parse_result = this.parser.Parse(formula);
     if (parse_result.expression) {
@@ -2894,6 +2913,10 @@ export class Calculator extends Graph {
     vertex.expression_error = !parse_result.valid;
 
     // vertex.UpdateState();
+
+    if (decimal_mark) {
+      this.parser.Restore();
+    }
 
   }
 

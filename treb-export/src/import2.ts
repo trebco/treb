@@ -27,10 +27,10 @@ import Base64JS from 'base64-js';
 import type { AnchoredChartDescription, AnchoredImageDescription, AnchoredTextBoxDescription} from './workbook2';
 import { ChartType, ConditionalFormatOperators, Workbook } from './workbook2';
 import type { ParseResult } from 'treb-parser';
-import { Parser } from 'treb-parser';
+import { DecimalMarkType, Parser } from 'treb-parser';
 import type { RangeType, AddressType, HyperlinkType } from './address-type';
 import { is_range, ShiftRange, InRange, is_address } from './address-type';
-import type { ImportedSheetData, AnchoredAnnotation, CellParseResult, AnnotationLayout, Corner as LayoutCorner, IArea, GradientStop, Color, HTMLColor, ThemeColor } from 'treb-base-types';
+import { type ImportedSheetData, type AnchoredAnnotation, type CellParseResult, type AnnotationLayout, type Corner as LayoutCorner, type IArea, type GradientStop, type Color, type HTMLColor, type ThemeColor, Area } from 'treb-base-types';
 import type { SerializedValueType } from 'treb-base-types';
 import type { Sheet} from './workbook-sheet2';
 import { VisibleState } from './workbook-sheet2';
@@ -341,7 +341,7 @@ export class Importer {
 
   }
 
-  public ParseConditionalFormat(address: RangeType|AddressType, rule: any): ConditionalFormat|undefined {
+  public ParseConditionalFormat(address: RangeType|AddressType, rule: any): ConditionalFormat|ConditionalFormat[]|undefined {
 
     const area = this.AddressToArea(address);
     const operators = ConditionalFormatOperators;
@@ -365,11 +365,13 @@ export class Importer {
             area,
             style,
             unique: (rule.a$.type === 'uniqueValues'),
+            priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+
           };
         }
 
       case 'cellIs':
-        if (rule.a$.operator && rule.formula) {
+        if (rule.a$.operator && (rule.formula || typeof rule.formula === 'number')) {
           let style = {};
 
           if (rule.a$.dxfId) {
@@ -379,10 +381,26 @@ export class Importer {
             }
           }
 
+          if (rule.a$.operator === 'between') {
+            if (Array.isArray(rule.formula) && rule.formula.length === 2
+                && typeof rule.formula[0] === 'number' && typeof rule.formula[1] === 'number') {
+
+              return {
+                type: 'cell-match',
+                expression: '',
+                between: rule.formula, // special case? ugh
+                area,
+                style,
+                priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+              };
+
+            }
+          }
+
           const operator = operators[rule.a$.operator || ''];
 
           if (!operator) {
-            console.info('unhandled cellIs operator:', rule.a$.operator);
+            console.info('unhandled cellIs operator:', rule.a$.operator, {rule});
           }
           else {
             return {
@@ -390,9 +408,13 @@ export class Importer {
               expression: operator + ' ' + rule.formula,
               area,
               style,
+              priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
             };
           }
 
+        }
+        else {
+          console.info("miss?", rule);
         }
         break;
 
@@ -427,11 +449,51 @@ export class Importer {
             }
           }
 
+          if (rule.a$.type === 'expression' && (area.start.row !== area.end.row || area.start.column !== area.end.column)) {
+
+            // (1) this is only required if there are relative references
+            //     in the formula. so we could check and short-circuit.
+            //
+            // (2) I'd like to find a way to apply this as a single formula,
+            //     so there's only one rule required.
+
+            this.parser.Save();
+            this.parser.SetLocaleSettings(DecimalMarkType.Period);
+
+            const list: ConditionalFormat[] = [];
+            const a2 = new Area(area.start, area.end);
+
+            const parse_result = this.parser.Parse(rule.formula);
+            if (parse_result.expression) {
+              for (const cell of a2) {
+                const f = this.parser.Render(parse_result.expression, {
+                  missing: '',
+                  offset: { rows: cell.row - area.start.row, columns: cell.column - area.start.column }
+                });
+
+                list.push({
+                  type: 'expression',
+                  expression: f,
+                  style,
+                  area: { start: cell, end: cell },
+                  priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+                })
+
+                // console.info(f);
+              }
+            }
+
+            this.parser.Restore();
+            return list;
+
+          }
+
           return {
             type: 'expression',
             expression: rule.formula,
             area,
             style,
+            priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
           };
 
         }
@@ -479,6 +541,8 @@ export class Importer {
             stops,
             color_space: 'RGB',
             area,
+            priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+
           };
 
         }
@@ -545,7 +609,12 @@ export class Importer {
             for (const rule of rules) {
               const format = this.ParseConditionalFormat(area, rule);
               if (format) {
-                conditional_formats.push(format);
+                if (Array.isArray(format)) {
+                  conditional_formats.push(...format);
+                }
+                else {
+                  conditional_formats.push(format);
+                }
               }
             }
           }

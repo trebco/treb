@@ -3338,9 +3338,6 @@ export class Sheet {
     for (const format of this.conditional_formats) {
 
       if (format.internal?.vertex?.updated) {
-
-        // console.info('updated');
-
         format.internal.vertex.updated = false;
       }
 
@@ -3353,6 +3350,10 @@ export class Sheet {
       // you can just drop everything on the stack when you see a 
       // stop rule. if you go forwards, you need some sort of indicator 
       // or flag).
+
+      // there's more to this, because there are rules that apply to areas,
+      // which might stop, and there's priority. so we probably need those
+      // flags eventually. 
 
       const area = JSON.parse(JSON.stringify(format.area));
       

@@ -2386,6 +2386,21 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    Between: {
+      arguments: [
+        { name: 'target', boxed: true, unroll: true },
+        { name: 'min' },
+        { name: 'max' },
+      ],
+      visibility: 'internal',
+      fn: (target: UnionValue, min = 0, max = 1) => {
+        return {
+          type: ValueType.boolean,
+          value: (target.type === ValueType.number) && (target.value >= min && target.value <= max),
+        };
+      }
+    },
+
     Gradient: {
       arguments: [
         { name: 'range', boxed: true },
