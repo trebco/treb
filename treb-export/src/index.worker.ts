@@ -23,7 +23,7 @@ import type { ImportedSheetData } from 'treb-base-types';
 import type { SerializedModel } from 'treb-data-model';
 
 import { Exporter } from './export';
-import { Importer } from './import2';
+import { Importer } from './import';
 
 const ctx: Worker = self as unknown as Worker;
 const exporter = new Exporter();

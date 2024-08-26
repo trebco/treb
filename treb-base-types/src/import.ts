@@ -19,7 +19,7 @@
  * 
  */
 
-import type { CellStyle } from './style';
+import type { CellStyle, Color } from './style';
 import type { SerializedValueType } from './value-type';
 import type { IArea } from './area';
 import type { AnnotationLayout } from './layout';
@@ -64,14 +64,13 @@ export interface ImportedSheetData {
   // optional, for backcompat
   sheet_style?: number;
   column_styles?: number[];
-
   row_styles?: number[];
 
-  // new
   annotations?: AnchoredAnnotation[];
+  outline?: number[];
 
   // new
-  outline?: number[];
+  tab_color?: Color;
 
   hidden?: boolean;
 

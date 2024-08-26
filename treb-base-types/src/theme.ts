@@ -22,6 +22,7 @@
 import { type Color, type CellStyle, IsHTMLColor, IsThemeColor, ThemeColorIndex, type ThemeColor } from './style';
 import { ColorFunctions } from './color';
 import { DOMContext } from './dom-utilities';
+import { Measurement } from 'treb-utils';
 
 /*
  * so this is a little strange. we use CSS to populate a theme object,
@@ -242,7 +243,15 @@ export const ResolveThemeColor = (theme: Theme, color?: Color, default_index?: n
       return ''; 
     }
 
-    const resolved = ResolveThemeColor(theme, color.offset);
+    let resolved = '';
+
+    if (IsHTMLColor(color.offset)) {
+      const clamped = Measurement.MeasureColor(color.offset.text);
+      resolved = `rgb(${clamped[0]}, ${clamped[1]}, ${clamped[2]})`;
+    }
+    else {
+      resolved = ResolveThemeColor(theme, color.offset, undefined);
+    }
 
     // check cache
     if (theme.offset_cache && theme.offset_cache[resolved]) {
@@ -253,17 +262,35 @@ export const ResolveThemeColor = (theme: Theme, color?: Color, default_index?: n
 
     if (resolved) {
       // ok figure it out?
-      const match = resolved.match(/rgb\((\d+), (\d+), (\d+)\)/);
+      const match = resolved.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
       if (match) {
-        const hsl = ColorFunctions.RGBToHSL(Number(match[1]), Number(match[2]), Number(match[3]));
-        // console.info('resolved', resolved, {hsl});
-        if (hsl.l > .65) {
+
+        type ColorTuple = [number, number, number];
+
+        const background: ColorTuple = [Number(match[1]), Number(match[2]), Number(match[3])];
+
+
+        // const hsl = ColorFunctions.RGBToHSL(r, g, b);
+        // const check = ColorFunctions.GetLuminance(r, g, b);
+
+        const a = Array.from(Measurement.MeasureColor(theme.offset_dark)) as ColorTuple;
+        const b = Array.from(Measurement.MeasureColor(theme.offset_light)) as ColorTuple;
+
+        const tc = ColorFunctions.GetTextColor(background, a, b);
+
+        offset = `rgb(${tc[0]}, ${tc[1]}, ${tc[2]})`;
+
+        /*
+         if (hsl.l >.65)) {
           offset = theme.offset_dark;
         }
+        */
+
+
       }
       else {
         // ...
-        console.warn(`can't offset against color`, resolved);
+        console.warn(`can't offset against color`, resolved, '(1)');
       }
 
       if (!theme.offset_cache) {
@@ -272,7 +299,7 @@ export const ResolveThemeColor = (theme: Theme, color?: Color, default_index?: n
       theme.offset_cache[resolved] = offset;
     }
     else {
-      console.warn(`can't resolve offset color`, color.offset);
+      console.warn(`can't resolve offset color`, color.offset, '(2)');
     }
 
     return offset;

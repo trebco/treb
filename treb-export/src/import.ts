@@ -591,6 +591,33 @@ export class Importer {
 
     const FindAll: (path: string) => any[] = XMLUtils.FindAll.bind(XMLUtils, sheet.sheet_data);
 
+    // tab color
+
+    const tab_color_element = FindAll('worksheet/sheetPr/tabColor');
+
+    let tab_color: Color|undefined;
+    
+    if (tab_color_element?.[0]) {
+
+      const element = tab_color_element[0];
+      if (element.a$?.theme) {
+        tab_color = { theme: Number(element.a$.theme) };
+        if (element.a$?.tint) {
+          tab_color.tint = Number(element.a$.tint);
+        }
+      }
+      if (element.a$?.rgb) {
+        const argb = element.a$.rgb;
+        tab_color = {
+          text: '#' + (
+            argb.length > 6 ?
+            argb.substr(argb.length - 6) :
+            argb),
+        };
+      }
+
+    }
+
     // conditionals 
 
     const conditional_formatting = FindAll('worksheet/conditionalFormatting');
@@ -1120,7 +1147,8 @@ export class Importer {
             type = 'treb-chart';
             func = 'Box.Plot';
             if (series?.length) {
-              args[0] = `Group(${series.map(s => `Series(${s.title || ''},,${s.values||''})` || '').join(', ')})`;
+              args[0] = `Group(${series.map(s => `Series(${s.title || ''},,${s.values||''})`).join(', ')})`;
+              console.info("S?", {series}, args[0])
             }
             args[1] = descriptor.chart.title;
             break;
@@ -1129,7 +1157,7 @@ export class Importer {
             type = 'treb-chart';
             func = 'Scatter.Line';
             if (series && series.length) {
-              args[0] = `Group(${series.map(s => `Series(${s.title || ''},${s.categories||''},${s.values||''})` || '').join(', ')})`;
+              args[0] = `Group(${series.map(s => `Series(${s.title || ''},${s.categories||''},${s.values||''})`).join(', ')})`;
             }
             args[1] = descriptor.chart.title;
             break;
@@ -1165,7 +1193,7 @@ export class Importer {
 
             if (series) {
               if (series.length > 1) {
-                args[0] = `Group(${series.map(s => `Series(${s.title || ''},,${s.values||''})` || '').join(', ')})`;
+                args[0] = `Group(${series.map(s => `Series(${s.title || ''},,${s.values||''})`).join(', ')})`;
               }
               else if (series.length === 1) {
                 if (series[0].title) {
@@ -1289,6 +1317,7 @@ export class Importer {
       default_column_width,
       column_widths,
       row_heights,
+      tab_color,
       row_styles,
       annotations,
       conditional_formats,

@@ -145,6 +145,8 @@ export class Sheet {
 
   public name = Sheet.default_sheet_name;
 
+  public tab_color?: Color;
+
   public background_image?: string;
 
   protected _image: HTMLImageElement|undefined = undefined;
@@ -402,6 +404,9 @@ export class Sheet {
     }
     if (source.name) {
       sheet.name = source.name;
+    }
+    if (source.tab_color) {
+      sheet.tab_color = source.tab_color;
     }
 
     if (source.background_image) {
@@ -2744,6 +2749,7 @@ export class Sheet {
 
       id: this.id,
       name: this.name,
+      tab_color: this.tab_color,
 
       data,
       sheet_style,
@@ -2915,7 +2921,11 @@ export class Sheet {
     // this.cells.FromJSON(cell_data);
     this.cells.FromJSON(data.cells);
     if (data.name) {
-      this.name = data.name || '';
+      this.name = data.name || ''; // wtf is this?
+    }
+
+    if (data.tab_color) {
+      this.tab_color = data.tab_color;
     }
 
     // 0 is implicitly just a general style

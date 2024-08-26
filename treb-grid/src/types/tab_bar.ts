@@ -25,7 +25,7 @@ import type { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
 import type { GridOptions } from './grid_options';
 import { type ScaleEvent, ScaleControl } from './scale-control';
-import { DOMContext } from 'treb-base-types';
+import { DOMContext, ResolveThemeColor, type Theme } from 'treb-base-types';
 
 export interface ActivateSheetEvent {
   type: 'activate-sheet';
@@ -100,6 +100,8 @@ export class TabBar extends EventSource<TabEvent> {
     timeout?: number;
   } = {};
 
+  private tab_color_cache: Map<number, { background: string, foreground: string }> = new Map();
+
   // tslint:disable-next-line: variable-name
   private _visible = false;
 
@@ -133,6 +135,7 @@ export class TabBar extends EventSource<TabEvent> {
       private model: DataModel,
       private view: ViewModel,
       private options: GridOptions,
+      private theme: Theme,
       // private container: HTMLElement,
       view_node: HTMLElement,
     ) {
@@ -236,10 +239,21 @@ export class TabBar extends EventSource<TabEvent> {
     if (active) {
       // tab.classList.add('treb-selected');
       tab.setAttribute('selected', '');
+
+      if (tab.dataset.background_color) {
+        tab.style.backgroundColor = `color-mix(in srgb, ${tab.dataset.background_color} 20%, var(--treb-tab-bar-active-tab-background, #fff))`;
+        tab.style.color = '';
+      }
     }
     else {
       // tab.classList.remove('treb-selected');
       tab.removeAttribute('selected');
+      if (tab.dataset.background_color) {
+        tab.style.backgroundColor = tab.dataset.background_color;
+      }
+      if (tab.dataset.foreground_color) {
+        tab.style.color = tab.dataset.foreground_color;
+      }
     }
   }
 
@@ -419,6 +433,11 @@ export class TabBar extends EventSource<TabEvent> {
 
   }
 
+  public UpdateTheme() {
+    this.tab_color_cache.clear();
+    this.Update();
+  }
+
   /**
    * update tabs from model.
    */
@@ -463,6 +482,24 @@ export class TabBar extends EventSource<TabEvent> {
       const index = tabs.length;
       const tab = this.DOM.Create('li');
       tab.setAttribute('tabindex', '0');
+
+      if (sheet.tab_color) {
+        const id = sheet.id;
+        if (!this.tab_color_cache.has(id)) {
+          const background = ResolveThemeColor(this.theme, sheet.tab_color);
+          const foreground = ResolveThemeColor(this.theme, { offset: sheet.tab_color });
+          if (background && foreground) {
+            this.tab_color_cache.set(id, { background, foreground });
+          }
+        }
+        const color = this.tab_color_cache.get(id);
+        if (color) {
+          tab.style.backgroundColor = color.background;
+          tab.style.color = color.foreground;
+          tab.dataset.background_color = color.background;
+          tab.dataset.foreground_color = color.foreground;
+        }
+      }
 
       // tab.classList.add('tab');
       tab.style.order = (index * 2).toString();

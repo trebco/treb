@@ -19,6 +19,8 @@
  * 
  */
 
+
+
 /**
  * utility functions, primarily for adjusting lightness. since we generally
  * traffic in RGB (or symbolic colors) that requires translating to/from HSL.
@@ -120,5 +122,35 @@ export const ColorFunctions = {
     return p;
   },
 
+  ////////////////
+
+
+  GetLuminance: (r: number, g: number, b: number): number => {
+    const a = [r, g, b].map(v => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+  },
+  
+  GetContrastRatio: (data: [number, number]): number => {
+    data.sort((a, b) => b - a);
+    return (data[0] + 0.05) / (data[1] + 0.05);
+  },
+  
+  GetTextColor: (background: [number, number, number], a: [number, number, number], b: [number, number, number]) => {
+
+    const luminance = ColorFunctions.GetLuminance(...background);
+    const luminance_a = ColorFunctions.GetLuminance(...a); 
+    const luminance_b = ColorFunctions.GetLuminance(...b);
+
+    const contrast_a = ColorFunctions.GetContrastRatio([luminance_a, luminance]);
+    const contrast_b = ColorFunctions.GetContrastRatio([luminance_b, luminance]);
+
+    return contrast_a > contrast_b ? a : b;
+  },
+  
 };
+
+
 

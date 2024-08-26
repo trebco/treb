@@ -19,7 +19,7 @@
  * 
  */
 
-import type { IArea, SerializedCellData, CellStyle } from 'treb-base-types';
+import type { IArea, SerializedCellData, CellStyle, Color } from 'treb-base-types';
 import type { AnnotationData } from './annotation';
 import type { GridSelection, SerializedGridSelection } from './sheet_selection';
 import type { ConditionalFormatList } from './conditional_format';
@@ -125,6 +125,9 @@ export interface SerializedSheet {
 
   /** sheet name */
   name?: string;
+
+  /** tab color */
+  tab_color?: Color;
 
   /** current active selection */
   selection: SerializedGridSelection;

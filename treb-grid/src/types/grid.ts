@@ -1403,6 +1403,10 @@ export class Grid extends GridBase {
 
     // this.tile_renderer.UpdateTheme(); // has reference
 
+    if (this.tab_bar) {
+      this.tab_bar.UpdateTheme();
+    }
+
     if (!initial) {
 
       this.UpdateLayout(); // in case we have changed font size
@@ -1454,7 +1458,7 @@ export class Grid extends GridBase {
 
     if (this.options.tab_bar) {
 
-      this.tab_bar = new TabBar(this.layout, this.model, this.view, this.options, view_node);
+      this.tab_bar = new TabBar(this.layout, this.model, this.view, this.options, this.theme, view_node);
       this.tab_bar.Subscribe((event) => {
         switch (event.type) {
           case 'cancel':

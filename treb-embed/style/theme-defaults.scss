@@ -437,6 +437,22 @@ $text-reference-color-5: rgb(254, 47, 1);
       &[selected] {
         background: var(--treb-tab-bar-active-tab-background, #fff);
         color: var(--treb-tab-bar-active-tab-color, var(--treb-ui-color, inherit));
+
+        border-bottom-color: var(--treb-tab-bar-active-tab-border-color, currentColor);
+
+        /*
+        position: relative;
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 0px;
+          left: 0px;
+          width: 100%;
+          height: 1px;
+          background: currentColor;
+        }
+        */
+
       }
     }
 
