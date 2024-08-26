@@ -967,7 +967,7 @@ export class Grid extends GridBase {
     if (add_to_layout) {
       this.layout.AddAnnotation(annotation);
       if (annotation.data.layout) {
-        this.EnsureAddress(annotation.data.layout.br.address, 1);
+        this.EnsureAddress(annotation.data.layout.br.address, 1, toll_events);
       }
     }
     else {
@@ -1190,7 +1190,7 @@ export class Grid extends GridBase {
     this.QueueLayoutUpdate();
 
     this.StyleDefaultFromTheme();
-        
+
     if (render) {
       this.Repaint(false, false); // true, true);
     }
@@ -5940,7 +5940,7 @@ export class Grid extends GridBase {
   /** 
    * if the address is outside of current extent, expand 
    */
-  private EnsureAddress(address: ICellAddress, step = 8): boolean {
+  private EnsureAddress(address: ICellAddress, step = 8, toll_layout = false): boolean {
 
     let expanded = false;
 
@@ -5963,7 +5963,7 @@ export class Grid extends GridBase {
         expanded = true;
       }
 
-      if (expanded) {
+      if (expanded && !toll_layout) {
         this.layout.UpdateTiles();
         this.layout.UpdateContentsSize();
         this.Repaint(true, true);
