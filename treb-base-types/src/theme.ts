@@ -21,6 +21,8 @@
 
 import { type Color, type CellStyle, IsHTMLColor, IsThemeColor, ThemeColorIndex, type ThemeColor } from './style';
 import { ColorFunctions } from './color';
+// import * as LCHColorFunctions from './color2';
+
 import { DOMContext } from './dom-utilities';
 import { Measurement } from 'treb-utils';
 
@@ -107,7 +109,7 @@ export interface Theme {
   theme_colors?: string[];
 
   /** as RGB, so we can adjust them */
-  theme_colors_rgb?: number[][];
+  theme_colors_rgb?: [number, number, number][];
 
   /**
    * cache tinted colors. the way this works is we index by the 
@@ -207,7 +209,8 @@ const TintedColor = (theme: Theme, source: ThemeColor) => {
   let color = theme.tint_cache[index][tint];
   if (!color) {
 
-    const rgb = (theme.theme_colors_rgb ? theme.theme_colors_rgb[index] : [0, 0, 0]) || [0, 0, 0];
+    const rgb: [number, number, number] = (theme.theme_colors_rgb ? theme.theme_colors_rgb[index] : [0, 0, 0]) || [0, 0, 0];
+
     let tinted: {r: number, g: number, b: number};
     if (tint > 0) {
       tinted = ColorFunctions.Lighten(rgb[0], rgb[1], rgb[2], tint * 100, true);
@@ -216,6 +219,21 @@ const TintedColor = (theme: Theme, source: ThemeColor) => {
       tinted = ColorFunctions.Darken(rgb[0], rgb[1], rgb[2], -tint * 100, true);
     }
     color = `rgb(${tinted.r},${tinted.g},${tinted.b})`;
+
+    /*
+    // L is in [0, 100] and the passed tint value is between (-1 and 1). but
+    // is the tint value the desired value, or the adjustment? (...)
+    // looks like it's the adjustment. makes sense I guess if you pick the 
+    // original colors.
+
+    // if the tint value was not originally in perceptual space we might need
+    // to curve it a bit? (...)
+
+    const lch = LCHColorFunctions.RGBToLCH(...rgb);
+    const tinted = LCHColorFunctions.LCHToRGB(lch.l + 50 * tint, lch.c, lch.h);
+    color = `rgb(${tinted.r},${tinted.g},${tinted.b})`;
+    */
+
     theme.tint_cache[index][tint] = color;
 
   }
