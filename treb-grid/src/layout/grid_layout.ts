@@ -95,6 +95,8 @@ export class GridLayout extends BaseLayout {
 
     this.container.addEventListener('scroll', () => scroll_callback());
 
+    this.ApplyThemeColors();
+
   }
 
   public ResizeCursor(resize?: 'row'|'column'): void {

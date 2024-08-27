@@ -96,6 +96,8 @@ export abstract class BaseLayout {
 
   public header_size: Size = { width: 0, height: 0 };
 
+  public applied_theme_colors: string[] = [];
+
   /**
    * last rendered column. this is used to calculate the limits of
    * cell overflows, which may exceed actual data in the sheet.
@@ -1280,6 +1282,18 @@ export abstract class BaseLayout {
 
   }
 
+  public ApplyThemeColors() {
+
+    // what's the best node for this? (...)
+    
+    if (this.container) {
+      for (const [index, entry] of this.applied_theme_colors.entries()) {
+        this.container.style.setProperty(`--treb-applied-theme-color-${index + 1}`, entry);
+      }
+
+    }
+  }
+
   /**
    * applies theme to nodes, as necessary
    */
@@ -1306,6 +1320,13 @@ export abstract class BaseLayout {
     // TODO: dropdown caret
 
     this.dropdown_list.style.font = Style.Font(theme.grid_cell || {});
+
+    // testing
+
+    this.applied_theme_colors = theme.theme_colors?.slice(4, 10) || [];
+    if (this.container) {
+      this.ApplyThemeColors();
+    }
 
   }
 
