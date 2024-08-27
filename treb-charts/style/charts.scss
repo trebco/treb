@@ -79,40 +79,40 @@
   .series-5 { color: var(--treb-applied-theme-color-5); }
   .series-6 { color: var(--treb-applied-theme-color-6); }
 
-  .series-7  { color: hsl(from var(--treb-applied-theme-color-1) h s calc(l + var(--segment-2-offset))); }
-  .series-8  { color: hsl(from var(--treb-applied-theme-color-2) h s calc(l + var(--segment-2-offset))); }
-  .series-9  { color: hsl(from var(--treb-applied-theme-color-3) h s calc(l + var(--segment-2-offset))); }
-  .series-10 { color: hsl(from var(--treb-applied-theme-color-4) h s calc(l + var(--segment-2-offset))); }
-  .series-11 { color: hsl(from var(--treb-applied-theme-color-5) h s calc(l + var(--segment-2-offset))); }
-  .series-12 { color: hsl(from var(--treb-applied-theme-color-6) h s calc(l + var(--segment-2-offset))); }
+  .series-7  { color: lch(from var(--treb-applied-theme-color-1) calc(l + var(--segment-2-offset)) c h ); }
+  .series-8  { color: lch(from var(--treb-applied-theme-color-2) calc(l + var(--segment-2-offset)) c h ); }
+  .series-9  { color: lch(from var(--treb-applied-theme-color-3) calc(l + var(--segment-2-offset)) c h ); }
+  .series-10 { color: lch(from var(--treb-applied-theme-color-4) calc(l + var(--segment-2-offset)) c h ); }
+  .series-11 { color: lch(from var(--treb-applied-theme-color-5) calc(l + var(--segment-2-offset)) c h ); }
+  .series-12 { color: lch(from var(--treb-applied-theme-color-6) calc(l + var(--segment-2-offset)) c h ); }
 
-  .series-13 { color: hsl(from var(--treb-applied-theme-color-1) h s calc(l + var(--segment-3-offset))); }
-  .series-14 { color: hsl(from var(--treb-applied-theme-color-2) h s calc(l + var(--segment-3-offset))); }
-  .series-15 { color: hsl(from var(--treb-applied-theme-color-3) h s calc(l + var(--segment-3-offset))); }
-  .series-16 { color: hsl(from var(--treb-applied-theme-color-4) h s calc(l + var(--segment-3-offset))); }
-  .series-17 { color: hsl(from var(--treb-applied-theme-color-5) h s calc(l + var(--segment-3-offset))); }
-  .series-18 { color: hsl(from var(--treb-applied-theme-color-6) h s calc(l + var(--segment-3-offset))); }
+  .series-13 { color: lch(from var(--treb-applied-theme-color-1) calc(l + var(--segment-3-offset)) c h ); }
+  .series-14 { color: lch(from var(--treb-applied-theme-color-2) calc(l + var(--segment-3-offset)) c h ); }
+  .series-15 { color: lch(from var(--treb-applied-theme-color-3) calc(l + var(--segment-3-offset)) c h ); }
+  .series-16 { color: lch(from var(--treb-applied-theme-color-4) calc(l + var(--segment-3-offset)) c h ); }
+  .series-17 { color: lch(from var(--treb-applied-theme-color-5) calc(l + var(--segment-3-offset)) c h ); }
+  .series-18 { color: lch(from var(--treb-applied-theme-color-6) calc(l + var(--segment-3-offset)) c h ); }
 
-  .series-19 { color: hsl(from var(--treb-applied-theme-color-1) h s calc(l + var(--segment-4-offset))); }
-  .series-20 { color: hsl(from var(--treb-applied-theme-color-2) h s calc(l + var(--segment-4-offset))); }
-  .series-21 { color: hsl(from var(--treb-applied-theme-color-3) h s calc(l + var(--segment-4-offset))); }
-  .series-22 { color: hsl(from var(--treb-applied-theme-color-4) h s calc(l + var(--segment-4-offset))); }
-  .series-23 { color: hsl(from var(--treb-applied-theme-color-5) h s calc(l + var(--segment-4-offset))); }
-  .series-24 { color: hsl(from var(--treb-applied-theme-color-6) h s calc(l + var(--segment-4-offset))); }
+  .series-19 { color: lch(from var(--treb-applied-theme-color-1) calc(l + var(--segment-4-offset)) c h ); }
+  .series-20 { color: lch(from var(--treb-applied-theme-color-2) calc(l + var(--segment-4-offset)) c h ); }
+  .series-21 { color: lch(from var(--treb-applied-theme-color-3) calc(l + var(--segment-4-offset)) c h ); }
+  .series-22 { color: lch(from var(--treb-applied-theme-color-4) calc(l + var(--segment-4-offset)) c h ); }
+  .series-23 { color: lch(from var(--treb-applied-theme-color-5) calc(l + var(--segment-4-offset)) c h ); }
+  .series-24 { color: lch(from var(--treb-applied-theme-color-6) calc(l + var(--segment-4-offset)) c h ); }
 
-  .series-25 { color: hsl(from var(--treb-applied-theme-color-1) h s calc(l + var(--segment-5-offset))); }
-  .series-26 { color: hsl(from var(--treb-applied-theme-color-2) h s calc(l + var(--segment-5-offset))); }
-  .series-27 { color: hsl(from var(--treb-applied-theme-color-3) h s calc(l + var(--segment-5-offset))); }
-  .series-28 { color: hsl(from var(--treb-applied-theme-color-4) h s calc(l + var(--segment-5-offset))); }
-  .series-29 { color: hsl(from var(--treb-applied-theme-color-5) h s calc(l + var(--segment-5-offset))); }
-  .series-30 { color: hsl(from var(--treb-applied-theme-color-6) h s calc(l + var(--segment-5-offset))); }
+  .series-25 { color: lch(from var(--treb-applied-theme-color-1) calc(l + var(--segment-5-offset)) c h ); }
+  .series-26 { color: lch(from var(--treb-applied-theme-color-2) calc(l + var(--segment-5-offset)) c h ); }
+  .series-27 { color: lch(from var(--treb-applied-theme-color-3) calc(l + var(--segment-5-offset)) c h ); }
+  .series-28 { color: lch(from var(--treb-applied-theme-color-4) calc(l + var(--segment-5-offset)) c h ); }
+  .series-29 { color: lch(from var(--treb-applied-theme-color-5) calc(l + var(--segment-5-offset)) c h ); }
+  .series-30 { color: lch(from var(--treb-applied-theme-color-6) calc(l + var(--segment-5-offset)) c h ); }
 
-  .series-31 { color: hsl(from var(--treb-applied-theme-color-1) h s calc(l + var(--segment-6-offset))); }
-  .series-32 { color: hsl(from var(--treb-applied-theme-color-2) h s calc(l + var(--segment-6-offset))); }
-  .series-33 { color: hsl(from var(--treb-applied-theme-color-3) h s calc(l + var(--segment-6-offset))); }
-  .series-34 { color: hsl(from var(--treb-applied-theme-color-4) h s calc(l + var(--segment-6-offset))); }
-  .series-35 { color: hsl(from var(--treb-applied-theme-color-5) h s calc(l + var(--segment-6-offset))); }
-  .series-36 { color: hsl(from var(--treb-applied-theme-color-6) h s calc(l + var(--segment-6-offset))); }
+  .series-31 { color: lch(from var(--treb-applied-theme-color-1) calc(l + var(--segment-6-offset)) c h ); }
+  .series-32 { color: lch(from var(--treb-applied-theme-color-2) calc(l + var(--segment-6-offset)) c h ); }
+  .series-33 { color: lch(from var(--treb-applied-theme-color-3) calc(l + var(--segment-6-offset)) c h ); }
+  .series-34 { color: lch(from var(--treb-applied-theme-color-4) calc(l + var(--segment-6-offset)) c h ); }
+  .series-35 { color: lch(from var(--treb-applied-theme-color-5) calc(l + var(--segment-6-offset)) c h ); }
+  .series-36 { color: lch(from var(--treb-applied-theme-color-6) calc(l + var(--segment-6-offset)) c h ); }
 
   /* chart title, at top or bottom */
   .chart-title {
