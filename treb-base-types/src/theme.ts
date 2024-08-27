@@ -642,7 +642,7 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
       context.fillStyle = color;
       context.fillRect(0, 0, 3, 3);
       const imagedata = context.getImageData(1, 1, 1, 1);
-      return Array.from(imagedata.data);
+      return Array.from(imagedata.data) as [number, number, number];
     });
   }
   
