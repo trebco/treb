@@ -35,7 +35,7 @@ import type { SerializedValueType } from 'treb-base-types';
 import type { Sheet} from './workbook-sheet2';
 import { VisibleState } from './workbook-sheet2';
 import type { CellAnchor } from './drawing2/drawing2';
-import { type DOMContent, XMLUtils } from './xml-utils';
+import { type GenericDOMElement, XMLUtils } from './xml-utils';
 
 // import { one_hundred_pixels } from './constants';
 import { ColumnWidthToPixels } from './column-width';
@@ -51,6 +51,55 @@ interface SharedFormula {
 }
 
 interface SharedFormulaMap { [index: string]: SharedFormula }
+
+interface CellElementType {
+  a$: {
+    r?: string;
+    t?: string;
+    s?: string;
+  };
+  v?: string|number|{
+    t$: string;
+    a$?: Record<string, string>; // DOMContent;
+  }; 
+  f?: string|{ 
+    t$: string;
+    a$?: {
+      si?: string;
+      t?: string;
+      ref?: string;
+    },
+  };
+};
+
+interface ConditionalFormatRule {
+  a$: {
+    type?: string;
+    dxfId?: string;
+    priority?: string;
+    operator?: string;
+  };
+  formula?: string|[number,number]|{t$: string};
+  colorScale?: {
+    cfvo?: {
+      a$: {
+        type?: string;
+        val?: string;
+      }
+    }[];
+    color?: {
+      a$: {
+        rgb?: string;
+        theme?: string;
+        tint?: string;
+      }
+    }[];
+  };
+}
+
+const ElementHasTextNode = (test: unknown): test is {t$: string} => {
+  return typeof test === 'object' && typeof (test as {$t: string}).$t !== 'undefined';
+}
 
 export class Importer {
 
@@ -76,25 +125,7 @@ export class Importer {
 
   public ParseCell(
     sheet: Sheet,
-    element: {
-      a$: {
-        r?: string;
-        t?: string;
-        s?: string;
-      };
-      v?: string|number|{
-        t$: string;
-        a$?: DOMContent;
-      }; 
-      f?: string|{ 
-        t$: string;
-        a$?: {
-          si?: string;
-          t?: string;
-          ref?: string;
-        },
-      };
-    },
+    element: CellElementType,
     shared_formulae: SharedFormulaMap,
     arrays: RangeType[],
     merges: RangeType[],
@@ -178,7 +209,12 @@ export class Importer {
                   if (/^_xll\./.test(unit.name)) {
                     unit.name = unit.name.substring(5);
                   }
-                  else if (/^_xlfn\./.test(unit.name)) {
+                  if (/^_xlfn\./.test(unit.name)) {
+                    console.info("xlfn:", unit.name);
+                    unit.name = unit.name.substring(6);
+                  }
+                  if (/^_xlws\./.test(unit.name)) {
+                    console.info("xlws:", unit.name);
                     unit.name = unit.name.substring(6);
                   }
                 }
@@ -347,10 +383,12 @@ export class Importer {
 
   }
 
-  public ParseConditionalFormat(address: RangeType|AddressType, rule: any): ConditionalFormat|ConditionalFormat[]|undefined {
+  public ParseConditionalFormat(address: RangeType|AddressType, rule: ConditionalFormatRule): ConditionalFormat|ConditionalFormat[]|undefined {
 
     const area = this.AddressToArea(address);
     const operators = ConditionalFormatOperators;
+
+    console.info({rule});
 
     switch (rule.a$.type) {
       case 'duplicateValues':
@@ -431,7 +469,7 @@ export class Importer {
         if (rule.formula) {
 
           if (typeof rule.formula !== 'string') {
-            if (rule.formula.t$) {
+            if (ElementHasTextNode(rule.formula)) {
 
               // the only case (to date) we've seen here is that the attribute 
               // is "xml:space=preserve", which we can ignore (are you sure?)
@@ -442,7 +480,7 @@ export class Importer {
             }
             else {
               console.info("unexpected conditional expression", {rule});
-
+              rule.formula = '';
             }
           }
 
@@ -520,7 +558,7 @@ export class Importer {
             else if (color_element.a$.theme) {
               (color as ThemeColor).theme = Number(color_element.a$.theme) || 0;
               if (color_element.a$.tint) {
-                (color as ThemeColor).tint = Math.round(color_element.a$.tint * 1000) / 1000;
+                (color as ThemeColor).tint = Math.round(Number(color_element.a$.tint) * 1000) / 1000;
               }
             }           
 
@@ -595,7 +633,7 @@ export class Importer {
 
     const annotations: AnchoredAnnotation[] = [];
 
-    const FindAll: (path: string) => any[] = XMLUtils.FindAll.bind(XMLUtils, sheet.sheet_data);
+    const FindAll: <T = GenericDOMElement>(path: string) => T[] = XMLUtils.FindAll.bind(XMLUtils, sheet.sheet_data);
 
     // tab color
 
@@ -640,7 +678,7 @@ export class Importer {
           if (element.cfRule) {
             const rules = Array.isArray(element.cfRule) ? element.cfRule : [element.cfRule];
             for (const rule of rules) {
-              const format = this.ParseConditionalFormat(area, rule);
+              const format = this.ParseConditionalFormat(area, rule as unknown as ConditionalFormatRule);
               if (format) {
                 if (Array.isArray(format)) {
                   conditional_formats.push(...format);
@@ -661,7 +699,7 @@ export class Importer {
     const merge_cells = FindAll('worksheet/mergeCells/mergeCell');
 
     for (const element of merge_cells) {
-      if (element.a$.ref) {
+      if (element.a$?.ref) {
         const merge = sheet.TranslateAddress(element.a$.ref);
         if (is_range(merge)) {
           merges.push(ShiftRange(merge, -1, -1));
@@ -677,7 +715,7 @@ export class Importer {
       const ref = entry.a$?.sqref;
       const formula = entry.formula1;
 
-      if (ref && formula && type === 'list') {
+      if (ref && formula && typeof formula === 'string' && type === 'list') {
         // let address: ICellAddress|undefined;
         let validation: DataValidation|undefined;
         let parse_result = this.parser.Parse(ref);
@@ -796,8 +834,8 @@ export class Importer {
 
       }
       else {
-        reference = child.__location || '';
-        text = child.__display || '';
+        reference = typeof child.__location === 'string' ? child.__location : '';
+        text = typeof child.__display === 'string' ? child.__display : '';
       }
 
       links.push({ address, reference, text });
@@ -864,11 +902,10 @@ export class Importer {
         row_heights[row_index - 1] = height;
       }
 
-      let cells = row.c || [];
-      if (!Array.isArray(cells)) { cells = [cells]; }
+      const cells = row.c ? Array.isArray(row.c) ? row.c : [row.c] : [];
 
       for (const element of cells) {
-        const cell = this.ParseCell(sheet, element, shared_formulae, arrays, merges, links); // , validations);
+        const cell = this.ParseCell(sheet, element as unknown as CellElementType, shared_formulae, arrays, merges, links); // , validations);
         if (cell) {
           data.push(cell);
         }

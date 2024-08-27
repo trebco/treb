@@ -28,6 +28,26 @@ export interface DOMContent {
   [index: string]: string|DOMContent|string[]|DOMContent[]|number|number[]|undefined;
 }
 
+// --- take 2 ------------------------------------------------------------------
+
+export interface XMLKeys {
+  a$?: Record<string, string>;
+  t$?: string;
+}
+
+export type DOMElementType = number|number[]|string|string[]|(BaseDOM & XMLKeys)|(BaseDOM & XMLKeys)[];
+
+export interface BaseDOM {
+  [key: string]: DOMElementType;
+}
+
+export type GenericDOMElement = BaseDOM & XMLKeys;
+
+export const GenericDOMArray = (element: GenericDOMElement|GenericDOMElement[]): GenericDOMElement[] => element ? Array.isArray(element) ? element : [element] : [];
+
+// -----------------------------------------------------------------------------
+
+
 /**
  * not sure why we have to do this, but filter attributes that 
  * have value === undefined
@@ -76,6 +96,7 @@ export const PatchXMLBuilder = (options: Partial<XmlBuilderOptions>) => {
 
 //////////////////
 
+/*
 export const XMLOptions: Partial<X2jOptions> = {
   ignoreAttributes: false,
   attributeNamePrefix: '__',
@@ -84,6 +105,7 @@ export const XMLOptions: Partial<X2jOptions> = {
   tagValueProcessor: XMLTagProcessor,
   ignoreDeclaration: true,
 };
+*/
 
 /**
  * group attributes under `a$`, and don't add attribute prefixes (should be 
@@ -91,7 +113,6 @@ export const XMLOptions: Partial<X2jOptions> = {
  */
 export const XMLOptions2: Partial<X2jOptions> = {
   ignoreAttributes: false,
-  // attrNodeName: 'a$', // FXP v4
   attributesGroupName: 'a$',
   attributeNamePrefix: '',
   textNodeName: 't$',

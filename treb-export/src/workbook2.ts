@@ -20,10 +20,10 @@
  */
 
 import { XMLParser } from 'fast-xml-parser';
-import { XMLUtils, XMLOptions, XMLOptions2 } from './xml-utils';
+import { XMLUtils, XMLOptions2 } from './xml-utils';
 
 // const xmlparser = new XMLParser();
-const xmlparser1 = new XMLParser(XMLOptions);
+// const xmlparser1 = new XMLParser(XMLOptions);
 const xmlparser2 = new XMLParser(XMLOptions2);
 
 // import * as he from 'he';
@@ -514,7 +514,8 @@ export class Workbook {
     const data = this.zip.Get(reference.replace(/^../, 'xl'));
     if (!data) { return undefined; }
 
-    const xml = xmlparser1.parse(data);
+    // const xml = xmlparser1.parse(data);
+    const xml = xmlparser2.parse(data);
 
     const result: ChartDescription = {
       type: ChartType.Unknown
@@ -532,8 +533,8 @@ export class Workbook {
         if (typeof node === 'string') {
           result.title = node;
         }
-        else if (node.text__) {
-          result.title = node.text__; // why is this not quoted, if the later one is quoted? is this a reference?
+        else if (node.t$) {
+          result.title = node.t$; // why is this not quoted, if the later one is quoted? is this a reference?
         }
       }
       else {
@@ -553,14 +554,14 @@ export class Workbook {
         series_nodes = [series_nodes];
       }
 
-      // console.info("SN", series_nodes);
+      // console.info({SN: series_nodes});
 
       for (const series_node of series_nodes) {
 
         let index = series.length;
         const order_node = series_node['c:order'];
         if (order_node) {
-          index = Number(order_node.__val||0) || 0;
+          index = Number(order_node.a$?.val||0) || 0;
         }
 
         const series_data: ChartSeries = {};
@@ -626,7 +627,7 @@ export class Workbook {
       result.type = ChartType.Bar;
       // console.info("BD", node);
       if (node['c:barDir']) {
-        if (node['c:barDir'].__val === 'col') {
+        if (node['c:barDir'].a$?.val === 'col') {
           result.type = ChartType.Column;
         }
       }
@@ -682,7 +683,7 @@ export class Workbook {
 
       const ex_series = XMLUtils.FindAll(xml, 'cx:chartSpace/cx:chart/cx:plotArea/cx:plotAreaRegion/cx:series');
       if (ex_series?.length) {
-        if (ex_series.every(test => test.__layoutId === 'boxWhisker')) {
+        if (ex_series.every(test => test.a$?.layoutId === 'boxWhisker')) {
           result.type = ChartType.Box;
           result.series = [];
           const data = XMLUtils.FindAll(xml, 'cx:chartSpace/cx:chartData/cx:data'); // /cx:data/cx:numDim/cx:f');
@@ -693,9 +694,9 @@ export class Workbook {
 
             const series: ChartSeries = {};
 
-            const id = Number(entry['cx:dataId']?.['__val']);
+            const id = Number(entry['cx:dataId']?.a$?.val);
             for (const data_series of data) {
-              if (Number(data_series.__id) === id) {
+              if (Number(data_series.a$?.id) === id) {
                 series.values = data_series['cx:numDim']?.['cx:f'] || '';
                 break;
               }
