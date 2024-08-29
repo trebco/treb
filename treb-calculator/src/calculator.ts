@@ -55,7 +55,7 @@ import * as Primitives from './primitives';
 import type { FunctionDescriptor } from 'treb-grid';
 import type { LeafVertex } from './dag/graph';
 
-import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError, DivideByZeroError } from './function-error';
+import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError, DivideByZeroError, NotImplError } from './function-error';
 import { StateLeafVertex } from './dag/state_leaf_vertex';
 import { CalculationLeafVertex } from './dag/calculation_leaf_vertex';
 
@@ -604,6 +604,60 @@ export class Calculator extends Graph {
 
         },
       },
+
+      Cell: {
+        description: 'Returns data about a cell',
+        arguments: [
+          { name: 'type', description: 'Type of data to return', unroll: true,  },
+          { name: 'reference', description: 'Cell reference', metadata: true, unroll: true,  },
+        ],
+  
+        // there's no concept of "structure volatile", and structure events
+        // don't trigger recalc, so this is not helpful -- we may need to 
+        // think about both of those things
+        
+        // volatile: true, 
+  
+        fn: (type: string, reference: UnionValue): UnionValue => {
+  
+          if (!UnionIsMetadata(reference)) {
+            return ReferenceError();
+          }
+  
+          if (type) {
+            switch (type.toString().toLowerCase()) {
+              case 'format':
+                return reference.value.format ? // || ReferenceError;
+                  { type: ValueType.string, value: reference.value.format } : ReferenceError();
+              case 'address': 
+                {
+                  let sheet_name = '';
+                  if (reference.value.address.sheet_id) {
+                    const sheet = this.model.sheets.Find(reference.value.address.sheet_id);
+                    sheet_name = sheet?.name || '';
+                  }
+
+                  if (sheet_name) {
+                    if (QuotedSheetNameRegex.test(sheet_name)) {
+                      sheet_name = `'${sheet_name}'`;
+                    }
+                    sheet_name += '!';
+                  }
+
+                  return { 
+                    type: ValueType.string, 
+                    value: '[]' + sheet_name + reference.value.address.label.replace(/\$/g, ''), 
+                  };
+                }
+            }
+          }
+  
+          return { type: ValueType.error, value: NotImplError.error };
+  
+        },
+  
+      },
+  
 
       Address: {
         arguments: [

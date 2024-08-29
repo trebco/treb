@@ -22,7 +22,7 @@
 import type { FunctionMap, IntrinsicValue } from '../descriptors';
 import * as Utils from '../utilities';
 // import { StringUnion, NumberUnion } from '../utilities';
-import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
+import { ReferenceError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
 import type { UnionValue, 
          RenderFunctionResult, RenderFunctionOptions, Complex, CellValue, 
         // ICellAddress
@@ -678,6 +678,7 @@ export const BaseFunctionLibrary: FunctionMap = {
   },
 
 
+    /*
     Cell: {
       description: 'Returns data about a cell',
       arguments: [
@@ -703,7 +704,10 @@ export const BaseFunctionLibrary: FunctionMap = {
               return reference.value.format ? // || ReferenceError;
                 { type: ValueType.string, value: reference.value.format } : ReferenceError();
             case 'address':
-              return { type: ValueType.string, value: reference.value.address.label.replace(/\$/g, '') };
+
+              // FIXME: this needs to return a fully-qualified address, we'll need access to the model
+
+              return { type: ValueType.string, value: '[]' + reference.value.address.label.replace(/\$/g, '') };
           }
         }
 
@@ -712,6 +716,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
 
     },
+    */
 
     Year: {
       description: 'Returns year from date',

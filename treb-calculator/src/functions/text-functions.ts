@@ -284,12 +284,16 @@ export const TextFunctionLibrary: FunctionMap = {
       { name: 'Start', default: 1, },
     ],
     fn: (needle: string, haystack: string, start = 1): UnionValue => {
+
       if (start >= 1) {
         if (!needle) {
           return {
             type: ValueType.number, value: start,
           }
         }
+
+        needle = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
         const match = new RegExp(needle).exec(haystack.substr(start - 1));
         if (match) {
           return {
