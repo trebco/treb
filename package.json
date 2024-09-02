@@ -12,12 +12,12 @@
   "type": "module",
   "devDependencies": {
     "@types/html-minifier": "^4.0.2",
-    "@types/node": "^22.1.0",
+    "@types/node": "^22.5.2",
     "@types/uzip": "^0.20201231.0",
     "base64-js": "^1.5.1",
     "cssnano": "^7.0.4",
-    "esbuild": "^0.23.0",
-    "eslint": "^9.8.0",
+    "esbuild": "^0.23.1",
+    "eslint": "^9.9.1",
     "fast-xml-parser": "^4.0.7",
     "html-minifier-terser": "^7.2.0",
     "sass": "^1.69.3",
@@ -31,9 +31,9 @@
     "treb-parser": "file:treb-parser",
     "treb-utils": "file:treb-utils",
     "ts-node-dev": "^2.0.0",
-    "tslib": "^2.2.0",
+    "tslib": "^2.7.0",
     "typescript": "^5.3.3",
-    "typescript-eslint": "^8.0.0",
+    "typescript-eslint": "^8.3.0",
     "uzip": "^0.20201231.0"
   },
   "scripts": {
