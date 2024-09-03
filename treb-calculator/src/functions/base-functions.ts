@@ -404,10 +404,50 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         switch (value.type) {
           case ValueType.number: sum.real += value.value; break;
-          case ValueType.boolean: sum.real += (value.value ? 1 : 0); break;
+          case ValueType.boolean: 
+            // sum.real += (value.value ? 1 : 0); // ??
+            break;
           case ValueType.complex:
             sum.real += value.value.real;
             sum.imaginary += value.value.imaginary;
+            break;
+          case ValueType.error: return value;
+        }
+      }
+
+      return ComplexOrReal(sum);
+
+    },
+  },
+
+  SumSQ: {
+    description: 'Returns the sum of the squares of all arguments',
+    arguments: [{ boxed: true, name: 'values or ranges' }],
+    fn: (...args: UnionValue[]) => {
+
+      const sum = { real: 0, imaginary: 0 };
+      const values = Utils.FlattenBoxed(args); // as UnionValue[];
+
+      for (const value of values) {
+
+        switch (value.type) {
+          case ValueType.number: sum.real += value.value * value.value; break;
+          case ValueType.boolean: 
+            // sum.real += (value.value ? 1 : 0); // ??
+            break;
+          case ValueType.complex:
+
+            {
+              const squared = ComplexMath.Multiply(value.value, value.value);
+
+              // sum.real += value.value.real;
+              // sum.imaginary += value.value.imaginary;
+
+              sum.real += squared.real;
+              sum.imaginary += squared.imaginary;
+
+            }
+
             break;
           case ValueType.error: return value;
         }
