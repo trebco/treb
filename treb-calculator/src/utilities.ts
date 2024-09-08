@@ -280,7 +280,9 @@ export const ApplyArrayX = <TFunc extends (...args: any[]) => UnionValue>(map: b
     let shape: unknown[][] = [];
     
     for (const [i, arg] of args.entries()) {
+
       if (arg && map[i]) {
+
         const arr = Array.isArray(arg) ? arg : IsArrayUnion(arg) ? arg.value : undefined;
         if (arr) {
           arrays[i] = arr;
@@ -298,8 +300,15 @@ export const ApplyArrayX = <TFunc extends (...args: any[]) => UnionValue>(map: b
       return {
         type: ValueType.array,
         value: shape.map((_, i) => _.map((_, j) => {
-          const apply = args.map((arg, index) => arrays[index] ? (arrays[index][i][j] || { type: ValueType.undefined }) : arg);
+
+          // this was breaking on boolean false, because 
+          // it used || instead of ??. if we don't require 
+          // boxed arguments, we need to handle naked booleans
+
+          const apply = args.map((arg, index) => arrays[index] ? (arrays[index][i][j] ?? { type: ValueType.undefined }) : arg);
+
           return base(...apply as Parameters<TFunc>);
+
         })),
       };
 

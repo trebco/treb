@@ -867,6 +867,9 @@ export const BaseFunctionLibrary: FunctionMap = {
             value = !!arg.value;
             break;
 
+          case ValueType.error:
+            return arg;
+
           }
         }
 
