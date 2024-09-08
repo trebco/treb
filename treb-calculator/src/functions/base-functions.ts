@@ -849,15 +849,28 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Not: {
-      arguments: [{ unroll: true }],
-      fn: (...args: unknown[]): UnionValue => {
-        if (args.length === 0) {
-          return ArgumentError();
+      arguments: [{ unroll: true, boxed: true }],
+      fn: (arg: UnionValue): UnionValue => {
+
+        let value = false;
+
+        if (arg) {
+          switch (arg.type) {
+
+          case ValueType.undefined:
+            value = false;
+            break;
+
+          case ValueType.string:
+          case ValueType.boolean:
+          case ValueType.number:
+            value = !!arg.value;
+            break;
+
+          }
         }
-        if (args.length === 1) {
-          return Box(!args[0]);
-        }
-        return Box(true);
+
+        return Box(!value);
       },
     },
 

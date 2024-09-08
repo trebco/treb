@@ -2538,7 +2538,6 @@ export class Calculator extends Graph {
 
         // first pass, run the calculation
         const check = this.Evaluate(expression, context, options, true);
-        
         entry.internal.vertex.result = check;
         entry.internal.vertex.updated = true;
 
