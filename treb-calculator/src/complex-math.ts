@@ -99,6 +99,24 @@ export const RectangularToPolar = (value: Complex): { r: number, theta: number }
   return { r, theta };
 };
 
+export const TanH = (z: Complex): Complex => {
+
+  // tanh(a+bi) = (sinh a cos b + i cosh a sin b) / (cosh a cos b + i sinh a sin b)
+
+  const num: Complex = {
+    real: Math.sinh(z.real) * Math.cos(z.imaginary),
+    imaginary: Math.cosh(z.real) * Math.sin(z.imaginary),
+  };
+
+  const denom: Complex = {
+    real: Math.cosh(z.real) * Math.cos(z.imaginary),
+    imaginary: Math.sinh(z.real) * Math.sin(z.imaginary),
+  };
+
+  return Divide(num, denom);
+
+};
+
 export const Tan = (z: Complex) => {
 
   // tan(a+bi) = (tan(a) + i tanh(b)) / (1 - i tan(a) tanh(b))
@@ -113,6 +131,17 @@ export const Tan = (z: Complex) => {
 
 };
 
+export const CosH = (z: Complex): Complex => {
+
+  // cosh(a+bi) = cosh a cos b + i sinh a sin b
+
+  return {
+    real: Math.cosh(z.real) * Math.cos(z.imaginary),
+    imaginary: Math.sinh(z.real) * Math.sin(z.imaginary),
+  };
+
+};
+
 export const Cos = (z: Complex) => {
    
   // sin(a+bi) = cos(a) cosh(b) + i sin(a) sinh(b)
@@ -124,6 +153,16 @@ export const Cos = (z: Complex) => {
 
 };
 
+export const SinH = (z: Complex): Complex => {
+
+  // sinh(a+bi) = sinh a cos b + i cosh a sin b
+
+  return {
+    real: Math.sinh(z.real) * Math.cos(z.imaginary),
+    imaginary: Math.cosh(z.real) * Math.sin(z.imaginary),
+  };
+  
+};
 
 export const Sin = (z: Complex) => {
    

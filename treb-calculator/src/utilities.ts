@@ -305,6 +305,15 @@ export const ApplyArrayX = <TFunc extends (...args: any[]) => UnionValue>(map: b
           // it used || instead of ??. if we don't require 
           // boxed arguments, we need to handle naked booleans
 
+          // actually, this is still slightly wrong. we know (actually the 
+          // caller of this function knows) if each argument is boxed or not, 
+          // and if it's not, we should not return the boxed undefined type, 
+          // we should just return undefined.
+
+          // that actually would basically solve false booleans as well, even
+          // if it were incorrectly returning undefined. the issue is we were
+          // returning a boxed undefined, which evaluates to true.
+
           const apply = args.map((arg, index) => arrays[index] ? (arrays[index][i][j] ?? { type: ValueType.undefined }) : arg);
 
           return base(...apply as Parameters<TFunc>);

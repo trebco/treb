@@ -2561,6 +2561,24 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    SinH: {
+      arguments: [
+        { name: 'number', boxed: true, unroll: true },
+      ],
+      fn: (a: UnionValue) => {
+
+        if (a.type === ValueType.number) {
+          return { type: ValueType.number, value: Math.sinh(a.value) };
+        }
+        if (a.type === ValueType.complex) {
+          return { type: ValueType.complex, value: ComplexMath.SinH(a.value) }; 
+        }
+
+        return ArgumentError();
+
+      },
+    },
+
     Sin: {
       arguments: [
         { name: 'angle in radians', boxed: true, unroll: true, }
@@ -2572,6 +2590,24 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
         if (a.type === ValueType.complex) {
           return { type: ValueType.complex, value: ComplexMath.Sin(a.value) }; 
+        }
+
+        return ArgumentError();
+
+      },
+    },
+
+    CosH: {
+      arguments: [
+        { name: 'number', boxed: true, unroll: true },
+      ],
+      fn: (a: UnionValue) => {
+
+        if (a.type === ValueType.number) {
+          return { type: ValueType.number, value: Math.cosh(a.value) };
+        }
+        if (a.type === ValueType.complex) {
+          return { type: ValueType.complex, value: ComplexMath.CosH(a.value) }; 
         }
 
         return ArgumentError();
@@ -2596,7 +2632,25 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       },
     },
-    
+
+    TanH: {
+      arguments: [
+        { name: 'number', boxed: true, unroll: true, }
+      ],
+      fn: (a: UnionValue) => {
+
+        if (a.type === ValueType.number) {
+          return { type: ValueType.number, value: Math.tanh(a.value) };
+        }
+        if (a.type === ValueType.complex) {
+          return { type: ValueType.complex, value: ComplexMath.TanH(a.value) }; 
+        }
+
+        return ArgumentError();
+
+      },
+    },
+
     Tan: {
       arguments: [
         { name: 'angle in radians', boxed: true, unroll: true, }
