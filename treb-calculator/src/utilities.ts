@@ -127,7 +127,7 @@ export const FlattenBoxed = (args: UnionValue[]): UnionValue[] => {
 
   let result: UnionValue[] = [];
   for (const arg of args) {
-    if (arg.type === ValueType.array) {
+    if (arg?.type === ValueType.array) {
 
       // possibly recursive
       for (const row of arg.value) {

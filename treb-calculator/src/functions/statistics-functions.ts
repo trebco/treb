@@ -25,6 +25,57 @@ import { ValueError, ArgumentError, NAError } from '../function-error';
 import { type Complex, type UnionValue, ValueType, type CellValue } from 'treb-base-types';
 import * as ComplexMath from '../complex-math';
 
+
+/** error function (for gaussian distribution) */
+const erf = (x: number): number => {
+
+  const a1 = 0.254829592;
+  const a2 = -0.284496736;
+  const a3 = 1.421413741;
+  const a4 = -1.453152027;
+  const a5 = 1.061405429;
+  const p = 0.3275911;
+
+  x = Math.abs(x);
+  const t = 1 / (1 + p * x);
+  return 1 - ((((((a5 * t + a4) * t) + a3) * t + a2) * t) + a1) * t * Math.exp(-1 * x * x);
+
+};
+
+const sqrt2pi = Math.sqrt(2 * Math.PI);
+
+const norm_dist = (x: number, mean: number, stdev: number, cumulative: boolean) => {
+  
+  let value = 0;
+
+  if (cumulative) {
+    const sign = (x < mean) ? -1 : 1;
+    value = 0.5 * (1.0 + sign * erf((Math.abs(x - mean)) / (stdev * Math.sqrt(2))));
+  }
+  else {
+    value = Math.exp(-1/2 * Math.pow((x - mean) / stdev, 2)) / (stdev * sqrt2pi);
+  }
+
+  return value;
+
+}
+
+/** imprecise but reasonably fast normsinv function */
+const inverse_normal = (q: number): number => {
+
+  if (q === 0.50) {
+    return 0;
+  }
+  
+  const p = (q < 1.0 && q > 0.5) ? (1 - q) : q;
+  const t = Math.sqrt(Math.log(1.0 / Math.pow(p, 2.0)));
+  const x = t - (2.515517 + 0.802853 * t + 0.010328 * Math.pow(t, 2.0)) /
+    (1.0 + 1.432788 * t + 0.189269 * Math.pow(t, 2.0) + 0.001308 * Math.pow(t, 3.0));
+
+  return (q > 0.5 ? x : -x);
+
+};
+
 const Median = (data: number[]) => {
   const n = data.length;
   if (n % 2) {
@@ -143,6 +194,157 @@ export const Variance = (data: number[], sample = false) => {
 };
 
 export const StatisticsFunctionLibrary: FunctionMap = {
+
+  Phi: {
+    arguments: [
+      { name: 'x', boxed: true, unroll: true }
+    ],
+    fn: (x: UnionValue) => {
+
+      if (x.type === ValueType.number) {
+        return {
+          type: ValueType.number,
+          value: (1 / Math.sqrt(Math.PI * 2)) * Math.exp(-x.value * x.value / 2),
+        };
+      }
+
+      return ArgumentError();
+    }
+  },
+
+  'Z.Test': {
+    arguments: [
+      { name: 'Array', boxed: true,  },
+      { name: 'x', boxed: true, unroll: true, },
+      { name: 'Sigma', boxed: true, unroll: true, },
+    ],
+    fn: (array: UnionValue, x: UnionValue, sigma?: UnionValue) => {
+
+      const data: number[] = [];
+
+      if (array.type === ValueType.array) {
+        for (const row of array.value) {
+          for (const cell of row) { 
+            if (cell.type === ValueType.number) {
+              data.push(cell.value);
+            }
+          }
+        }
+      }
+      else if (array.type === ValueType.number) {
+        data.push(array.value);
+      }
+
+      if (data.length && x.type === ValueType.number) {
+
+        let average = 0; 
+        const n = data.length;
+        for (const value of data) { average += value; }
+        average /= n;
+
+        const s = sigma?.type === ValueType.number ? sigma.value : 
+          Math.sqrt(Variance(data, true));
+
+        return {
+          type: ValueType.number,
+          value: 1 - norm_dist((average - x.value) / (s / Math.sqrt(n)), 0, 1, true),
+        };
+
+      }
+
+      return ArgumentError();
+
+    },
+  },
+
+
+  Erf: {
+    fn: (a: number): UnionValue => {
+      return { type: ValueType.number, value: erf(a) };
+    },
+  },
+
+  'NormsInv': {
+    
+    description: 'Inverse of the normal cumulative distribution', 
+    arguments: [
+      {name: 'probability'},
+    ],
+
+    fn: (q: number): UnionValue => {
+      return {
+        type: ValueType.number,
+        value: inverse_normal(q),
+      }
+    }
+  },
+
+  'Norm.Inv': {
+    description: 'Inverse of the normal cumulative distribution', 
+    arguments: [
+      {name: 'probability'},
+      {name: 'mean', default: 0},
+      {name: 'standard deviation', default: 1},
+    ],
+    xlfn: true,
+    fn: (q: number, mean = 0, stdev = 1): UnionValue => {
+      return {
+        type: ValueType.number,
+        value: inverse_normal(q) * stdev + mean,
+      }
+    }
+  },
+
+  'Norm.S.Inv': {
+    description: 'Inverse of the normal cumulative distribution', 
+    arguments: [
+      {name: 'probability'},
+      {name: 'mean', default: 0},
+      {name: 'standard deviation', default: 1},
+    ],
+    xlfn: true,
+    fn: (q: number, mean = 0, stdev = 1): UnionValue => {
+      return {
+        type: ValueType.number,
+        value: inverse_normal(q) * stdev + mean,
+      }
+    }
+  }, 
+
+  'Norm.Dist': {
+
+    description: 'Cumulative normal distribution',
+    arguments: [
+      {name: 'value'},
+      {name: 'mean', default: 0},
+      {name: 'standard deviation', default: 1},
+      {name: 'cumulative', default: true},
+    ],
+
+    // this does need xlfn but it also requires four parameters
+    // (we have three and they are not required).
+    
+    xlfn: true,
+
+    fn: (x: number, mean = 0, stdev = 1, cumulative = true): UnionValue => {
+      return { type: ValueType.number, value: norm_dist(x, mean, stdev, cumulative) };
+    },
+  },
+
+  'Norm.S.Dist': {
+
+    description: 'Cumulative normal distribution',
+    arguments: [
+      {name: 'value'},
+      {name: 'cumulative', default: true},
+    ],
+
+    xlfn: true,
+
+    fn: (x: number, cumulative = true): UnionValue => {
+      return { type: ValueType.number, value: norm_dist(x, 0, 1, cumulative) };
+    },
+  },
 
   'StDev.P': {
     description: 'Returns the standard deviation of a set of values, corresponding to a population',
