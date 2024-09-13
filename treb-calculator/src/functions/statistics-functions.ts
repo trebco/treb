@@ -22,9 +22,10 @@
 import type { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ValueError, ArgumentError, NAError } from '../function-error';
-import { type Complex, type UnionValue, ValueType, type CellValue } from 'treb-base-types';
+import { type Complex, type UnionValue, ValueType, type CellValue, ComplexOrReal } from 'treb-base-types';
 import * as ComplexMath from '../complex-math';
 
+import { BetaCDF, BetaPDF, InverseBeta, LnGamma } from './beta';
 
 /** error function (for gaussian distribution) */
 const erf = (x: number): number => {
@@ -119,9 +120,12 @@ const InterpolatedQuartiles = (data: number[], include_median = true) => {
 
 };
 
+/**
+ * this is a Lanczos approximation. could be cleaned up.
+ * @param z 
+ * @returns 
+ */
 const Gamma = (z: Complex): Complex => {
-
-  // this is a Lanczos approximation. could be cleaned up.
 
   const coefficients = [
     0.99999999999980993,
@@ -137,6 +141,9 @@ const Gamma = (z: Complex): Complex => {
 
   // generally speaking I'm against operator overloading but 
   // it would be a big help for complex math
+
+  // how about a class based on the complex type? then you could
+  // use class methods on values. would be a little cleaner?
 
   const pi = Math.PI;
   const sin = ComplexMath.Sin;
@@ -257,6 +264,56 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     },
   },
 
+  'Beta.Dist': {
+    description: 'beta distribution',
+    arguments: [
+      { name: 'x', unroll: true},
+      { name: 'a', },
+      { name: 'b', },
+      { name: 'cumulative', },
+    ],
+    fn: (x: number, a: number, b: number, cumulative: boolean) => {
+
+      if (a < 0 || b < 0) {
+        return ArgumentError();
+      }
+
+      if (cumulative) {
+        return {
+          type: ValueType.number,
+          value: BetaCDF(x, a, b),
+        };
+      }
+      else {
+        return {
+          type: ValueType.number,
+          value: BetaPDF(x, a, b),
+        };
+      }
+
+      return ArgumentError();
+    }
+  },
+
+  'Beta.Inv': {
+    description: 'Inverse of the beta distribution',
+    arguments: [
+      {name: 'probability', unroll: true},
+      {name: 'a', },
+      {name: 'b', },
+    ],
+    fn: (x: number, a: number, b: number) => {
+
+      if (a < 0 || b < 0) {
+        return ArgumentError();
+      }
+
+      return {
+        type: ValueType.number,
+        value: InverseBeta(x, a, b),
+      }
+    }
+  },
 
   Erf: {
     fn: (a: number): UnionValue => {
@@ -278,7 +335,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       }
     }
   },
-
+  
   'Norm.Inv': {
     description: 'Inverse of the normal cumulative distribution', 
     arguments: [
@@ -598,9 +655,46 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     },
   },
 
+  GammaLn: {
+    description: 'Returns the natural log of the gamma function',
+    arguments: [{ name: 'value', boxed: true, unroll: true }],
+    fn: (value: UnionValue) => {
+      if (value.type === ValueType.number) {
+        return {
+          type: ValueType.number,
+          value: LnGamma(value.value),
+        };
+      }
+      return ArgumentError();
+    },
+  },
+
+  'GammaLn.Precise': {
+    description: 'Returns the natural log of the gamma function',
+    arguments: [{ name: 'value', boxed: true, unroll: true }],
+    fn: (value: UnionValue) => {
+
+      let cpx: Complex|undefined;
+
+      if (value.type === ValueType.number) {
+        cpx = { real: value.value, imaginary: 0 };
+      } 
+      else if (value.type === ValueType.complex) {
+        cpx = value.value;
+      }
+
+      if (cpx) {
+        const gamma = Gamma(cpx);
+        return ComplexOrReal(ComplexMath.Log(gamma));
+      }
+
+      return ArgumentError();
+    },
+  },
+
   Gamma: {
     description: 'Returns the gamma function for the given value',
-    arguments: [{ name: 'value', boxed: true }],
+    arguments: [{ name: 'value', boxed: true, unroll: true }],
     fn: (value: UnionValue) => {
 
       let complex: Complex = { real: 0, imaginary: 0 };
