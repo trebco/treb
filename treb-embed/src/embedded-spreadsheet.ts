@@ -2611,6 +2611,19 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     this.grid.ShowSheet(index, !hide);
   }
 
+  /** list sheets in the model */
+  public ListSheets() {
+    return this.model.sheets.list.map(sheet => {
+      const entry: { name: string, hidden?: boolean } = {
+        name: sheet.name, 
+      };
+      if (!sheet.visible) {
+        entry.hidden = true;
+      }
+      return entry;
+    });
+  }
+
   /**
    * Show or hide sheet. This method is deprecated because it's ambiguous.
    * To set a sheet's visibility, use `HideSheet`. To activate a sheet, use
