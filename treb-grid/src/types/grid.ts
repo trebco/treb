@@ -7524,7 +7524,7 @@ export class Grid extends GridBase {
     if (typeof column === 'number') column = [column];
 
     const auto = typeof command.width !== 'number';
-    const width = Math.round(command.width || 0 / this.scale)
+    const width = Math.round((command.width || 0) / this.scale);
 
     if (auto) {
       for (const entry of column) {

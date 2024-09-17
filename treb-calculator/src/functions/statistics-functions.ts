@@ -202,6 +202,94 @@ export const Variance = (data: number[], sample = false) => {
 
 export const StatisticsFunctionLibrary: FunctionMap = {
 
+  Slope: {
+    arguments: [
+      { name: 'known_y' },
+      { name: 'known_x' },
+    ],
+    fn: (y: CellValue[][], x: CellValue[][]) => {
+
+      const flat_x = Utils.FlattenNumbers(x);
+      const flat_y = Utils.FlattenNumbers(y);
+
+      if (flat_x.length !== flat_y.length) {
+        return ArgumentError();
+      }
+
+      let sum_x = 0;
+      let sum_y = 0;
+      let sum_products = 0;
+      let sum_squared_x = 0;
+  
+      for (let i = 0; i < flat_x.length; i++) {
+  
+        const x = flat_x[i];
+        const y = flat_y[i];
+  
+        sum_products += (x * y);
+        sum_x += x;
+        sum_y += y;
+  
+        sum_squared_x += (x * x);
+        // sum_squared_y += (y * y);
+  
+      }
+  
+      const value = 
+        ((flat_x.length * sum_products) - (sum_x * sum_y) ) /
+         ((flat_x.length * sum_squared_x) - (sum_x * sum_x));
+
+      return {
+        type: ValueType.number,
+        value,
+      }
+
+    },
+  },
+
+  Intercept: {
+    arguments: [
+      { name: 'known_y' },
+      { name: 'known_x' },
+    ],
+    fn: (y: CellValue[][], x: CellValue[][]) => {
+      const flat_x = Utils.FlattenNumbers(x);
+      const flat_y = Utils.FlattenNumbers(y);
+
+      if (flat_x.length !== flat_y.length) {
+        return ArgumentError();
+      }
+
+      const N = flat_x.length;
+
+      let sum_x = 0;
+      let sum_y = 0;
+      let sum_products = 0;
+      let sum_squared_x = 0;
+
+      for (let i = 0; i < N; i++) {
+
+        const x = flat_x[i];
+        const y = flat_y[i];
+
+        sum_products += (x * y);
+        sum_x += x;
+        sum_y += y;
+
+        sum_squared_x += (x * x);
+
+      }
+
+      let m = ((N * sum_products) - (sum_x * sum_y) );
+      m /= ((N * sum_squared_x) - (sum_x * sum_x));
+
+      return {
+        type: ValueType.number, value: (sum_y - (m * sum_x)) / N,
+      };
+
+    },
+  },
+
   Phi: {
     arguments: [
       { name: 'x', boxed: true, unroll: true }

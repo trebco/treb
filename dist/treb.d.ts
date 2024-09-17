@@ -1,4 +1,4 @@
-/*! API v30.13. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v30.15. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -514,6 +514,12 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      * @public
      */
     HideSheet(index?: number | string, hide?: boolean): void;
+
+    /** list sheets in the model */
+    ListSheets(): {
+        name: string;
+        hidden?: boolean;
+    }[];
 
     /**
      * Show or hide sheet. This method is deprecated because it's ambiguous.
