@@ -934,10 +934,7 @@ export const CreateScatterChart = (args: [UnionValue, string, string], style: 'p
   // transform).
 
   const series: SeriesType[] = TransformSeriesData(args[0]);
-
   const common = CommonData(series);
-
-  console.info({common})
 
   const title = args[1]?.toString() || undefined;
   const options = args[2]?.toString() || undefined;
