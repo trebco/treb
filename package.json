@@ -32,6 +32,7 @@
     "treb-utils": "file:treb-utils",
     "ts-node": "^10.9.2",
     "tslib": "^2.7.0",
+    "tsx": "^4.19.1",
     "typescript": "^5.3.3",
     "typescript-eslint": "^8.3.0",
     "uzip": "^0.20201231.0"
@@ -45,8 +46,8 @@
     "tsc": "tsc -b treb-embed/modern.tsconfig.json",
     "rebuild-tsc": "tsc -b --force treb-embed/modern.tsconfig.json",
     "watch-tsc": "tsc -b treb-embed/modern.tsconfig.json -w",
-    "watch-api": "NODE_OPTIONS='--import=./register-ts-loader.mjs' node --watch api-generator/api-generator.ts --config api-config.json",
-    "generate-api": "NODE_OPTIONS='--import=./register-ts-loader.mjs' node api-generator/api-generator.ts --config api-config.json",
+    "watch-api": "tsx --watch api-generator/api-generator.ts --config api-config.json",
+    "generate-api": "tsx api-generator/api-generator.ts --config api-config.json",
     "release": "npm run rebuild-tsc && npm run build && npm run generate-api"
   }
 }
