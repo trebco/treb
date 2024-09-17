@@ -1,6 +1,6 @@
 {
   "name": "@trebco/treb",
-  "version": "30.16.0",
+  "version": "30.16.2",
   "license": "LGPL-3.0-or-later",
   "homepage": "https://treb.app",
   "repository": {
@@ -30,7 +30,7 @@
     "treb-grid": "file:treb-grid",
     "treb-parser": "file:treb-parser",
     "treb-utils": "file:treb-utils",
-    "ts-node-dev": "^2.0.0",
+    "ts-node": "^10.9.2",
     "tslib": "^2.7.0",
     "typescript": "^5.3.3",
     "typescript-eslint": "^8.3.0",
@@ -45,8 +45,8 @@
     "tsc": "tsc -b treb-embed/modern.tsconfig.json",
     "rebuild-tsc": "tsc -b --force treb-embed/modern.tsconfig.json",
     "watch-tsc": "tsc -b treb-embed/modern.tsconfig.json -w",
-    "watch-api": "ts-node-dev --respawn api-generator/api-generator.ts --config api-config.json",
-    "generate-api": "ts-node-dev api-generator/api-generator.ts --config api-config.json",
+    "watch-api": "NODE_OPTIONS='--import=./register-ts-loader.mjs' node --watch api-generator/api-generator.ts --config api-config.json",
+    "generate-api": "NODE_OPTIONS='--import=./register-ts-loader.mjs' node api-generator/api-generator.ts --config api-config.json",
     "release": "npm run rebuild-tsc && npm run build && npm run generate-api"
   }
 }

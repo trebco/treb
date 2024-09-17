@@ -653,7 +653,9 @@ function CollectDependencyTransformer<T extends ts.Node>(
 
           if (node.exportClause && ts.isNamedExports(node.exportClause)) {
             for (const element of node.exportClause.elements) {
-              const name = element.name.escapedText.toString();
+
+              const name = ts.isIdentifier(element.name) ? element.name.escapedText.toString() : element.name.getFullText();
+
               //if (args.types && args.types.includes(name)) {
               //  if (!args.recursive_targets[target]) { args.recursive_targets[target] = []; }
               //  args.recursive_targets[target].push(element.name.escapedText.toString());
