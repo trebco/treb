@@ -61,8 +61,10 @@ export const ArrayMinMax = (data: number[]) => {
 
 export const ReadSeries = (data: ReferenceSeries['value']): SeriesType => {
 
-  const [label, x, y, z, index, subtype, data_labels] = data;
+  // const label, x, y, z, index, subtype, data_labels] = data;
 
+  const { label, x, y, z, index, subtype, data_labels, axis } = data;
+ 
   // series type is (now)
   //
   // [0] label, string
@@ -78,6 +80,10 @@ export const ReadSeries = (data: ReferenceSeries['value']): SeriesType => {
     x: { data: [] },
     y: { data: [] },
   };
+
+  if (typeof axis === 'number') {
+    series.axis = axis;
+  }
 
   if (typeof index === 'number') {
     series.index = index;
@@ -431,10 +437,22 @@ export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: n
 
   let x_format = '';
   let y_format = '';
+  let y2_format = '';
 
   for (const entry of series) {
-    if (entry.y.format && !y_format) { y_format = entry.y.format; }
-    if (entry.x.format && !x_format) { x_format = entry.x.format; }
+    if (entry.axis) {
+      if (entry.y.format && !y2_format) { 
+        y2_format = entry.y.format; 
+      }
+    }
+    else {
+      if (entry.y.format && !y_format) { 
+        y_format = entry.y.format; 
+      }
+    }
+    if (entry.x.format && !x_format) { 
+      x_format = entry.x.format; 
+    }
   }
 
   let legend: Array<{ label: string, index?: number }> | undefined; // string[]|undefined;
@@ -449,12 +467,24 @@ export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: n
   let x_min = Math.min.apply(0, x.map(test => test.x.range?.min || 0));
   let x_max = Math.max.apply(0, x.map(test => test.x.range?.max || 0));
 
-  // const y = series.filter(test => test.y.range);
-  let y_min = Math.min.apply(0, x.map(test => test.y.range?.min || 0));
-  let y_max = Math.max.apply(0, x.map(test => test.y.range?.max || 0));
+  const x1 = x.filter(test => !test.axis);
+  const x2 = x.filter(test => test.axis);
+  
+  let y_min = Math.min.apply(0, x1.map(test => test.y.range?.min || 0));
+  let y_max = Math.max.apply(0, x1.map(test => test.y.range?.max || 0));
+
+  let y2_min = -1;
+  let y2_max = -1;
+
+  if (x2.length) {
+    y2_min = Math.min.apply(0, x2.map(test => test.y.range?.min || 0));
+    y2_max = Math.max.apply(0, x2.map(test => test.y.range?.max || 0));
+  }
 
   // if there's z data (used for bubble size), adjust x/y min/max to
   // account for the z size so bubbles are contained within the grid
+
+  // this can't be used with axis (atm)
 
   for (const subseries of series) {
     if (subseries.z) {
@@ -496,9 +526,29 @@ export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: n
 
   const x_scale = Util.Scale(x_min, x_max, 7);
   const y_scale = Util.Scale(y_min, y_max, 7);
+  const y2_scale = Util.Scale(y2_min, y2_max, 7);
+
+  if (y2_min !== y2_max && y_scale && y2_scale) {
+    if (y_scale.count !== y2_scale.count) {
+      const max = Math.max(y_scale.count, y2_scale.count);
+      const target = y_scale.count < max ? y_scale : y2_scale;
+      for (let i = target.count; i < max; i += 2) {
+        // add high
+        target.max += target.step;
+        target.count++;
+
+        if (target.count < max) {
+          // add low
+          target.min -= target.step;
+          target.count++;
+        }
+      }
+    }
+  }
 
   let x_labels: string[] | undefined;
   let y_labels: string[] | undefined;
+  let y2_labels: string[] | undefined;
 
   if (x_format) {
     x_labels = [];
@@ -509,8 +559,11 @@ export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: n
   }
 
   if (!y_format && auto_number_format) {
-    // y_format = default_number_format;
     y_format = AutoFormat(y_scale);
+  }
+
+  if (!y2_format && auto_number_format) {
+    y2_format = AutoFormat(y2_scale);
   }
 
   if (y_format) {
@@ -520,8 +573,20 @@ export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: n
       y_labels.push(format.Format(y_scale.min + i * y_scale.step));
     }
   }
+  if (y2_format) {
+    y2_labels = [];
+    const format = NumberFormatCache.Get(y2_format);
+    for (let i = 0; i <= y2_scale.count; i++) {
+      y2_labels.push(format.Format(y2_scale.min + i * y2_scale.step));
+    }
+  }
 
-  return {
+  const result: {
+    legend?: { label: string, index?: number }[],
+    x: { format: string, scale: RangeScale, labels?: string[] },
+    y: { format: string, scale: RangeScale, labels?: string[] },
+    y2?: { format: string, scale: RangeScale, labels?: string[] },
+  } = {
     x: {
       format: x_format,
       scale: x_scale,
@@ -534,6 +599,16 @@ export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: n
     },
     legend,
   };
+
+  if (y2_min !== y2_max) {
+    result.y2 = {
+      format: y2_format,
+      scale: y2_scale,
+      labels: y2_labels,
+    };
+  }
+
+  return result;
 
 };
 
@@ -862,6 +937,8 @@ export const CreateScatterChart = (args: [UnionValue, string, string], style: 'p
 
   const common = CommonData(series);
 
+  console.info({common})
+
   const title = args[1]?.toString() || undefined;
   const options = args[2]?.toString() || undefined;
 
@@ -877,6 +954,9 @@ export const CreateScatterChart = (args: [UnionValue, string, string], style: 'p
 
     y_scale: common.y.scale,
     y_labels: common.y.labels,
+
+    y2_scale: common.y2?.scale,
+    y2_labels: common.y2?.labels,
 
     lines: style === 'line', // true,
     points: style === 'plot',

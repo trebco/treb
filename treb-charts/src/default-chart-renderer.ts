@@ -175,6 +175,44 @@ export class DefaultChartRenderer implements ChartRendererType {
 
       }
 
+      if (chart_data.type === 'scatter2' && chart_data.y2_labels && chart_data.y2_labels.length && chart_data.y2_scale) {
+
+        const y2_labels: Array<{label: string; metrics: Metrics}> = [];
+        let max_width = 0;
+        let max_height = 0;
+
+        const scale = chart_data.y2_scale;
+        
+        const count = scale.count + 1;
+
+        for (let i = 0; i < count; i++ ){
+          const metrics = this.renderer.MeasureText(chart_data.y2_labels[i], ['axis-label', 'y-axis-label']);
+          y2_labels.push({ label: chart_data.y2_labels[i], metrics });
+          max_width = Math.max(max_width, metrics.width);
+          max_height = Math.max(max_height, metrics.height);
+        }
+
+        /*
+        area.bottom = Math.round(area.bottom - max_height / 2);
+        area.top = Math.round(area.top + max_height / 2);
+
+        if (x_metrics.length) {
+          area.bottom -= (max_x_height + chart_margin.bottom);
+        }
+        if (x_metrics2.length) {
+          area.bottom -= (max_x_height2 + chart_margin.bottom);
+        }
+        if (extra_padding) {
+          area.bottom -= extra_padding;
+        }
+        */
+
+        this.renderer.RenderYAxis(area, area.right - max_width, y2_labels, ['axis-label', 'y-axis-label'], 'left');
+        area.right -= (max_width + chart_margin.left);
+        // area.left += (max_width + chart_margin.left);
+
+      }
+
       // now render x axis
 
       if (x_metrics.length && chart_data.x_labels?.length) {
@@ -318,11 +356,12 @@ export class DefaultChartRenderer implements ChartRendererType {
           }
 
           const index = typeof series.index === 'number' ? series.index : i + 1;
+
           this.renderer.RenderScatterSeries(area, 
             series.x.data, 
             series.y.data, 
             chart_data.x_scale, 
-            chart_data.y_scale, 
+            (series.axis && chart_data.y2_scale) ? chart_data.y2_scale : chart_data.y_scale, 
               lines,
               points,
               !!chart_data.filled,

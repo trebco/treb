@@ -577,11 +577,11 @@ export class ChartRenderer {
   /**
    * render y axis labels; skips over labels to prevent overlap
    */
-  public RenderYAxis(area: Area, left: number,
+  public RenderYAxis(area: Area, x: number,
     labels: Array<{
       label: string;
       metrics: Metrics;
-    }>, classes?: string | string[]) {
+    }>, classes?: string | string[], align:'left'|'right' = 'right') {
 
     const count = labels.length;
     if (!count) return;
@@ -612,7 +612,7 @@ export class ChartRenderer {
     for (let i = 0; i < count; i += increment) {
       const label = labels[i];
       const y = Math.round(area.bottom - step * i + label.metrics.height / 4);
-      this.RenderText(this.axis_group, label.label, 'right', { x: left, y }, classes);
+      this.RenderText(this.axis_group, label.label, align, { x, y }, classes);
     }
 
   }

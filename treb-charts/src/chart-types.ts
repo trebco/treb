@@ -33,6 +33,18 @@ export interface ReferenceMetadata {
 
 export interface ReferenceSeries extends ExtendedUnion {
   key: 'series',
+  value: {
+    label?: string;
+    x?: UnionValue;
+    y?: UnionValue;
+    z?: UnionValue;
+    index?: number;
+    subtype?: string;
+    data_labels?: string[];
+    axis?: number;
+  }
+
+  /*
   value: [
     CellValue?, // { name: 'Label' }, // , metadata: true, },
     UnionValue?, // { name: 'X', metadata: true, },
@@ -42,6 +54,8 @@ export interface ReferenceSeries extends ExtendedUnion {
     CellValue?, // { name: 'subtype', },
     CellValue?, // { name: 'Labels', description: 'Labels for bubble charts only (atm)' },
   ];
+  */
+
 }
 
 export const IsMetadata = (value?: unknown): value is ExtendedUnion & { value: ReferenceMetadata } => {
@@ -54,7 +68,8 @@ export const IsMetadata = (value?: unknown): value is ExtendedUnion & { value: R
 export const IsSeries = (value?: unknown): value is ReferenceSeries => {
   return (!!value && (typeof value === 'object')
     && (value as ReferenceSeries).key === 'series'
-    && Array.isArray((value as ReferenceSeries).value));
+    // && Array.isArray((value as ReferenceSeries).value));
+    && (typeof (value as ReferenceSeries).value === 'object'));
 };
 
 export const IsArrayUnion = (value?: unknown): value is ArrayUnion => {
@@ -140,9 +155,11 @@ export interface ScatterData2 extends ChartDataBaseType {
 
   x_scale: RangeScale;
   y_scale: RangeScale;
+  y2_scale?: RangeScale;
 
   x_labels?: string[];
   y_labels?: string[];
+  y2_labels?: string[];
 
   style?: 'plot'|'line'|'area';
 
@@ -311,8 +328,10 @@ export interface SeriesType {
   subtype?: string;
   x: SubSeries;
   y: SubSeries;
+  y2?: SubSeries;
   z?: SubSeries;
   index?: number;
   labels?: string[];
+  axis?: number;
 }
 

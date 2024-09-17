@@ -48,7 +48,7 @@ export type ChartFunction
   | 'Box.Plot'
   ;
 
-type SupportFunction = 'Group'|'Series';
+type SupportFunction = 'Group'|'Series' ; // |'Scatter.Series';
 
 /**
  * chart functions for registration
@@ -87,19 +87,56 @@ export const ChartFunctions: Record<ChartFunction|SupportFunction, CompositeFunc
       { name: 'X', metadata: true, },
       { name: 'Y', metadata: true, },
       { name: 'Z', metadata: true, },
-      { name: 'index', },
-      { name: 'subtype', },
+      { name: 'Index', },
+      { name: 'Subtype', },
       { name: 'Labels', description: 'Labels for bubble charts only (atm)' },
+      { name: 'Axis', description: `Series axis (scatter plot only)` },
     ],
     fn: (...args: unknown[]) => {
       return {
         type: ValueType.object,
-        value: args,
+        value: {
+          label: args[0],
+          x: args[1],
+          y: args[2],
+          z: args[3],
+          index: args[4],
+          subtype: args[5],
+          data_labels: args[6],
+          axis: args[7],
+        },
         key: 'series',
       };
     },
     category: ['chart functions'],
   },
+
+  /*
+  'Scatter.Series': {
+    arguments: [
+      { name: 'Label' }, // , metadata: true, },
+      { name: 'X', metadata: true, },
+      { name: 'Y', metadata: true, },
+      { name: 'index', },
+      { name: 'subtype', },
+      { name: 'axis', },
+    ],
+    fn: (...args: unknown[]) => {
+      return {
+        type: ValueType.object,
+        value: {
+          label: args[0],
+          x: args[1],
+          y: args[2],
+          index: args[3],
+          subtype: args[4],
+          axis: args[5],
+        },
+        key: 'series',
+      };
+    },
+  },
+  */
 
   'Bar.Chart': {
     arguments: [
