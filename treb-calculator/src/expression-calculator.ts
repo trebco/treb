@@ -560,9 +560,12 @@ export class ExpressionCalculator {
         return argument_error;
       }
 
+      // cloning, out of an abundance of caution
+      const ctx = { address: { ...this.context.address }};
+
       if (func.return_type === 'reference') {
 
-        const result = func.fn.apply(null, mapped_args);
+        const result = func.fn.apply(ctx, mapped_args);
         
         if (return_reference) { 
           return result; 
@@ -581,7 +584,7 @@ export class ExpressionCalculator {
 
       }
 
-      return func.fn.apply(null, mapped_args);
+      return func.fn.apply(ctx, mapped_args);
 
     };
 

@@ -41,6 +41,8 @@ import { CoerceComplex } from './function-utilities';
 import type { UnitAddress, UnitRange } from 'treb-parser';
 import { ConstructDate } from './date-utils';
 
+// import type { CalculationContext } from '../descriptors';
+
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
  * functions and associated metadata (there's also a list of aliases).
@@ -1253,10 +1255,17 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
     */
    
-
     Row: {
       arguments: [{ name: 'reference', metadata: true }],
-      fn: (ref: UnionValue): UnionValue => {
+      fn: function(ref?: UnionValue): UnionValue {
+        
+        if (!ref) {
+          return {
+            type: ValueType.number,
+            value: this ? this.address.row + 1 : -1,
+          };
+        }
+        
         if (ref.type === ValueType.array) {
           const arr = ref.value;
           const first = arr[0][0];
@@ -1283,7 +1292,15 @@ export const BaseFunctionLibrary: FunctionMap = {
 
     Column: {
       arguments: [{ name: 'reference', metadata: true }],
-      fn: (ref: UnionValue): UnionValue => {
+      fn: function(ref?: UnionValue): UnionValue {
+
+        if (!ref) {
+          return {
+            type: ValueType.number,
+            value: this ? this.address.column + 1 : -1,
+          };
+        }
+
         if (ref.type === ValueType.array) {
           const arr = ref.value;
           const first = arr[0][0];
@@ -1307,7 +1324,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         return ArgumentError();
       },
     },
-    
+
     Choose: {
       arguments: [
         { name: 'Selected index', },

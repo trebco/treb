@@ -19,7 +19,14 @@
  * 
  */
 
-import type { RenderFunction, ClickFunction, UnionValue } from 'treb-base-types';
+import type { RenderFunction, ClickFunction, UnionValue, ICellAddress } from 'treb-base-types';
+
+/**
+ * FIXME: possible to add stuff in here if we need it
+ */
+export interface FunctionContext {
+  address: ICellAddress;
+}
 
 // FIXME: at least some of this could move to base types
 
@@ -122,12 +129,12 @@ export interface CompositeFunctionDescriptor {
    * the actual function. if this is an object member and needs access
    * to the containing instance, make sure to bind it to that instance.
    * 
-   * FIXME: this should change to unknown, but that's going to cause 
-   * a lot of issues
+   * otherwise, `this` will be bound to a `CalculationContext` object
+   * if your function is defined as a function (i.e. not an arrow function).
    * 
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fn: (...args: any[]) => UnionValue; 
+  fn: (this: FunctionContext|undefined, ...args: any[]) => UnionValue; 
 
   /**
    * limited visibility

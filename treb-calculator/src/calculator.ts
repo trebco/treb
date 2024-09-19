@@ -1837,6 +1837,11 @@ export class Calculator extends Graph {
     for (const name of Object.keys(map)) {
 
       const descriptor = map[name];
+
+      // the way we call this now, this is unecessary
+      // @see `CallExpression` in `expression-calculator.ts`.
+
+      /*
       const original_function = descriptor.fn;
      
       // we don't bind to the actual context because that would allow
@@ -1844,27 +1849,22 @@ export class Calculator extends Graph {
       // that rely on it. which is a pretty far-fetched scenario, but we might
       // as well protect against it.
 
+      console.info('wrapping...');
+
       descriptor.fn = (...args: unknown[]) => {
+
+        console.info("wrapped?");
+
         return original_function.apply({
           address: { ...this.expression_calculator.context.address},
         }, args);
       };
+      */
 
       this.library.Register({[name]: descriptor});
     }
 
   }
-
-  /* *
-   * wrap the attachdata function so we can update the expression calculator
-   * at the same time (we should unwind this a little bit, it's an artifact
-   * of graph being a separate class)
-   * /
-  public AttachModel(): void {
-    // this.RebuildMap();
-    // this.expression_calculator.SetModel(this.model);
-  }
-  */
 
   /**
    * wrapper method for calculation
