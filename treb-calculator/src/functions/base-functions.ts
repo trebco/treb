@@ -1258,12 +1258,30 @@ export const BaseFunctionLibrary: FunctionMap = {
     Row: {
       arguments: [{ name: 'reference', metadata: true }],
       fn: function(ref?: UnionValue): UnionValue {
-        
+
         if (!ref) {
-          return {
-            type: ValueType.number,
-            value: this ? this.address.row + 1 : -1,
-          };
+          if (this?.area) {
+            const value: UnionValue[][] = [];
+            for (let c = this.area.start.column; c <= this.area.end.column; c++) {
+              const col: UnionValue[] = [];
+              for (let r = this.area.start.row; r <= this.area.end.row; r++) {
+                col.push({
+                  type: ValueType.number,
+                  value: r + 1, 
+                });
+              }
+              value.push(col);
+            }
+            return {
+              type: ValueType.array, value,
+            }
+          }
+          else {
+            return {
+              type: ValueType.number,
+              value: this ? this.address.row + 1 : -1,
+            };
+          }
         }
         
         if (ref.type === ValueType.array) {
@@ -1295,10 +1313,28 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: function(ref?: UnionValue): UnionValue {
 
         if (!ref) {
-          return {
-            type: ValueType.number,
-            value: this ? this.address.column + 1 : -1,
-          };
+          if (this?.area) {
+            const value: UnionValue[][] = [];
+            for (let c = this.area.start.column; c <= this.area.end.column; c++) {
+              const col: UnionValue[] = [];
+              for (let r = this.area.start.row; r <= this.area.end.row; r++) {
+                col.push({
+                  type: ValueType.number,
+                  value: c + 1, 
+                });
+              }
+              value.push(col);
+            }
+            return {
+              type: ValueType.array, value,
+            }
+          }
+          else {
+            return {
+              type: ValueType.number,
+              value: this ? this.address.column + 1 : -1,
+            };
+          }
         }
 
         if (ref.type === ValueType.array) {

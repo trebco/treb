@@ -1569,7 +1569,7 @@ export class Calculator extends Graph {
       };
     }
 
-    return this.expression_calculator.Calculate(vertex.expression, vertex.address); // <- this one
+    return this.expression_calculator.Calculate(vertex.expression, vertex.address, vertex.reference?.area); // <- this one
   }
 
 
@@ -2076,7 +2076,7 @@ export class Calculator extends Graph {
       address: ICellAddress = {row: -1, column: -1},
       preserve_flags = false): UnionValue {
 
-    return this.expression_calculator.Calculate(expression, address, preserve_flags).value; // dropping volatile flag
+    return this.expression_calculator.Calculate(expression, address, undefined, preserve_flags).value; // dropping volatile flag
   }
 
   /**

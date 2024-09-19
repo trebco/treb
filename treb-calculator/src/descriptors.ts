@@ -19,13 +19,14 @@
  * 
  */
 
-import type { RenderFunction, ClickFunction, UnionValue, ICellAddress } from 'treb-base-types';
+import type { RenderFunction, ClickFunction, UnionValue, ICellAddress, IArea } from 'treb-base-types';
 
 /**
  * FIXME: possible to add stuff in here if we need it
  */
 export interface FunctionContext {
   address: ICellAddress;
+  area?: IArea;
 }
 
 // FIXME: at least some of this could move to base types

@@ -26,7 +26,8 @@ import type { Cell, ICellAddress,
          NumberUnion,
          UndefinedUnion,
          ComplexUnion, 
-         DimensionedQuantityUnion} from 'treb-base-types';
+         DimensionedQuantityUnion,
+         IArea} from 'treb-base-types';
 import { ValueType, GetValueType, Area } from 'treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference } from 'treb-parser';
@@ -83,6 +84,7 @@ export interface ReferenceMetadata {
 
 export interface CalculationContext {
   address: ICellAddress;
+  area?: IArea;
   volatile: boolean;
 }
 
@@ -104,12 +106,13 @@ export class ExpressionCalculator {
    * there's a case where we are calling this from within a function
    * (which is weird, but hey) and to do that we need to preserve flags.
    */
-  public Calculate(expr: ExpressionUnit, addr: ICellAddress, preserve_flags = false): {
+  public Calculate(expr: ExpressionUnit, addr: ICellAddress, area?: IArea, preserve_flags = false): {
       value: UnionValue /*UnionOrArray*/, volatile: boolean }{
 
     if (!preserve_flags) {
       this.context.address = addr;
       this.context.volatile = false;
+      this.context.area = area;
     }
 
     return {
@@ -561,7 +564,14 @@ export class ExpressionCalculator {
       }
 
       // cloning, out of an abundance of caution
-      const ctx = { address: { ...this.context.address }};
+      // const ctx = JSON.parse(JSON.stringify({ address: this.context.address, area: this.context.area }));
+      const ctx = {
+        address: { ...this.context.address },
+        area: this.context.area ? {
+          start: { ...this.context.area.start, },
+          end: { ...this.context.area.end, },
+        } : undefined,
+      };
 
       if (func.return_type === 'reference') {
 
