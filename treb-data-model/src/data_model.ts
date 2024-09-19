@@ -435,8 +435,8 @@ export class DataModel {
   }
 
   /** wrapper method ensures it always returns an Area (instance, not interface) */
-  public ResolveArea(address: string|ICellAddress|IArea, active_sheet: Sheet): Area {
-    const resolved = this.ResolveAddress(address, active_sheet);
+  public ResolveArea(address: string|ICellAddress|IArea, active_sheet: Sheet, options?: { r1c1?: boolean }): Area {
+    const resolved = this.ResolveAddress(address, active_sheet, options);
     return IsCellAddress(resolved) ? new Area(resolved) : new Area(resolved.start, resolved.end);
   }
 
@@ -449,10 +449,21 @@ export class DataModel {
    * Q: why are we not preserving absoute/relative? (...)
    * 
    */
-  public ResolveAddress(address: string|ICellAddress|IArea, active_sheet: Sheet): ICellAddress|IArea {
+  public ResolveAddress(address: string|ICellAddress|IArea, active_sheet: Sheet, options? : { r1c1?: boolean }): ICellAddress|IArea {
     
     if (typeof address === 'string') {
+
+      if (options?.r1c1) {
+        this.parser.Save();
+        this.parser.flags.r1c1 = true;
+      }
+
       const parse_result = this.parser.Parse(address);
+
+      if (options?.r1c1) {
+        this.parser.Restore();
+      }
+
       if (parse_result.expression && parse_result.expression.type === 'address') {
         this.ResolveSheetID(parse_result.expression, undefined, active_sheet);
         return {
