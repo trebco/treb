@@ -209,8 +209,9 @@ export class Parser {
 
   /** 
    * FIXME: why is this a class member? at a minimum it could be static 
+   * FIXME: why are we doing this with a regex?
    */
-  protected r1c1_regex = /[rR]((?:\[[-+]{0,1}\d+\]|\d+))[cC]((?:\[[-+]{0,1}\d+\]|\d+))$/;
+  protected r1c1_regex = /[rR]((?:\[[-+]{0,1}\d+\]|\d*))[cC]((?:\[[-+]{0,1}\d+\]|\d*))$/;
 
   /**
    * internal argument separator, as a number. this is set internally on
@@ -2556,16 +2557,24 @@ export class Parser {
           r1c1.offset_row = true;
           r1c1.row = Number(match[1].substring(1, match[1].length - 1));
         }
-        else { // absolute
+        else if (match[1]){ // absolute
           r1c1.row = Number(match[1]) - 1; // R1C1 is 1-based
+        }
+        else {
+          r1c1.offset_row = true;
+          r1c1.row = 0;
         }
 
         if (match[2][0] === '[') { // relative
           r1c1.offset_column = true;
           r1c1.column = Number(match[2].substring(1, match[2].length - 1));
         }
-        else { // absolute
+        else if (match[2]) { // absolute
           r1c1.column = Number(match[2]) - 1; // R1C1 is 1-based
+        }
+        else {
+          r1c1.offset_column = true;
+          r1c1.column = 0;
         }
 
         return r1c1;
