@@ -409,6 +409,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     },
   },
 
+  /* use alias instead 
   'NormsInv': {
     
     description: 'Inverse of the normal cumulative distribution', 
@@ -423,7 +424,8 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       }
     }
   },
-  
+  */
+
   'Norm.Inv': {
     description: 'Inverse of the normal cumulative distribution', 
     arguments: [
@@ -441,17 +443,15 @@ export const StatisticsFunctionLibrary: FunctionMap = {
   },
 
   'Norm.S.Inv': {
-    description: 'Inverse of the normal cumulative distribution', 
+    description: 'Inverse of the standard normal cumulative distribution', 
     arguments: [
       {name: 'probability'},
-      {name: 'mean', default: 0},
-      {name: 'standard deviation', default: 1},
     ],
     xlfn: true,
-    fn: (q: number, mean = 0, stdev = 1): UnionValue => {
+    fn: (q: number): UnionValue => {
       return {
         type: ValueType.number,
-        value: inverse_normal(q) * stdev + mean,
+        value: inverse_normal(q),
       }
     }
   }, 
@@ -1073,4 +1073,7 @@ export const StatisticsFunctionAliases: {[index: string]: string} = {
   'StDevPA': 'StDev.P',
   'Var': 'Var.S',
   'Quartile': 'Quartile.Inc',
+  'NormSInv': 'Norm.S.Inv',
+  'NormSDist': 'Norm.S.Dist',
+
 };
