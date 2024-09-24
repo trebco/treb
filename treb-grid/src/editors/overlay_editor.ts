@@ -359,10 +359,11 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
 
     rect.ApplyStyle(this.container_node);
 
-    // in order to figure out how to offset this, we need to know how
-    // the tile renderer sets the baseline in the cell. (also, line height?)
+    // trial and error. still a little wonky at scales, but reasonable.
+    
+    const offset = UA.is_mac ? 0 : 0.5;
 
-    this.edit_node.style.bottom = '0.5px'; // does this need to scale for dpr? not sure
+    this.edit_node.style.bottom = offset.toFixed(2) + 'px'; // does this need to scale for dpr? not sure
 
     this.autocomplete?.ResetBlock();
     this.selection = gridselection;

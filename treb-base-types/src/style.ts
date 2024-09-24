@@ -512,6 +512,8 @@ export const Style = {
   CompositeFont: (base: FontSize, properties: CellStyle, scale: number, theme: Theme) => {
 
     let variants: string|undefined;
+    let stack_size: FontSize|undefined; // for reporting only
+    let font_size: FontSize|undefined;
 
     const parts: string[] = [];
 
@@ -522,6 +524,7 @@ export const Style = {
     if (properties.italic) {
       parts.push('italic');
     }
+
 
     const font_face = properties.font_face || 'stack:default';
     // let stack_scale = 1;
@@ -540,19 +543,20 @@ export const Style = {
       }
 
       if (stack) {
-        const font_size = Style.CompositeFontSize(stack.size, properties.font_size || { unit: 'pt', value: 10 }, scale);
+        stack_size = properties.font_size;
+        font_size = Style.CompositeFontSize(stack.size, properties.font_size || { unit: 'pt', value: 10 }, scale);
         parts.push(font_size.value.toFixed(2) + font_size.unit);
         parts.push(stack.font || '');
         variants = stack.variants;
       }
     }
     else {
-      const font_size = Style.CompositeFontSize(base, properties.font_size || { unit: 'pt', value: 10 }, scale);
+      font_size = Style.CompositeFontSize(base, properties.font_size || { unit: 'pt', value: 10 }, scale);
       parts.push(font_size.value.toFixed(2) + font_size.unit);
       parts.push(font_face || '');
     }
 
-    return { font: parts.join(' '), variants, base, size: properties.font_size, scale };
+    return { font: parts.join(' '), variants, base, size: properties.font_size, scale, stack_size, font_size };
 
   },
 

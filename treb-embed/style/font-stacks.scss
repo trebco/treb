@@ -40,9 +40,15 @@
   /* flag that we need to use font variants (chrome only) */
   --treb-font-stack-sitka-text-variant: lining-nums tabular-nums;
 
-  /* os-specific size adjustment */
+  /* 
+   * os-specific size adjustment. it's not that important but for consistency
+   * with the old layout this should be 10pt, ~13.33px. I notice that the 
+   * editor is slightly off from the canvas rendering, I assume that's related
+   * to the subpixel size? maybe we should break from the old version. (or 
+   * maybe we can fix the editor?)
+   */
   &.treb-ua-osx {
-    --treb-font-stack-system-ui-size: 13px;
+    --treb-font-stack-system-ui-size: 10pt;
   }
 
   /**
