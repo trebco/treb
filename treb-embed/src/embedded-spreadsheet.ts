@@ -1230,6 +1230,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         map[entry.base.toUpperCase()] = entry;
       }
 
+      // console.info({map});
+
       list = list.map(descriptor => {
         const partial = map[descriptor.name.toUpperCase()];
 
@@ -1239,10 +1241,25 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         // setting function names / descriptions.
 
         if (partial) {
-          return {
+
+          const clone: FunctionDescriptor = JSON.parse(JSON.stringify({
             ...descriptor,
-            ...partial, 
-          };
+            name: partial.name,
+          }));
+
+          if (partial.description) {
+            clone.description = partial.description;
+          }
+          if (partial.arguments && clone.arguments) {
+            for (const [index, argument] of partial.arguments.entries()) {
+              if (clone.arguments[index]) {
+                clone.arguments[index].name = argument;
+              }
+            }
+          }
+
+          return clone;
+
         }
         return descriptor;
       });

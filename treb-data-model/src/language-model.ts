@@ -19,16 +19,25 @@
  * 
  */
 
-import type { FunctionDescriptor } from 'treb-grid';
+// import type { FunctionDescriptor } from 'treb-grid';
 
 /**
  * this is similar to a function descriptor, but we need a lot less
  * information. not sure if we should composite them.
  */
-export interface TranslatedFunctionDescriptor extends FunctionDescriptor {
+export interface TranslatedFunctionDescriptor {
 
   /** original name (name in english), so we know what to replace. */
   base: string;
+
+  /** name (localized) */
+  name: string;
+
+  /** description, if we have it. if not, show the english description? or nothing? dunno  */
+  description?: string;
+
+  /** argument names only */
+  arguments?: string[];
 
 }
 

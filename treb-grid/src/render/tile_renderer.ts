@@ -2028,10 +2028,12 @@ export class TileRenderer {
 
     const m2 = GetFontMetrics(fonts.base, base_font.variants);
 
+    /*
     if (cell.value) {
       console.info(fonts.base, {m2});
     }
-    
+    */
+
     // set stroke for underline
 
     // FIXME: color here should default to style, not ''. it's working only
