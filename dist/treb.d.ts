@@ -1,4 +1,4 @@
-/*! API v30.17. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v31.0. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -169,6 +169,9 @@ export interface EmbeddedSpreadsheetOptions {
 
     /** include the font scale control in the toolbar */
     font_scale?: boolean;
+
+    /** include the font stack control in the toolbar */
+    font_stack?: boolean;
 
     /** include the insert/remove table button in the toolbar */
     table_button?: boolean;
@@ -1601,7 +1604,7 @@ export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file"
  * EmbeddedSheetEvent is a discriminated union. Switch on the `type` field
  * of the event.
  */
-export type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEvent | DocumentLoadEvent | ThemeChangeEvent | ViewChangeEvent | DataChangeEvent | FocusViewEvent | SelectionEvent | ResizeEvent;
+export type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEvent | DocumentLoadEvent | ThemeChangeEvent | ViewChangeEvent | DataChangeEvent | FocusViewEvent | SelectionEvent | ResizeEvent | AnnotationSelectionEvent;
 
 /**
  * options when inserting a table into a sheet
@@ -1689,6 +1692,14 @@ export interface DocumentChangeEvent {
  */
 export interface SelectionEvent {
     type: 'selection';
+}
+
+/**
+ * this event is used when an annotation is selected. we're not changing
+ * the original selection event, because I don't want to break anything.
+ */
+export interface AnnotationSelectionEvent {
+    type: 'annotation-selection';
 }
 
 /**
@@ -1972,6 +1983,12 @@ export interface AnnotationDataBase {
 
     /** the new layout, persisted and takes preference over the old one */
     layout?: AnnotationLayout;
+
+    /**
+     * adding cell style as a convenient store for font stack; atm we are
+     * ignoring everything but the font_face attribute
+     */
+    style?: CellStyle;
 
     /**
      * the old layout used rectangles, and we need to keep support for
