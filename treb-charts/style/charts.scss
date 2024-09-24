@@ -43,8 +43,14 @@
   // this was getting lost by the new higher-specificity reset
   background: var(--treb-chart-background, #fff);
 
-}
+ }
 
+ /**
+  * new override allows inheriting fonts in annotations (at least for charts)
+  */
+.treb-main.treb-main .treb-inherit-font .treb-chart {
+  font-family: inherit;
+}
 
 /* container style */
 .treb-chart {

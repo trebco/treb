@@ -67,6 +67,9 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
 
   // ---------------------------------------------------------------------------
 
+  /** possibly carrying over a font face (+size?) */
+  public edit_style?: CellStyle;
+
   /**
    * this is a flag used to indicate when we need to reset the selection.
    * the issue has to do with selecting cells via arrow keys; if you do
@@ -273,7 +276,7 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
    * 
    * something to do with keyboard selection? (which needs to be fixed)?
    */
-  public Edit(gridselection: GridSelection, rect: Rectangle, cell: Cell, value?: CellValue, event?: Event): void {
+  public Edit(gridselection: GridSelection, rect: Rectangle, cell: Cell, value?: CellValue, event?: Event, edit_style?: CellStyle): void {
 
     this.Publish({ 
       type: 'start-editing', 
@@ -284,9 +287,33 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
     this.target_address = {...gridselection.target};
     this.reset_selection = false;
 
-    const style: CellStyle = cell.style || {};
+    const style: CellStyle = JSON.parse(JSON.stringify(cell.style || {})); // clone
 
-    this.edit_node.style.font = Style.Font(style, this.scale);
+    //
+    // CURRENT ISSUE: this works, but the style is not actually applied to
+    // the cell. we need to modify the commit routine to apply the style.
+    // I think?
+    //
+    // WAIT, that might not be right... might have something to do with 
+    // default?
+    // 
+
+    this.edit_style = edit_style; // set (or unset)
+    
+    if (edit_style?.font_face) {
+      style.font_face = edit_style.font_face;
+    }
+
+    const font_info = Style.CompositeFont(this.theme.grid_cell_font_size, style, this.scale, this.theme);
+
+    this.edit_node.style.font = font_info.font;
+    if (font_info.variants) {
+      this.edit_node.style.fontVariant = font_info.variants;
+    }
+    else {
+      this.edit_node.style.fontVariant = '';
+    }
+
     this.edit_node.style.color = ResolveThemeColor(this.theme, style.text, 1);
     this.edit_inset.style.backgroundColor = ResolveThemeColor(this.theme, style.fill, 0);
 
@@ -331,6 +358,11 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
     // get jumpy scrolling behavior in scrolled contexts.
 
     rect.ApplyStyle(this.container_node);
+
+    // in order to figure out how to offset this, we need to know how
+    // the tile renderer sets the baseline in the cell. (also, line height?)
+
+    this.edit_node.style.bottom = '0.5px'; // does this need to scale for dpr? not sure
 
     this.autocomplete?.ResetBlock();
     this.selection = gridselection;

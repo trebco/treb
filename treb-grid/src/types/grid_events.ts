@@ -89,7 +89,7 @@ export interface StructureEvent {
 export interface AnnotationEvent {
   type: 'annotation';
   annotation?: Annotation;
-  event?: 'move'|'resize'|'create'|'delete'|'update';
+  event?: 'move'|'resize'|'create'|'delete'|'update'|'select';
 }
 
 export interface HyperlinkCellEventData {

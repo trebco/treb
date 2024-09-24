@@ -33,7 +33,10 @@ import { Measurement, ValidateURI } from 'treb-utils';
 
 import type { TextPart ,
   Cell, ICellAddress, CellSerializationOptions, CellValue, ImportedSheetData, Complex, 
-  DimensionedQuantity, IArea, Table, TableTheme, HorizontalAlign, VerticalAlign} from 'treb-base-types';
+  DimensionedQuantity, IArea, Table, TableTheme, HorizontalAlign, VerticalAlign,
+  Theme} from 'treb-base-types';
+
+import { Get as GetFonrMetrics } from 'treb-grid/src/util/fontmetrics';
 
 // --- local imports ----------------------------------------------------------
 
@@ -299,7 +302,8 @@ export class Sheet {
 
     this.default_column_width = DEFAULT_COLUMN_WIDTH;
     this.row_header_width = DEFAULT_ROW_HEADER_WIDTH;
-    this.UpdateDefaultRowHeight();
+
+    // this.UpdateDefaultRowHeight();
 
     this.id_ = Sheet.base_id++;
 
@@ -314,9 +318,13 @@ export class Sheet {
   /**
    * factory method creates a new sheet
    */
-  public static Blank(style_defaults: CellStyle, name?: string, rows = 30, columns = 20): Sheet {
+  public static Blank(style_defaults: CellStyle, name?: string, rows = 30, columns = 20, theme?: Theme): Sheet {
 
     const sheet = new Sheet(style_defaults);
+
+    if (theme) {
+      sheet.UpdateDefaultRowHeight(theme);
+    }
 
     if (name) {
       sheet.name = name;
@@ -906,70 +914,44 @@ export class Sheet {
   }
 
   /**
-   * FIXME: measure the font.
-   * 
-   * Can we use the same metrics as renderer? That uses a canvas. Obviously
-   * canvas won't work if there's no DOM but it's OK if this method fails in
-   * that case; the only question is will it break if it's running headless?
-   */
-  public StyleFontSize(style: CellStyle, default_properties: CellStyle = {}): number {
-
-    let font_height = (style.font_size?.value || 0);
-
-    let scale = 0;
-
-    switch (style.font_size?.unit) {
-      case 'px':
-        font_height *= (75 / 100);
-        break;
-
-      case 'em':
-        scale = style.font_size.value || 1;
-        break;
-
-      case '%':
-        scale = (style.font_size.value || 100) / 100;
-        break;
-    }
-
-    if (scale) {
-      font_height = scale * (default_properties.font_size?.value || 10);
-      if (default_properties.font_size?.unit === 'px') {
-        font_height *= (75 / 100);
-      }
-    }
-
-    return font_height || 10;
-
-  }
-
-  /**
    * FIXME: this is called in the ctor, which made sense when sheets
    * were more ephemeral. now that we update a single instance, rather
    * than create new instances, we lose this behavior. we should call
    * this when we change sheet style.
    * 
-   * removing parameter, event
+   * actually this should just move to theme, no? as long as sheet has
+   * a reference to theme. for headless instances that would just use 
+   * theme defaults, which should be appropriate.
+   * 
+   * I guess the original idea was that sheet style might be used to
+   * base row height on sheet font size? not sure if that's how it actually
+   * plays out, since this is only called in the ctor (or equivalent) or when
+   * theme is updated (but not when sheet style is updated). might need some
+   * thought.
+   * 
    */
-  public UpdateDefaultRowHeight(): void {
+  public UpdateDefaultRowHeight(theme: Theme, scale = 1): void {
 
-    const composite = Style.Composite([this.default_style_properties, this.sheet_style]);
+    // this guard is here because this is called by sheet directly, so maybe
+    // in headless context? would make more sense to just not call it
 
     if (typeof window !== 'undefined') {
 
-      const measurement = Measurement.MeasureText(Style.Font(composite), 'M');
-      const height = Math.round(measurement.height * 1.4);
+      const composite = Style.Composite([this.default_style_properties, this.sheet_style]);
+      const font_info = Style.CompositeFont(theme.grid_cell_font_size, composite, scale, theme);
+      const metrics = GetFonrMetrics(font_info.font, font_info.variants);
+      const height = metrics.height * 1.25; // ??
+
+      // const measurement = Measurement.MeasureText(Style.Font2(composite, 1, theme).font, 'M');
+      // const height = Math.round(measurement.height * 1.4);
+
+      // console.info({height, default: this.default_row_height});
 
       if (this.default_row_height < height) {
         this.default_row_height = height;
       }
 
     }
-    /*
-    else {
-      // console.info('worker?');
-    }
-    */
 
   }
 
@@ -1658,14 +1640,14 @@ export class Sheet {
     this.column_header_height = column_header_height;
   }
 
-  /**
+  /* *
    * resize row to match character hight, taking into
    * account multi-line values.
    * 
    * UPDATE: since the only caller calls with inline = true, removing 
    * parameter, test, and extra behavior.
-   */
-  public AutoSizeRow(row: number, default_properties: CellStyle = {}, allow_shrink = true): void {
+   * /
+  public AutoSizeRow(row: number, theme?: Theme, allow_shrink = true, scale = 1): void {
 
     let height = this.default_row_height;
     const padding = 9; // 9?
@@ -1673,7 +1655,7 @@ export class Sheet {
     for (let column = 0; column < this.cells.columns; column++) {
 
       const cell = this.CellData({ row, column });
-      const style = cell.style;
+      const style = JSON.parse(JSON.stringify(cell.style));
       let text = cell.formatted || '';
 
       if (typeof text !== 'string') {
@@ -1682,7 +1664,25 @@ export class Sheet {
 
       if (style && text && text.length) {
         const lines = text.split(/\n/);
-        const font_height = Math.round(this.StyleFontSize(style, default_properties) * 1.5); // it's a start, we still need to measure properly
+
+        if (style.font_size) {
+          if (style.font_size.unit === 'em') {
+            const base = theme?.grid_cell_font_size || { unit: 'pt', value: 10 };
+            style.font_size.unit = base.unit;
+            style.font_size.value *= base.value;
+          }
+        }
+        else {
+          style.font_size = theme?.grid_cell_font_size || { unit: 'pt', value: 10 };
+        }
+
+        let target = style.font_size.value;
+        if (style.font_size.unit === 'px') {
+          target = Math.round((style.font_size.value||16) * 300 / 4) / 100;
+        }
+
+        const font_height = // Math.round(this.StyleFontSize(style, default_properties) * 1.5); // it's a start, we still need to measure properly
+          Math.round(target * 1.5 * scale);
         height = Math.max(height, ((font_height || 10) + padding) * lines.length);
       }
     }
@@ -1695,6 +1695,7 @@ export class Sheet {
     this.SetRowHeight(row, height);
 
   }
+  */
 
   /** returns the style properties for a given style index */
   public GetStyle(index: number): CellStyle {

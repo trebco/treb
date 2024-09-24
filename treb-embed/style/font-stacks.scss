@@ -1,0 +1,99 @@
+/*
+ * This file is part of TREB.
+ *
+ * TREB is free software: you can redistribute it and/or modify it under the 
+ * terms of the GNU General Public License as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any 
+ * later version.
+ *
+ * TREB is distributed in the hope that it will be useful, but WITHOUT ANY 
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along 
+ * with TREB. If not, see <https://www.gnu.org/licenses/>. 
+ *
+ * Copyright 2022-2024 trebco, llc. 
+ * info@treb.app
+ * 
+ */
+
+//
+// thanks to 
+// https://modernfontstacks.com/
+// 
+// for the stacks. we make some minor changes, mostly because of browser issues.
+//
+
+.treb-main.treb-main {
+
+  /* default size for fonts in grid cells */
+  --treb-font-stack-default-size: 14px;
+
+  /* size adjustment for some fonts */
+  --treb-font-stack-calibri-size: 16px;
+  --treb-font-stack-tscu-comic-size: 16px;
+  --treb-font-stack-helvetica-neue-size: 13px;
+  --treb-font-stack-cambria-size: 16px;
+
+  /* flag that we need to use font variants (chrome only) */
+  --treb-font-stack-sitka-text-variant: lining-nums tabular-nums;
+
+  /* os-specific size adjustment */
+  &.treb-ua-osx {
+    --treb-font-stack-system-ui-size: 13px;
+  }
+
+  /**
+   * this is the default font. it's also used for other font stacks 
+   * if stacks are turned off (the default, for now).
+   */ 
+  .treb-font-stack-default {
+
+    // I love avenir but the bold is too bold. can we adjust it?
+
+    // font-family: calibri, avenir, $font-stack;
+    font-family: calibri, $font-stack;
+    
+  }
+  
+  .treb-font-stack-transitional {
+
+    // we drop sitka text because the bounding box isn't calculating properly
+    // for some reason -- variants? also, firefox does not support numeric 
+    // variants in canvas and the sitka default is old-style non-tabular nums. 
+
+    // font-family: Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif; 
+    font-family: Charter, 'Bitstream Charter', Cambria, serif; 
+
+  }
+
+  /* not using this atm, we just have one serif (the transitional) */
+  .treb-font-stack-old-style {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', 'URW Palladio L', P052, serif;
+  }
+
+  .treb-font-stack-handwritten {
+
+    // not sure I believe that that tscu comic font is widely installed... 
+    // there might be a better alternative.
+
+    font-family: 'Segoe Print', 'Bradley Hand', Chilanka, TSCu_Comic, casual, cursive; 
+  }
+
+  /* not using this atm */
+  .treb-font-stack-industrial {
+    font-family: Bahnschrift, 'DIN Alternate', 'Franklin Gothic Medium', 'Nimbus Sans Narrow', sans-serif-condensed, sans-serif; 
+  }
+
+  /* not a slab */
+  .treb-font-stack-monospace {
+    font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace; 
+  }
+
+  .treb-font-stack-ui {
+    font-family: system-ui, sans-serif;
+  }
+
+}

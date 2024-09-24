@@ -187,6 +187,9 @@ export interface EmbeddedSpreadsheetOptions {
   /** include the font scale control in the toolbar */
   font_scale?: boolean;
 
+  /** include the font stack control in the toolbar */
+  font_stack?: boolean;
+
   /** include the insert/remove table button in the toolbar */
   table_button?: boolean;
 

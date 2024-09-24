@@ -30,11 +30,10 @@ import type {
   Complex,
   Color,
   CellStyle,
-  IRectangle} from 'treb-base-types';
+  IRectangle } from 'treb-base-types';
   
 import {
   Area, 
-  Style, 
   Is2DArray, 
   Rectangle, 
   ValueType, 
@@ -46,6 +45,7 @@ import {
   IsComplex,
   TextPartFlag,
   IsArea,
+  Style,
 } from 'treb-base-types';
 
 import type { ExpressionUnit, RenderOptions, UnitAddress } from 'treb-parser';
@@ -139,6 +139,14 @@ export class Grid extends GridBase {
   // new...
   public headless = false;
 
+  /**
+   * we're tracking the current selected style so we can use it for new
+   * cells. conceptually, if you are typing in a font (stack) like handwritten,
+   * and you enter a new cell, you probably want to type in the same font
+   * there. so we want to make that happen. TODO: size
+   */
+  public readonly edit_state: CellStyle = {};
+
   public get scale(): number {
     return this.layout.scale;
   }
@@ -148,7 +156,7 @@ export class Grid extends GridBase {
       this.layout.scale = value;
       this.UpdateLayout();
       this.UpdateAnnotationLayout();
-      this.layout.UpdateAnnotation(this.active_sheet.annotations);
+      this.layout.UpdateAnnotation(this.active_sheet.annotations, this.theme);
       this.layout.ApplyTheme(this.theme);
       this.overlay_editor?.UpdateScale(value);
       this.tab_bar?.UpdateScale(value);
@@ -173,6 +181,18 @@ export class Grid extends GridBase {
    */
   public readonly theme: Theme; // ExtendedTheme;
 
+  /**  
+   * this was private, which made sense, but there's a case where the 
+   * client (embedded sheet) wants to check if an annotation is selected.
+   * we need to allow that somehow, ideally without any reacharounds.
+   * 
+   * I guess the concern is a client could modify it, but at this point
+   * we really only have one client and we trust it. making this public.
+   * we could maybe switch to an accessor or have a "is this selected?" method.
+   */
+  public selected_annotation?: Annotation;
+
+
   // --- private members -------------------------------------------------------
 
   // testing
@@ -195,9 +215,6 @@ export class Grid extends GridBase {
 
   /**  */
   private editing_selection: GridSelection|undefined;
-
-  /**  */
-  private selected_annotation?: Annotation;
 
   /** */
   private editing_annotation?: Annotation;
@@ -787,16 +804,33 @@ export class Grid extends GridBase {
               if (event) {
                 this.grid_events.Publish(event);
               }
-  
+              else {
+
+                // probably a click on the annotation. if it is not already
+                // selected, send an event.
+
+                if (this.selected_annotation !== annotation) {
+                  this.grid_events.Publish({
+                    type: 'annotation',
+                    annotation,
+                    event: 'select',
+                  })
+                }
+
+              }
+
               if (annotation.data.layout) {
                 this.EnsureAddress(annotation.data.layout.br.address, 1);
               }
   
             });
+
           },
 
           focusin: () => {
   
+            // console.info("AFI");
+
             for (const element of this.layout.GetFrozenAnnotations(annotation)) {
               element.classList.add('clone-focus');
             }
@@ -816,7 +850,9 @@ export class Grid extends GridBase {
 
           focusout: (event) => {
 
-            // console.info('annotation focusout', annotation);
+            // console.info("AFO");
+
+            // console.info('annotation focusout', annotation, event);
   
             for (const element of this.layout.GetFrozenAnnotations(annotation)) {
               element.classList.remove('clone-focus');
@@ -838,10 +874,24 @@ export class Grid extends GridBase {
 
             }
             else {
-              if (this.selected_annotation === annotation) {
-                this.selected_annotation = undefined;
+
+              // here's where we need to make a change. if the new focus 
+              // (the related target) is outside of the sheet hierarchy, we 
+              // want to persist the selection, or at least remember it.
+
+              // the next time we focus in on the grid we want to have the 
+              // opportunity to restore this focus. I think persisting the 
+              // focus may be a problem? not sure...
+
+              const focus_in_layout = this.layout.FocusInLayout(event.relatedTarget||undefined);
+
+              if (focus_in_layout) {
+                if (this.selected_annotation === annotation) {
+                  this.selected_annotation = undefined;
+                }
+                this.ShowGridSelection();
               }
-              this.ShowGridSelection();
+
             }
           },
 
@@ -965,7 +1015,7 @@ export class Grid extends GridBase {
     }
 
     if (add_to_layout) {
-      this.layout.AddAnnotation(annotation);
+      this.layout.AddAnnotation(annotation, this.theme);
       if (annotation.data.layout) {
         this.EnsureAddress(annotation.data.layout.br.address, 1, toll_events);
       }
@@ -1356,7 +1406,7 @@ export class Grid extends GridBase {
     let composite: Theme = JSON.parse(JSON.stringify(DefaultTheme));
 
     if (this.view_node) {
-      const theme_properties = LoadThemeProperties(this.view_node);
+      const theme_properties = LoadThemeProperties(this.view_node, this.options.support_font_stacks);
       composite = {...theme_properties};
     }
 
@@ -1396,7 +1446,7 @@ export class Grid extends GridBase {
     // update style for theme
     this.StyleDefaultFromTheme();
 
-    this.active_sheet.UpdateDefaultRowHeight();
+    this.active_sheet.UpdateDefaultRowHeight(this.theme);
     this.active_sheet.FlushCellStyles();
 
     this.layout.ApplyTheme(this.theme);
@@ -1646,10 +1696,62 @@ export class Grid extends GridBase {
   }
 
   /**
-   * focus on the container. you must call this method to get copying
-   * to work properly (because it creates a selection)
+   * 
    */
-  public Focus(text = ''): void {
+  public ApplyAnnotationStyle(style: CellStyle = {}, delta = true) {
+
+    // get the logic from committing a formula, I guess? it should run
+    // through the command queue to update any related views. 
+    // 
+    // actually, FIXME? I think updating annotations generally is not
+    // running through the command queue, that's a larger issue we need
+    // to look at.
+
+    if (this.selected_annotation) {
+
+      const annotation = this.selected_annotation;
+      annotation.data.style = JSON.parse(JSON.stringify( 
+        delta ? Style.Composite([annotation.data.style || {}, style]) : style
+      ));
+      const node = annotation.view[this.view_index]?.node;
+
+      this.layout.UpdateAnnotation(annotation, this.theme);
+
+      if (node) {
+        node.focus();
+      }
+      this.grid_events.Publish({ type: 'annotation', event: 'update', annotation });
+      this.DelayedRender();
+    }
+
+  }
+
+  /**
+   * 
+   */
+  public AnnotationSelected() {
+    return !!this.selected_annotation;
+  }
+
+  /**
+   * focus on the container. not sure what that text parameter was,
+   * legacy? TODO: remove
+   */
+  public Focus(text = '', click = false): void {
+
+    if (this.selected_annotation) {
+
+      if (click) {
+        this.selected_annotation = undefined;
+        this.ShowGridSelection();
+      }
+      else {
+        // console.info("reselect annotation...", this.selected_annotation);
+        // console.info("check", this.view_index, this.selected_annotation.view[this.view_index].node);
+        this.selected_annotation.view[this.view_index].node?.focus();
+        return;
+      }
+    }
 
     // FIXME: cache a pointer
     if (UA.is_mobile) {
@@ -2465,40 +2567,55 @@ export class Grid extends GridBase {
       this.theme.grid_cell?.font_size || { unit: 'pt', value: 10 };
   }
 
+  private AutoSizeRow(sheet: Sheet, row: number, allow_shrink = true): void {
+    
+    if (!this.tile_renderer) {
+      return;
+    }
+
+    const current_height = sheet.GetRowHeight(row);
+    let max_height = 0;
+    const padding = 6; // 4 * 2; // FIXME: parameterize
+
+    for (let column = 0; column < sheet.cells.columns; column++) {
+      const cell = sheet.CellData({ row, column });
+      const { height } = this.tile_renderer.MeasureText(cell, sheet.GetColumnWidth(column), 1);
+      max_height = Math.max(max_height, height + padding);
+    }
+
+    if (!allow_shrink) {
+      max_height = Math.max(current_height, max_height);
+    }
+
+    if (max_height > padding + 2) {
+      sheet.SetRowHeight(row, max_height);
+    }
+
+
+  }
+
   private AutoSizeColumn(sheet: Sheet, column: number, allow_shrink = true): void {
 
     if (!this.tile_renderer) {
       return;
     }
 
-    // const context = Sheet.measurement_canvas.getContext('2d');
-    // if (!context) return;
-
-    let width = 0;
+    const current_width = sheet.GetColumnWidth(column);
+    let max_width = 0;
     const padding = 12; // 4 * 2; // FIXME: parameterize
 
-    if (!allow_shrink) width = sheet.GetColumnWidth(column);
-
     for (let row = 0; row < sheet.cells.rows; row++) {
-
       const cell = sheet.CellData({ row, column });
-      let text = cell.formatted || '';
-      if (typeof text !== 'string') {
-        text = text.map((part) => part.text).join('');
-      }
-
-      if (text && text.length) {
-        const metrics = this.tile_renderer.MeasureText(text, Style.Font(cell.style || {}));
-
-        // context.font = Style.Font(cell.style || {});
-        // console.info({text, style: Style.Font(cell.style||{}), cf: context.font});
-        // width = Math.max(width, Math.ceil(context.measureText(text).width) + padding);
-        width = Math.max(width, Math.ceil(metrics.width) + padding);
-      }
+      const { width } = this.tile_renderer.MeasureText(cell, current_width, 1);
+      max_width = Math.max(max_width, width + padding);
     }
 
-    if (width > padding + 2) {
-      sheet.SetColumnWidth(column, width);
+    if (!allow_shrink) {
+      max_width = Math.max(current_width, max_width);
+    }
+
+    if (max_width > padding + 2) {
+      sheet.SetColumnWidth(column, max_width);
     }
 
   }
@@ -3074,7 +3191,7 @@ export class Grid extends GridBase {
       }
 
       this.render_tiles = this.layout.VisibleTiles();
-      this.layout.UpdateAnnotation(this.active_sheet.annotations);
+      this.layout.UpdateAnnotation(this.active_sheet.annotations, this.theme);
 
       // FIXME: why is this here, as opposed to coming from the command
       // exec method? are we doubling up? (...)
@@ -3369,7 +3486,7 @@ export class Grid extends GridBase {
 
             this.layout.UpdateTileHeights(true, row);
             this.Repaint(false, true); // repaint full tiles
-            this.layout.UpdateAnnotation(this.active_sheet.annotations);
+            this.layout.UpdateAnnotation(this.active_sheet.annotations, this.theme);
 
           });
 
@@ -3451,7 +3568,7 @@ export class Grid extends GridBase {
       }
       */
       if (!this.SelectingArgument()) {
-        this.Focus();
+        this.Focus(undefined, true);
       }
 
 
@@ -3592,7 +3709,8 @@ export class Grid extends GridBase {
             x: tooltip_base + delta,
           });
 
-          // tile_sizes[tile_index] = tile_width + delta;
+          // I don't get how this works. it's not scaling?
+
           this.layout.SetColumnWidth(column, width);
 
           for (const { annotation, x } of move_annotation_list) {
@@ -3679,7 +3797,7 @@ export class Grid extends GridBase {
           this.ExecCommand({
             key: CommandKey.ResizeColumns,
             column: columns,
-            width: width / this.scale,
+            width: width, //  / this.scale,
           });
 
           for (const { annotation } of move_annotation_list) {
@@ -3710,7 +3828,7 @@ export class Grid extends GridBase {
       // @see Mousedown_RowHeader
 
       if (!this.SelectingArgument()) {
-        this.Focus();
+        this.Focus(undefined, true);
       }
 
       /*
@@ -4023,7 +4141,7 @@ export class Grid extends GridBase {
 
       // not sure why this breaks the formula bar handler
 
-      this.Focus();
+      this.Focus(undefined, true);
         
     }
 
@@ -4711,7 +4829,7 @@ export class Grid extends GridBase {
             // let's support command+shift+enter on mac
             const array = (event.key === 'Enter' && (event.ctrlKey || (UA.is_mac && event.metaKey)) && event.shiftKey);
 
-            this.SetInferredType(this.overlay_editor.selection, value, array);
+            this.SetInferredType(this.overlay_editor.selection, value, array, undefined, this.overlay_editor.edit_style);
           }
           
           this.DismissEditor();
@@ -5215,7 +5333,7 @@ export class Grid extends GridBase {
    * of commands. the former is the default for editor commits; the latter
    * is used for paste.
    */
-  private SetInferredType(selection: GridSelection, value: string|undefined, array = false, exec = true) {
+  private SetInferredType(selection: GridSelection, value: string|undefined, array = false, exec = true, apply_style?: CellStyle) {
 
     // validation: cannot change part of an array without changing the
     // whole array. so check the array. separately, if you are entering
@@ -5293,10 +5411,19 @@ export class Grid extends GridBase {
 
     if (cell.merge_area) target = cell.merge_area.start; // this probably can't happen at this point
 
+    const commands: Command[] = [];
+
+    if (apply_style) {
+      commands.push({
+        key: CommandKey.UpdateStyle,
+        style: apply_style,
+        area: array ? selection.area : selection.target,
+      })
+    }
+
     // first check functions
 
     const is_function = (typeof value === 'string' && value.trim()[0] === '=');
-    const commands: Command[] = [];
 
     if (is_function) {
 
@@ -5828,6 +5955,12 @@ export class Grid extends GridBase {
 
     let cell_value = cell.value;
 
+    let edit_state: CellStyle|undefined;
+
+    if (typeof cell_value === 'undefined' && !cell.style?.font_face) {
+      edit_state = this.edit_state;
+    }
+
     // if called from a keypress, we will overwrite whatever is in there so we
     // can just leave text as is -- except for handling %, which needs to get 
     // injected.
@@ -5855,7 +5988,7 @@ export class Grid extends GridBase {
     // if so, that should go in the method.
 
     // this.overlay_editor?.Edit(selection, rect.Shift(-1, -1).Expand(1, 1), cell, cell_value, event);
-    this.overlay_editor?.Edit(selection, rect.Expand(-1, -1), cell, cell_value, event);
+    this.overlay_editor?.Edit(selection, rect.Expand(-1, -1), cell, cell_value, event, edit_state);
 
     cell.editing = true;
     cell.render_clean = [];
@@ -7388,7 +7521,7 @@ export class Grid extends GridBase {
       this.Repaint();
 
       if (result.update_annotations_list?.length) {
-        this.layout.UpdateAnnotation(result.update_annotations_list);
+        this.layout.UpdateAnnotation(result.update_annotations_list, this.theme);
         for (const annotation of result.resize_annotations_list || []) {
           const view = annotation.view[this.view_index];
           if (view?.resize_callback) {
@@ -7472,7 +7605,7 @@ export class Grid extends GridBase {
       this.DelayedRender(true, undefined, true);
 
       if (result.update_annotations_list?.length) {
-        this.layout.UpdateAnnotation(result.update_annotations_list);
+        this.layout.UpdateAnnotation(result.update_annotations_list, this.theme);
         for (const annotation of result.resize_annotations_list || []) {
           const view = annotation.view[this.view_index];
           if (view?.resize_callback) {
@@ -7552,7 +7685,7 @@ export class Grid extends GridBase {
         this.Repaint(false, true); // repaint full tiles
       }
 
-      this.layout.UpdateAnnotation(this.active_sheet.annotations);
+      this.layout.UpdateAnnotation(this.active_sheet.annotations, this.theme);
       this.RenderSelections();
 
     }
@@ -7618,7 +7751,8 @@ export class Grid extends GridBase {
           }
         }
 
-        sheet.AutoSizeRow(entry, this.theme.grid_cell, shrink);
+        // sheet.AutoSizeRow(entry, this.theme, shrink, this.scale);
+        this.AutoSizeRow(sheet, entry, shrink);
       }
     }
     else {
@@ -7653,7 +7787,7 @@ export class Grid extends GridBase {
         this.Repaint(false, true); // repaint full tiles
       }
 
-      this.layout.UpdateAnnotation(this.active_sheet.annotations);
+      this.layout.UpdateAnnotation(this.active_sheet.annotations, this.theme);
       this.RenderSelections();
 
     }

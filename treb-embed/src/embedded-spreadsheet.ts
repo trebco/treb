@@ -759,6 +759,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       // delete_tab: this.options.delete_tab,
       expand: this.options.expand,
 
+      support_font_stacks: !!this.options.font_stack,
+
     };
 
     if (this.options.scale) {
@@ -838,7 +840,12 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // if we don't have a container. that's distinct (at the moment)
     // from headless, which is a state that can change.
 
-    this.grid = new Grid(grid_options, this.model, undefined, !!container, this.DOM);
+    this.grid = new Grid(
+        grid_options, 
+        this.model, 
+        undefined, 
+        !!container, 
+        this.DOM);
 
     if (this.options.headless) {
       this.grid.headless = true; // FIXME: move into grid options
@@ -1003,7 +1010,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
           case 'scale':
             this.RebuildAllAnnotations();
-            this.events.Publish({ type: 'view-change' });
+            this.Publish({ type: 'view-change' });
             break;
 
           case 'annotation':
@@ -1013,32 +1020,48 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             if (event.annotation) {
               const view: AnnotationViewData = event.annotation.view[this.grid.view_index] || {};
 
-              this.DocumentChange();
-              switch (event.event) {
-                case 'create':
-                  this.InflateAnnotation(event.annotation);
-                  this.calculator.UpdateAnnotations(event.annotation, this.grid.active_sheet);
-                  this.grid.AnnotationUpdated(event.annotation);
-                  break;
-                case 'delete':
-                  this.calculator.RemoveAnnotation(event.annotation); // clean up vertex
-                  break;
-                case 'update':
-                  if (view.update_callback) {
-                    view.update_callback();
+              let update_toolbar = false;
+
+              if (event.event === 'select') {
+                update_toolbar = true;
+              }
+              else {
+                this.DocumentChange();
+                switch (event.event) {
+                  case 'create':
+                    this.InflateAnnotation(event.annotation);
+                    this.calculator.UpdateAnnotations(event.annotation, this.grid.active_sheet);
                     this.grid.AnnotationUpdated(event.annotation);
-                  }
-                  else {
-                    console.info('annotation update event without update callback');
-                  }
-                  this.calculator.UpdateAnnotations(event.annotation, this.grid.active_sheet);
-                  break;
-                case 'resize':
-                  if (view.resize_callback) {
-                    view.resize_callback();
-                    this.grid.AnnotationUpdated(event.annotation);
-                  }
-                  break;
+                    update_toolbar = (event.annotation === this.grid.selected_annotation);
+                    break;
+                  case 'delete':
+                    this.calculator.RemoveAnnotation(event.annotation); // clean up vertex
+                    break;
+                  case 'update':
+                    if (view.update_callback) {
+                      view.update_callback();
+                      this.grid.AnnotationUpdated(event.annotation);
+                    }
+                    else {
+                      console.info('annotation update event without update callback');
+                    }
+                    this.calculator.UpdateAnnotations(event.annotation, this.grid.active_sheet);
+                    update_toolbar = (event.annotation === this.grid.selected_annotation);
+                    break;
+                  case 'resize':
+                    if (view.resize_callback) {
+                      view.resize_callback();
+                      this.grid.AnnotationUpdated(event.annotation);
+                    }
+                    break;
+                }
+
+              }
+
+              if (update_toolbar) {
+                this.UpdateSelectionStyleAnnotation(event.annotation);
+                this.Publish({ type: 'annotation-selection' });
+                break;
               }
 
             }
@@ -1557,6 +1580,34 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     let updated_style: CellStyle = {};
 
+    if (this.grid.AnnotationSelected()) {
+
+      // only handle a limited set of commands, then
+
+      switch (event.command) {
+        case 'font-scale':
+          {
+            const scale = Number(event.scale || 1);
+            if (scale && !isNaN(scale)) {
+              updated_style.font_size = { unit: 'em', value: scale };
+              this.grid.ApplyAnnotationStyle(updated_style);
+            }
+          }
+          break;
+
+        case 'font-stack':
+          if (event.font_stack) {
+            updated_style.font_face = 'stack:' + event.font_stack;
+          }
+          this.grid.ApplyAnnotationStyle(updated_style);
+          break;
+      }
+      
+      this.Focus();
+      return;
+
+    }
+
     const insert_annotation = (func: string) => {
       const selection = this.grid.GetSelection();
       if (selection && !selection.empty) {
@@ -1608,6 +1659,12 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           updated_style.number_format = event.format || 'General';
           break;
 
+        case 'font-stack':
+          if (event.font_stack) {
+            updated_style.font_face = 'stack:' + event.font_stack;
+          }
+          break;
+
         case 'font-scale':
 
           // above we handle 'font-size' events; this comes from a dropdown,
@@ -1615,6 +1672,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           // FIXME: break out
 
           {
+
             const selection = this.grid.GetSelection();
             const area = this.grid.active_sheet.RealArea(selection.area);
             const scale = Number(event.scale || 1);
@@ -1899,7 +1957,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     if (Object.keys(updated_style).length) {
       this.grid.ApplyStyle(undefined, updated_style, true);
     }
-
+    
     this.Focus();
 
   }
@@ -5813,6 +5871,26 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     this.Publish({ type: 'selection' });
   }
 
+  /** update selection style for the toolbar, when an annotation is selected. */
+  protected UpdateSelectionStyleAnnotation(annotation: Annotation) {
+
+    const state: SelectionState = {
+      style: JSON.parse(JSON.stringify(annotation.data.style || {})),
+    };
+
+    if (state.style) {
+      if (!state.style.font_face) {
+        state.style.font_face = 'stack:ui';
+      }
+      if (!state.style.font_size) {
+        state.style.font_size = { unit: 'em', value: 1 };
+      }
+    }
+
+    state.relative_font_size = Style.RelativeFontSize(state.style || {}, this.grid.theme.grid_cell || {});
+    this.selection_state = state;
+
+  }
 
   /** update selection style for the toolbar */
   protected UpdateSelectionStyle(selection?: GridSelection): void {
@@ -5845,10 +5923,22 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       state.style = data.style ? { ...data.style } : undefined;
       state.relative_font_size = Style.RelativeFontSize(state.style || {}, this.grid.theme.grid_cell || {});
 
+      state.empty = typeof data.value === 'undefined' && !data.style?.font_face;
+
+      // let's not do this
+      /*
+      if (state.empty && state.style) {
+        state.style.font_face = this.selection_state.style?.font_face || undefined;
+      }
+      */
+
+    }
+
+    if (this.grid?.edit_state) {
+      this.grid.edit_state.font_face = state.style?.font_face || undefined;
     }
 
     this.selection_state = state;
-    // this.toolbar?.UpdateState(state);
 
   }
 

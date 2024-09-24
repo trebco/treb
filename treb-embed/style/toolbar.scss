@@ -157,6 +157,13 @@ $swatch-size: 18px;
           mask-size: var(--icon-size, 16px 16px);
           -webkit-mask-size: var(--icon-size, 16px 16px);
         }
+
+        &.treb-font-stack {
+          &::before {
+            display: none;
+          }
+        }
+
       }
 
     }
@@ -191,6 +198,15 @@ $swatch-size: 18px;
         border-bottom-right-radius: $border-radius;      
       }
 
+    }
+
+    .treb-font-stack {
+      width: 8em;
+      align-items: flex-start;
+      overflow: hidden;
+      &::before {
+        display: none;
+      }
     }
 
     .treb-menu {

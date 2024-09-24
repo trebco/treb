@@ -1,8 +1,8 @@
 {
   "extends": "../tsproject.json",
   "references": [
-    { "path": "../treb-grid/modern.tsconfig.json" },
-    { "path": "../treb-utils/modern.tsconfig.json" }
+    { "path": "../treb-grid/tsconfig.json" },
+    { "path": "../treb-utils/tsconfig.json" }
   ],
   "include": [
     "../treb-base-types/**/*.ts"

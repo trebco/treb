@@ -192,7 +192,16 @@ $text-reference-color-5: rgb(254, 47, 1);
    */
   .grid-cells {
     font-family: var(--treb-grid-font-family, inherit);
+    
+    // it seems like the old default was 14px / 16px for calibri on windows? 
+    // we should get back to that, then we can adjust calibri (in the stacks)
+    // to scale.
+
+    // font-size: var(--treb-grid-font-size, 10px);
+    // font-size: var(--treb-grid-font-size, 10pt);
+
     font-size: var(--treb-grid-font-size, 14px);
+
     color: var(--treb-grid-default-color, inherit);
     stroke: var(--treb-grid-grid-color, rgb(204, 204, 212));
     background: var(--treb-grid-background, #fff);
@@ -520,11 +529,11 @@ $text-reference-color-5: rgb(254, 47, 1);
 
 
 
-  /**
+  /* *
    * special override for windows, using calibri (which is too small).
    * you should still be able to override with a regular theme style,
    * or (potentially) also override for windows specifically. fancy!
-   */
+   * /
   &.treb-ua-windows .grid-cells {
     font-size: var(--treb-grid-font-size-windows, var(--treb-grid-font-size, 12pt));
     font-family: var(--treb-grid-font-family-windows, var(--treb-grid-font-family, "Calibri", $font-stack)); // does this actually work? is this included? (...)
@@ -534,6 +543,7 @@ $text-reference-color-5: rgb(254, 47, 1);
     font-size: var(--treb-grid-font-size-osx, var(--treb-grid-font-size, 10pt)); // slightly smaller default
     font-family: var(--treb-grid-font-family-osx, var(--treb-grid-font-family, inherit));
   }
+  */
 
   /**
    *

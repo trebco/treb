@@ -118,6 +118,12 @@ export interface AnnotationDataBase {
   layout?: AnnotationLayout;
 
   /** 
+   * adding cell style as a convenient store for font stack; atm we are
+   * ignoring everything but the font_face attribute
+   */
+  style?: CellStyle;
+
+  /** 
    * the old layout used rectangles, and we need to keep support for
    * that. this is not the layout rectangle. this rectangle is just
    * for serialization/deserialization. the actual rectangle is maintained

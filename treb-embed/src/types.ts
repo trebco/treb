@@ -199,6 +199,14 @@ export interface SelectionEvent {
 }
 
 /**
+ * this event is used when an annotation is selected. we're not changing
+ * the original selection event, because I don't want to break anything.
+ */
+export interface AnnotationSelectionEvent {
+  type: 'annotation-selection';
+}
+
+/**
  * This event is sent when the focused view changes, if you have more
  * than one view.
  */
@@ -220,6 +228,7 @@ export type EmbeddedSheetEvent
   | FocusViewEvent
   | SelectionEvent
   | ResizeEvent
+  | AnnotationSelectionEvent
   ;
 
 /**

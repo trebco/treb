@@ -21,6 +21,8 @@
 
 const empty_json = JSON.stringify({}); // we could probably hard-code this
 
+import type { Theme } from './theme';
+
 /** horizontal align constants for cell style */
 export type HorizontalAlign = '' | 'left' | 'center' | 'right';
 
@@ -271,8 +273,9 @@ export const Style = {
     number_format: 'General', // '0.######',   // use symbolic, e.g. "general"
     nan: 'NaN',
 
-    font_size: { unit: 'pt', value: 10.5 },
-    font_face: 'sans-serif',
+    font_size: { unit: 'em', value: 1 },
+    // font_size: { unit: 'pt', value: 10.5 },
+    // font_face: 'sans-serif',
 
     bold: false,           // drop "font_"
     italic: false,         // ...
@@ -439,7 +442,9 @@ export const Style = {
     
   },
 
-  /** @internal */
+  /** 
+   * @internal 
+   */
   FontSize: (properties: CellStyle, prefer_points = true): string => {
 
     const value = properties.font_size?.value;
@@ -466,10 +471,47 @@ export const Style = {
     return '';
   },
 
-  /**
-   * returns a string representation suitable for canvas (or style)
+  /** 
+   * @internal 
+   * 
+   * generate a font size based on a base size (hopefully in actual units)
+   * and a relative size (em, %, or possibly a static unit). also optionally
+   * apply a scale.
+   * 
    */
-  Font: (properties: CellStyle, scale = 1) => {
+  CompositeFontSize: (base: FontSize, relative: FontSize, scale = 1, prefer_points = false) => {
+
+    let composite: FontSize = { ...base };
+
+    // maybe it's actually not relative
+
+    if (relative.unit === 'pt' || relative.unit === 'px') {
+      composite = { ...relative };
+    }
+    else {
+      composite.value = relative.value * base.value;
+      if (relative.unit === '%') { 
+        composite.value /= 100;
+      } 
+    }
+
+    if (composite.unit === 'px' && prefer_points) {
+      composite.value = Math.round((composite.value||16) * 300 / 4) / 100;
+    }
+
+    composite.value *= scale;
+
+    return composite;
+
+  },
+
+  /** 
+   * return a font string suitable for canvas. because our font sizes are 
+   * (probably) in ems, we need a base size to bounce off.
+   */
+  CompositeFont: (base: FontSize, properties: CellStyle, scale: number, theme: Theme) => {
+
+    let variants: string|undefined;
 
     const parts: string[] = [];
 
@@ -481,13 +523,77 @@ export const Style = {
       parts.push('italic');
     }
 
-    parts.push(((properties.font_size?.value || 0) * scale).toFixed(2) + 
-      (properties.font_size?.unit || 'pt'));
+    const font_face = properties.font_face || 'stack:default';
+    // let stack_scale = 1;
 
-    parts.push(properties.font_face || '');
+    // check if this is a stack
+    if (font_face.startsWith('stack:')) {
+      let stack = theme.font_stacks[font_face.substring(6) || 'default'];
 
-    return parts.join(' ');
-   
+      // default to default (not just a clever name). the rationale is we
+      // want to support environments that don't have fonts turned on. in
+      // that case, we just don't create the mappings, so everything shows
+      // as the default font.
+
+      if (!stack) {
+        stack = theme.font_stacks.default;
+      }
+
+      if (stack) {
+        const font_size = Style.CompositeFontSize(stack.size, properties.font_size || { unit: 'pt', value: 10 }, scale);
+        parts.push(font_size.value.toFixed(2) + font_size.unit);
+        parts.push(stack.font || '');
+        variants = stack.variants;
+      }
+    }
+    else {
+      const font_size = Style.CompositeFontSize(base, properties.font_size || { unit: 'pt', value: 10 }, scale);
+      parts.push(font_size.value.toFixed(2) + font_size.unit);
+      parts.push(font_face || '');
+    }
+
+    return { font: parts.join(' '), variants, base, size: properties.font_size, scale };
+
   },
+
+  /*
+  Font2: (properties: CellStyle, scale: number, theme: Theme) => {
+
+    let features = false;
+
+    const parts: string[] = [];
+
+    if (properties.bold) {
+      parts.push('bold');
+    }
+
+    if (properties.italic) {
+      parts.push('italic');
+    }
+
+    const font_face = properties.font_face || 'stack:default';
+    let stack_scale = 1;
+
+    // check if this is a stack
+    if (font_face.startsWith('stack:')) {
+      const stack = theme.font_stacks[font_face.substring(6) || 'default'];
+      if (stack) {
+        stack_scale = stack.scale;
+        parts.push(((properties.font_size?.value || 0) * (scale || 1) * (stack.scale || 1)).toFixed(2) + 
+          (properties.font_size?.unit || 'pt'));
+        parts.push(stack.font || '');
+        features = !!stack.apply_num_features;
+      }
+    }
+    else {
+      parts.push(((properties.font_size?.value || 0) * (scale || 1)).toFixed(2) + 
+        (properties.font_size?.unit || 'pt'));
+      parts.push(font_face || '');
+    }
+
+    return { font: parts.join(' '), features, base_size: properties.font_size, scale, stack_scale };
+    
+  },
+  */
 
 };

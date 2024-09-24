@@ -12,6 +12,7 @@ import { Measurement } from 'treb-utils';
 import type { ToolbarMessage } from '../toolbar-message';
 
 import { DOMContext } from 'treb-base-types';
+import { font_stack_labels, type FontStackType } from 'treb-base-types/src/font-stack';
 
 /** with a view towards i18n */
 const default_titles: Record<string, string> = {
@@ -668,6 +669,24 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
       }
     }
 
+    if (this.toolbar_controls.stack) {
+      if (state.style?.font_face) {
+        if (state.style.font_face.startsWith('stack:')) {
+          const stack_name = state.style.font_face.substring(6) as FontStackType;
+          this.toolbar_controls.stack.textContent = font_stack_labels[stack_name] || '';
+          this.toolbar_controls.stack.dataset.fontStack = stack_name;
+        }
+        else {
+          this.toolbar_controls.stack.textContent = '';
+          this.toolbar_controls.stack.dataset.fontStack = '';
+        }
+      }
+      else { // } if (!state.empty) {
+        this.toolbar_controls.stack.textContent = font_stack_labels.default || '';
+        this.toolbar_controls.stack.dataset.fontStack = 'default';
+      }
+    }
+    
     const format = this.toolbar_controls.format as HTMLInputElement;
     if (format) {
       if (state.style?.number_format) {
@@ -914,6 +933,19 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
     if (!sheet.options.font_scale) {
       remove.push(toolbar.querySelector('[font-scale]'));
     }
+    if (!sheet.options.font_stack) {
+      remove.push(toolbar.querySelector('[font-stack]'));
+    }
+    else {
+      const buttons = toolbar.querySelectorAll(`[font-stack] button[data-font-stack]`) as NodeListOf<HTMLElement>;
+      for (const button of buttons) {
+        if (button.dataset.fontStack) {
+          const label = font_stack_labels[button.dataset.fontStack as FontStackType];
+          button.textContent = label || '';
+        }
+      }
+    }
+
     if (!sheet.options.chart_menu) {
       remove.push(toolbar.querySelector('[chart-menu]'));
     }
@@ -966,6 +998,8 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
 
         'format': 'input.treb-number-format',
         'scale': 'input.treb-font-scale',
+
+        'stack': 'button.treb-font-stack',
 
       })) {
 
@@ -1029,9 +1063,11 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
         color?: Color;
         format?: string;
         scale?: string;
+        font_stack?: string;
       } = {
         format: target.dataset.format,
         scale: target.dataset.scale,
+        font_stack: target.dataset.fontStack,
       };
 
       let command = target?.dataset.command;
@@ -1376,9 +1412,11 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
             this.UpdateSelectionStyle(sheet, toolbar, comment_box);
             break;
 
+          case 'annotation-selection':
           case 'selection':
             this.UpdateSelectionStyle(sheet, toolbar, comment_box);
             break;
+
         }
       });
 

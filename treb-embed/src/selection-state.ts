@@ -10,6 +10,7 @@ export interface SelectionState {
   merge?: boolean;
   table?: boolean;
   frozen?: boolean;
+  empty?: boolean;
   comment?: string;
   selection?: GridSelection;
   relative_font_size?: number;

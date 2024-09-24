@@ -28,16 +28,18 @@ import type { ICellAddress,
 import { TextPartFlag, Style, ValueType, Area, Rectangle, ResolveThemeColor, IsDefinedColor } from 'treb-base-types';
 
 import type { Tile } from '../types/tile';
-import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
+// import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
 import type { FormattedString} from 'treb-parser';
 import { MDParser } from 'treb-parser';
-import type { BaseLayout, TileRange } from '../layout/base_layout';
+import { BaseLayout, TileRange } from '../layout/base_layout';
 import type { DataModel, ViewModel } from 'treb-data-model';
 import type { GridOptions } from '../types/grid_options';
 
+import { Get as GetFontMetrics } from '../util/fontmetrics';
+
 const DEFAULT_INDENT = '  '; // two spaces in the current font
-const BASELINE = 'bottom';
-const WK = /webkit/i.test(typeof navigator === 'undefined' ? '' : navigator?.userAgent || '') ? 1 : 0;
+// const BASELINE = 'bottom';
+// const WK = /webkit/i.test(typeof navigator === 'undefined' ? '' : navigator?.userAgent || '') ? 1 : 0;
 
 interface FontSet {
   base: string,
@@ -118,7 +120,8 @@ export class TileRenderer {
       this.buffer_context = context;
       this.buffer_context.setTransform(scale, 0, 0, scale, 0, 0);
       this.buffer_context.textAlign = 'left';
-      this.buffer_context.textBaseline = BASELINE; // 'alphabetic';
+      this.buffer_context.textBaseline = // BASELINE; // 
+        'alphabetic';
     }
 
     // this.UpdateTheme();
@@ -173,6 +176,52 @@ export class TileRenderer {
   }
 
   /**
+   * new method for measuring text, intended to take into account 
+   * indentation and wrapping, scale, and all the other stuff. 
+   */
+  public MeasureText(cell: Cell, current_width: number, override_scale?: number) {
+
+    // we need a canvas. I guess we can just randomly use one?
+
+    const tile = this.layout.grid_tiles[0][0];
+
+    // we need fonts, and check if we need variants
+
+    const scale = override_scale ?? this.layout.scale;
+    const style: CellStyle = cell.style || {};
+    const base_font = Style.CompositeFont(this.theme.grid_cell_font_size, style, scale, this.theme);
+    const metrics = GetFontMetrics(base_font.font, base_font.variants);
+
+    const fonts: FontSet = {
+      base: base_font.font,
+      strong: Style.CompositeFont(this.theme.grid_cell_font_size, {...style, bold: true}, scale, this.theme).font,
+      emphasis: Style.CompositeFont(this.theme.grid_cell_font_size, {...style, italic: true}, scale, this.theme).font,
+      strong_emphasis: Style.CompositeFont(this.theme.grid_cell_font_size, {...style, bold: true, italic: true }, scale, this.theme).font,
+    };
+
+    if (base_font.variants) {
+      tile.style.fontVariant = base_font.variants;
+    }
+    else {
+      tile.style.fontVariant = '';
+    }
+
+    const context = tile.getContext('2d', { alpha: false });
+
+    if (!context) {
+      throw new Error('context failed');
+    }
+
+    const prepped = this.PrepText(context, fonts, cell, current_width);
+
+    const width = prepped.width;
+    const height = metrics.height * prepped.strings.length;
+
+    return { width, height };
+
+  }
+
+  /* *
    * use one of the tile contexts to measure text. we are using the tile
    * context because it's attached to the DOM, and style is applied. we need
    * that for the root font size, in case font size in the style is relative
@@ -188,7 +237,7 @@ export class TileRenderer {
    * 
    * @param text 
    * @param font 
-   */
+   * /
   public MeasureText(text: string, font?: string): TextMetrics {
 
     const context = this.layout.grid_tiles[0][0].getContext('2d', { alpha: false });
@@ -203,6 +252,7 @@ export class TileRenderer {
 
     return context.measureText(text);
   }
+  */
 
   /**
    * when drawing to the buffered canvas, (1) ensure it's large enough,
@@ -233,7 +283,8 @@ export class TileRenderer {
       if (context) {
         this.buffer_context = context;
         this.buffer_context.textAlign = 'left';
-        this.buffer_context.textBaseline = BASELINE;
+        this.buffer_context.textBaseline = // BASELINE; 
+          'alphabetic';
       }
 
     }
@@ -291,7 +342,8 @@ export class TileRenderer {
       throw new Error('invalid context');
     }
 
-    const m2 = FontMetricsCache2.Get(Style.Font(this.theme.headers || {}, this.layout.scale));
+    const font_info = Style.CompositeFont(this.theme.grid_cell_font_size, this.theme.headers||{}, this.layout.scale, this.theme);
+    const m2 = GetFontMetrics(font_info.font, font_info.variants);
 
     const scale = this.layout.dpr;
     const header_size = this.layout.header_offset;
@@ -351,8 +403,8 @@ export class TileRenderer {
     // 0 or 1 pixel) we don't want to render them here.
 
     context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
+    context.textBaseline = 'middle'; // FUXME
+    context.font = font_info.font; // Style.Font(this.theme.headers||{}, this.layout.scale);
 
     context.fillStyle = ResolveThemeColor(this.theme, this.theme.headers?.text);
 
@@ -365,7 +417,8 @@ export class TileRenderer {
       context.lineTo(header_size.x, 0 - 0.5);
       context.stroke();
 
-      this.RenderRowLabels(context, 0, this.view.active_sheet.freeze.rows - 1, m2.block);
+      this.RenderRowLabels(context, 0, this.view.active_sheet.freeze.rows - 1, // m2.block);
+          m2.height);
 
     }
 
@@ -458,7 +511,10 @@ export class TileRenderer {
 
     const scale = this.layout.dpr;
     const header_size = this.layout.header_offset;
-    const m2 = FontMetricsCache2.Get(Style.Font(this.theme.headers || {}, this.layout.scale));
+
+    const font_info = Style.CompositeFont(this.theme.grid_cell_font_size, this.theme.headers||{}, this.layout.scale, this.theme);
+    const m2 = GetFontMetrics(font_info.font, font_info.variants);
+
 
     for (let column = tiles.start.column; column <= tiles.end.column; column++) {
 
@@ -470,8 +526,15 @@ export class TileRenderer {
         context.setTransform(scale, 0, 0, scale, 0, 0);
 
         context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
+        context.textBaseline = 'middle'; // FIXME
+
+        context.font = font_info.font; // Style.Font(this.theme.headers||{}, this.layout.scale);
+        if (font_info.variants) {
+          tile.style.fontVariant = font_info.variants;
+        }
+        else {
+          tile.style.fontVariant = '';
+        }
 
         context.fillStyle = this.theme.headers?.fill ? ResolveThemeColor(this.theme, this.theme.headers.fill) : '';
         context.fillRect(0, 0, tile.logical_size.width, this.layout.header_offset.y);
@@ -512,8 +575,16 @@ export class TileRenderer {
         context.setTransform(scale, 0, 0, scale, 0, 0);
 
         context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
+        context.textBaseline = 'middle'; // FIXME
+        // context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
+
+        context.font = font_info.font; // Style.Font(this.theme.headers||{}, this.layout.scale);
+        if (font_info.variants) {
+          tile.style.fontVariant = font_info.variants;
+        }
+        else {
+          tile.style.fontVariant = '';
+        }
 
         context.fillRect(0, 0, this.layout.header_offset.x, tile.logical_size.height);
 
@@ -527,7 +598,8 @@ export class TileRenderer {
 
         context.strokeStyle = this.theme.headers_grid_color || '';
 
-        this.RenderRowLabels(context, tile.first_cell.row, tile.last_cell.row, m2.block);
+        this.RenderRowLabels(context, tile.first_cell.row, tile.last_cell.row, // m2.block);
+              m2.height);
 
         tile.dirty = false;
       }
@@ -587,10 +659,18 @@ export class TileRenderer {
   /** render a tile */
   public Render(tile: Tile): void {
 
+    // can we assume this is always set? this feels sloppy, and 
+    // it feels like something we'd like to turn off... can we 
+    // fetch the canvas more than once? not sure what the impact of
+    // that would be.
+
+    // tile.style.fontVariantNumeric = 'lining-nums tabular-nums';
+
     const context = tile.getContext('2d', { alpha: false });
     if (!context) { return; } // should throw
 
-    context.textBaseline = BASELINE;
+    context.textBaseline = // BASELINE;
+      'alphabetic';
 
     const scale = this.layout.dpr;
 
@@ -1654,12 +1734,27 @@ export class TileRenderer {
     // (eventually) painting to the buffer context. just remember to set
     // font in the buffer context.
 
+    const base_font = Style.CompositeFont(this.theme.grid_cell_font_size, style, this.layout.scale, this.theme);
+
+    /*
+    if (cell.value) {
+      console.info(base_font);
+    }
+      */
+
     const fonts: FontSet = {
-      base: Style.Font(style, this.layout.scale),
-      strong: Style.Font({...style, bold: true}, this.layout.scale),
-      emphasis: Style.Font({...style, italic: true}, this.layout.scale),
-      strong_emphasis: Style.Font({...style, bold: true, italic: true}, this.layout.scale),
+      base: base_font.font,
+      strong: Style.CompositeFont(this.theme.grid_cell_font_size, {...style, bold: true}, this.layout.scale, this.theme).font,
+      emphasis: Style.CompositeFont(this.theme.grid_cell_font_size, {...style, italic: true}, this.layout.scale, this.theme).font,
+      strong_emphasis: Style.CompositeFont(this.theme.grid_cell_font_size, {...style, bold: true, italic: true }, this.layout.scale, this.theme).font,
     };
+
+    if (base_font.variants) {
+      tile.style.fontVariant = base_font.variants;
+    }
+    else {
+      tile.style.fontVariant = '';
+    }
 
     context.font = fonts.base;
 
@@ -1927,16 +2022,25 @@ export class TileRenderer {
     // and bold variants). this should be OK because we use it for height, mostly.
     // not sure about invisible text (FIXME)
 
-    const m2 = FontMetricsCache2.Get(fonts.base, this.theme.grid_cell?.font_size?.value);
-    // console.info("FB", fonts.base, m2);
+    // const m2 = FontMetricsCache2.Get(fonts.base, // this.theme.grid_cell?.font_size?.value);
+    //    this.theme.grid_cell_font_size);
 
+
+    const m2 = GetFontMetrics(fonts.base, base_font.variants);
+
+    /*
+    if (cell.value) {
+      console.info(fonts.base, {m2});
+    }
+      */
+    
     // set stroke for underline
 
     // FIXME: color here should default to style, not ''. it's working only
     // because our default style happens to be the default color. that applies
     // to text color, background color and border color.
 
-    context.lineWidth = 1;
+    context.lineWidth = 1; // 1.5; // FIXME: scale? font scale?
 
     context.strokeStyle = context.fillStyle =
       text_data.format ? text_data.format : ResolveThemeColor(this.theme, style.text, 1);
@@ -1945,11 +2049,12 @@ export class TileRenderer {
 
     let left = this.cell_edge_buffer;
 
-    const line_height = 1.25;
+    const line_height = 1; // 1.25;
 
     //const line_count = text_data.single ? 1 : text_data.strings.length;
     const line_count = text_data.strings.length;
-    const text_height = (line_count * m2.block * line_height);
+    // const text_height = (line_count * m2.block * line_height);
+    const text_height = (line_count * m2.height * line_height);
 
     // we stopped clipping initially because it was expensive -- but then
     // we were doing it on every cell. it's hard to imagine that clipping
@@ -1970,20 +2075,23 @@ export class TileRenderer {
       context.clip();
     }
 
-    // path for underline. if there's no underline, it won't do anything.
+    // path for underline (and strike). if there's no underline (or strike),
+    // it won't do anything.
 
     context.beginPath();
 
-    // baseline looks OK, if you account for descenders. 
-    
-    let original_baseline = Math.round(height - 2 - (m2.block * line_height * (line_count - 1)) + WK); // switched baseline to "bottom"
+    let original_baseline = Math.round(
+      (height - m2.descent - 2) + // baseline for first line of text
+      (-line_height * m2.height * (line_count - 1))); // adjust for multiple lines
 
     switch (style.vertical_align) {
-      case 'top': // Style.VerticalAlign.Top:
-        original_baseline = Math.round(m2.block * line_height) + 1;
+      case 'top':
+        original_baseline = Math.round(2 + m2.ascent);
         break;
-      case 'middle': // Style.VerticalAlign.Middle:
-        original_baseline = Math.round((height - text_height) / 2 + m2.block * line_height);
+
+      case 'middle': 
+        original_baseline = Math.round((height - text_height) / 2 + m2.ascent) - 1.5;
+
         break;
     }
 
@@ -2017,7 +2125,7 @@ export class TileRenderer {
       // may have different formatting.
 
       let baseline = original_baseline;
-      let index = 0;
+      // let index = 0;
 
       for (const line of text_data.strings) {
 
@@ -2026,29 +2134,17 @@ export class TileRenderer {
         let line_width = 0;
         for (const part of line) { line_width += part.width; }
 
-        if (horizontal_align === 'center' /* Style.HorizontalAlign.Center */ ) {
+        if (horizontal_align === 'center') {
           left = Math.round((width - line_width) / 2);
         }
-        else if (horizontal_align === 'right' /* Style.HorizontalAlign.Right */ ) {
+        else if (horizontal_align === 'right') {
           left = width - this.cell_edge_buffer - line_width;
         }
 
-        /*
-        if (style.font_underline) {
-          const underline_y = Math.floor(baseline + 1.5 - m2.descender - WK) + .5; // metrics.block - 3.5 - metrics.ascent - 3;
-          context.moveTo(left, underline_y);
-          context.lineTo(left + line_width, underline_y);
-        }
-        
-        if (style.font_strike) {
-          const strike_y = Math.floor(baseline - m2.descender - m2.ascender / 2) + .5;
-          context.moveTo(left, strike_y);
-          context.lineTo(left + line_width, strike_y);
-        }
-        */
+        // still tinkering with these. surely we need to apply scale? FIXME
 
-        const underline_y = Math.floor(baseline + 1.5 - m2.descender - WK) + .5; // metrics.block - 3.5 - metrics.ascent - 3;
-        const strike_y = Math.floor(baseline - m2.descender - m2.ascender / 2) + .5;
+        const underline_y = baseline + 2.5;
+        const strike_y = Math.floor(baseline - m2.ascent * 1 / 3) + .5;
 
         let x = left;
         for (const part of line) {
@@ -2089,8 +2185,10 @@ export class TileRenderer {
 
             if (preserve_layout_info) {
               part.left = x;
-              part.top = baseline - m2.block;
-              part.height = m2.block;
+              part.top = baseline - // m2.block;
+                m2.ascent;
+              part.height = // m2.block;
+                m2.height;
             }
   
           }
@@ -2099,106 +2197,16 @@ export class TileRenderer {
 
         }
 
-        index++;
-        baseline = Math.round(original_baseline + index * m2.block * line_height);
+        // height tends to be an integer, or maybe at worst 1/2 integer,
+        // so stepping is probably ok (we used to index and multiply).
+
+        baseline += line_height * m2.height;
+
 
       }
 
 
     }
-
-    /*
-    else if (text_data.single) {
-
-      // const cached_font = context.font;
-      // const italic_font = /italic/i.test(cached_font) ? cached_font : 'italic ' + cached_font;
-
-      // single refers to single-line text that has multiple components,
-      // including spacing or hidden text. single line text (not formatted)
-      // probably doesn't have this flag set, it will use the next block.
-      // these could (should?) be consolidated
-
-      if (horizontal_align === Style.HorizontalAlign.Center) {
-        left = Math.round((width - text_data.width) / 2);
-      }
-      else if (horizontal_align === Style.HorizontalAlign.Right) {
-        left = width - this.cell_edge_buffer - text_data.width;
-      }
-
-      const underline_y = Math.floor(original_baseline + 1.5 - m2.descender - WK) + .5; // metrics.block - 3.5 - metrics.ascent - 3;
-      const strike_y = Math.floor(original_baseline - m2.descender - m2.ascender / 2) + .5;
-
-      // we want a single underline, possibly spanning hidden elements,
-      // but not starting or stopping on a hidden element (usually invisible
-      // parentheses).
-
-      for (const part of text_data.strings) {
-        if (!part.hidden) {
-
-          context.fillText(part.text, left, original_baseline);
-
-          if (style.font_underline) {
-            context.moveTo(left, underline_y);
-            context.lineTo(left + part.width, underline_y);
-          }
-          if (style.font_strike) {
-            context.moveTo(left, strike_y);
-            context.lineTo(left + part.width, strike_y);
-          }
-        }
-
-        if (preserve_layout_info) {
-          part.left = left;
-          part.top = original_baseline - m2.block;
-          part.height = m2.block;
-        }
-
-        left += part.width;
-      }
-
-    }
-    else {
-
-      let baseline = original_baseline;
-      let index = 0;
-
-      for (const part of text_data.strings) {
-
-        // here we justify based on part, each line might have different width
-
-        if (horizontal_align === Style.HorizontalAlign.Center) {
-          left = Math.round((width - part.width) / 2);
-        }
-        else if (horizontal_align === Style.HorizontalAlign.Right) {
-          left = width - this.cell_edge_buffer - part.width;
-        }
-
-        if (style.font_underline) {
-          const underline_y = Math.floor(baseline + 1.5 - m2.descender - WK) + .5; // metrics.block - 3.5 - metrics.ascent - 3;
-          context.moveTo(left, underline_y);
-          context.lineTo(left + part.width, underline_y);
-        }
-        
-        if (style.font_strike) {
-          const strike_y = Math.floor(baseline - m2.descender - m2.ascender / 2) + .5;
-          context.moveTo(left, strike_y);
-          context.lineTo(left + part.width, strike_y);
-        }
-
-        context.fillText(part.text, left, baseline);
-
-        if (preserve_layout_info) {
-          part.left = left;
-          part.top = baseline - m2.block;
-          part.height = m2.block;
-        }
-
-        index++;
-        baseline = Math.round(original_baseline + index * m2.block * line_height);
-      }
-
-    }
-    */
 
     context.stroke();
 

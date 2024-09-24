@@ -55,6 +55,11 @@ export interface FontScaleToolbarMessage {
   scale?: number;
 }
 
+export interface FontStackToolbarMessage {
+  command: 'font-stack';
+  font_stack?: string;
+}
+
 export interface NumberFormatToolbarMessage {
   command: 'number-format';
   format?: string;
@@ -103,4 +108,5 @@ export type ToolbarMessage
   | IndentMessage
   | NumberFormatToolbarMessage
   | FontScaleToolbarMessage
+  | FontStackToolbarMessage
   ;

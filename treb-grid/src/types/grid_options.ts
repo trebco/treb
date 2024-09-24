@@ -90,6 +90,9 @@ export interface GridOptions {
   /** support MD formatting in text */
   markdown?: boolean;
 
+  /** support font stacks */
+  support_font_stacks?: boolean;
+
 }
 
 export const DefaultGridOptions: GridOptions = {

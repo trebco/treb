@@ -19,12 +19,13 @@
  * 
  */
 
-import { type Color, type CellStyle, IsHTMLColor, IsThemeColor, ThemeColorIndex, type ThemeColor } from './style';
+import { type Color, type CellStyle, IsHTMLColor, IsThemeColor, ThemeColorIndex, type ThemeColor, type FontSize } from './style';
 import { ColorFunctions } from './color';
 // import * as LCHColorFunctions from './color2';
 
 import { DOMContext } from './dom-utilities';
 import { Measurement } from 'treb-utils';
+import { font_stack_names, type FontStack, GenerateFontStack } from './font-stack';
 
 /*
  * so this is a little strange. we use CSS to populate a theme object,
@@ -90,6 +91,12 @@ export interface Theme {
   /** grid cell defaults (composite: size, font face, color, background) */
   grid_cell?: CellStyle;
 
+  /** 
+   * base font size for grid cell. we try to specify things in ems, but
+   * we do need to know this in order to measure
+   */
+  grid_cell_font_size: FontSize;
+
   /** gridlines color */
   grid_color: string;
 
@@ -150,6 +157,9 @@ export interface Theme {
   /** dark color for offset (against light background) */
   offset_dark: string;
 
+  /** precalculated font stacks */
+  font_stacks: Record<string, FontStack>;
+
 }
 
 /**
@@ -162,6 +172,8 @@ export const DefaultTheme: Theme = {
   offset_cache: {},
   offset_light: '#fff',
   offset_dark: '#000',
+  font_stacks: {},
+  grid_cell_font_size: { value: 10, unit: 'pt' },
 };
 
 /* *
@@ -428,18 +440,31 @@ const TableStyleFromCSS = (base: CSSStyleDeclaration, style: CSSStyleDeclaration
 */
 
 // testing
-const StyleFromCSS = (css: CSSStyleDeclaration): CellStyle => {
+const StyleFromCSS = (css: CSSStyleDeclaration, include_font_face = false): CellStyle => {
 
-  const { value, unit } = ParseFontSize(css.fontSize||'');
+  // const { value, unit } = ParseFontSize(css.fontSize||'');
 
   const style: CellStyle = {
     fill: { text: css.backgroundColor }, // || 'none',
     text: { text: css.color },
+    
+    /*
     font_size: {
       unit, value,
     },
-    font_face: css.fontFamily,
+    */
+
+    // use container size unless we scale. the reason we do this is 
+    // because if we set scale, we always wind up with em units.
+
+    font_size: { unit: 'em', value: 1 },
+
+    // font_face: css.fontFamily,
   };
+
+  if (include_font_face) {
+    style.font_face = css.fontFamily;
+  }
 
   // the default border comes from the "theme colors", not from 
   // the CSS property (it used to come from the CSS property, which
@@ -544,7 +569,7 @@ export const ThemeColorTable = (theme_color: number, tint = .7): TableTheme => {
  * 
  * @internal
  */
-export const LoadThemeProperties = (container: HTMLElement): Theme => {
+export const LoadThemeProperties = (container: HTMLElement, use_font_stacks = false): Theme => {
     
   const theme: Theme = JSON.parse(JSON.stringify(DefaultTheme));
   const DOM = DOMContext.GetInstance(container.ownerDocument);
@@ -558,14 +583,34 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
   }
 
   const node = Append(container, '');
-  const CSS = ElementCSS.bind(0, node);
+  const CSS: (classes: string) => CSSStyleDeclaration = ElementCSS.bind(0, node);
 
   let css = CSS('grid-cells');
-  theme.grid_cell = StyleFromCSS(css);
+  theme.grid_cell = StyleFromCSS(css, false);
   theme.grid_color = css.stroke || '';
+  theme.grid_cell_font_size = ParseFontSize(css.fontSize||'');
 
+  // console.info({theme});
+
+  if (use_font_stacks) {
+    for (const key of font_stack_names) {
+      css = CSS(`treb-font-stack-${key}`);
+      theme.font_stacks[key] = GenerateFontStack(key, css);
+    }
+  }
+  else {
+
+    // default only
+
+    css = CSS(`treb-font-stack-default`);
+    theme.font_stacks.default = GenerateFontStack('default', css);
+    
+  }
+  // console.info(theme.font_stacks);
+  
+  
   css = CSS('grid-headers');
-  theme.headers = StyleFromCSS(css);
+  theme.headers = StyleFromCSS(css, true);
   theme.headers_grid_color = css.stroke;
   if (!theme.headers_grid_color || theme.headers_grid_color === 'none') {
     theme.headers_grid_color = theme.grid_color;

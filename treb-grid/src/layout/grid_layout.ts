@@ -99,6 +99,13 @@ export class GridLayout extends BaseLayout {
 
   }
 
+  public FocusInLayout(target?: EventTarget): boolean {
+    if (target && target instanceof Element && this.container?.contains(target)) {
+      return true;
+    }
+    return false;
+  }
+
   public ResizeCursor(resize?: 'row'|'column'): void {
     switch (resize) {
     case 'row':

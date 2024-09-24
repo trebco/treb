@@ -25,8 +25,19 @@ $default-box-shadow: 0px 1px 4px 2px rgba(109,109,109,0.2);
 
 $tooltip-arrow-size: 4px;
 
+//
+// -apple-system came out because it would break safari when rendering 
+// certain characters. if you render an acute angle character ("⦟", U+299F)
+// in a canvas in safari with -apple-system, javascript will stop. no
+// exception, no error, it just stops. 
+// 
+// that was ca 2023? haven't tested this lately so it may be resolved by now.
+//
+
+// "BlinkMacSystemFont" magically turns into "system-ui"? that's incredibly annoying. 
+
 $font-stack: // "-apple-system",
-  "BlinkMacSystemFont",
+  "BlinkMacSystemFont", // this turns into "system-ui"? wuwt? is that a sass thing?
   "Segoe UI",
   "Roboto",
   "Oxygen-Sans",

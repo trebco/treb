@@ -377,6 +377,11 @@ export abstract class BaseLayout {
 
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public FocusInLayout(target?: EventTarget): boolean {
+    return false;
+  }
+
   /**
    * if the DPR has changed, update it and return true. otherwise return
    * false. this is used on resize events: if the scale has changed, we 
@@ -672,7 +677,7 @@ export abstract class BaseLayout {
 
   }
 
-  public UpdateAnnotation(elements: Annotation | Annotation[]): void {
+  public UpdateAnnotation(elements: Annotation | Annotation[], theme: Theme): void {
     if (!Array.isArray(elements)) elements = [elements];
     for (const annotation of elements) {
       const view = annotation.view[this.view.view_index] || {};
@@ -684,8 +689,48 @@ export abstract class BaseLayout {
         }
         */
 
+        let font_size_pt = 10 * this.scale;
+
+        // console.info(annotation.data.style);
+
+        if (annotation.data.style?.font_size?.unit === 'em') {
+
+          font_size_pt *= annotation.data.style.font_size.value;
+
+          // console.info("scaling up...", font_size_pt)
+
+        }
+
         view.node.dataset.scale = this.scale.toString();
-        view.node.style.fontSize = `${10 * this.scale}pt`;
+
+        // maybe we should just reset and then apply?
+
+        if (annotation.data.style?.font_face && annotation.data.style.font_face.startsWith('stack:')) { 
+          const name = annotation.data.style.font_face.substring(6);
+          const stack = theme.font_stacks[name];
+          if(stack) {
+            view.node.classList.add('treb-inherit-font');
+            view.node.style.fontFamily = stack.font || '';
+
+            // font_size_pt *= stack.scale;
+            
+            if (stack.variants) {
+              view.node.style.fontVariant = stack.variants;
+            }
+          }
+          else {
+            view.node.classList.remove('treb-inherit-font');
+            view.node.style.fontFamily = '';
+            view.node.style.fontVariant = '';
+          }
+        }
+        else {
+          view.node.classList.remove('treb-inherit-font');
+          view.node.style.fontFamily = '';
+          view.node.style.fontVariant = '';
+        }
+
+        view.node.style.fontSize = `${font_size_pt}pt`;
 
         // update the layout here if necessary. after that it should
         // be persisted (assuming it's saved). eventually this should
@@ -848,13 +893,13 @@ export abstract class BaseLayout {
 
   }
 
-  public AddAnnotation(annotation: Annotation): void {
+  public AddAnnotation(annotation: Annotation, theme: Theme): void {
     const view = annotation.view[this.view.view_index] || {};
     if (!view.node) {
       throw new Error('annotation view/node missing');
     }
     this.annotation_container.appendChild(view.node);
-    this.UpdateAnnotation(annotation);
+    this.UpdateAnnotation(annotation, theme);
   }
 
   // testing moving this here...
@@ -1246,38 +1291,6 @@ export abstract class BaseLayout {
 
     parent.appendChild(tile);
 
-    // NOTE re: text rendering. you can't use baseline = top, because that's
-    // inconsistent among browsers. in fact of all baselines, the only ones that
-    // are even close are alphabetic and bottom -- bottom is slightly different
-    // in ffx compared to chrome and edge, but that could be because of different
-    // font rendering schemes. alphabetic is the closest, but requires offset for
-    // ascender (or descender).
-
-    // actually it looks like there's a 1px difference in bottom baseline...
-    // alphabetic is the only one that's consistent.
-
-    // FIXME: why not just offset on a per-browser basis? it might be ugly
-    // but it's simpler.
-
-    // for the time being we will use bottom.
-
-    // why were we prepainting (because firefox, below?) and why was this so
-    // slow? do we need to preset the context text parameters? 
-
-    /*
-    const context = tile.getContext('2d', {alpha: false});
-
-    if (context) {
-      context.textAlign = 'left';
-      context.textBaseline = 'alphabetic';
-
-      // prepaint -- firefox is a little slow so flashes empty tiles sometimes
-
-      // context.fillStyle = '#fff'; // FIXME: use theme color
-      // context.fillRect(0, 0, tile.width, tile.height);
-    }
-    */
-
     return tile;
 
   }
@@ -1319,7 +1332,9 @@ export abstract class BaseLayout {
 
     // TODO: dropdown caret
 
-    this.dropdown_list.style.font = Style.Font(theme.grid_cell || {});
+    this.dropdown_list.style.font = Style.CompositeFont(theme.grid_cell_font_size, {
+      font_face: 'stack:default',
+    }, this.scale, theme).font;
 
     // testing
 
