@@ -36,6 +36,7 @@ import type {
   RenderOptions,
   BaseExpressionUnit,
 } from './parser-types';
+
 import {
   ArgumentSeparatorType,
   DecimalMarkType,
@@ -1137,7 +1138,6 @@ export class Parser {
 
       }
 
-
       // so we're moving complex handling to post-reordering, to support
       // precedence properly. there's still one thing we have to do here,
       // though: handle those cases of naked imaginary values "i". these
@@ -1233,7 +1233,13 @@ export class Parser {
 
     // return this.BinaryToRange(this.ArrangeUnits(stream));
     // return this.ArrangeUnits(stream);
+
+    // const arranged = this.ArrangeUnits(stream);
+    // const result = this.BinaryToComplex(arranged);
+    // return result;
+
     return this.BinaryToComplex(this.ArrangeUnits(stream));
+
   }
 
   /**
@@ -1808,6 +1814,7 @@ export class Parser {
    * reorders operations for precendence
    */
   protected ArrangeUnits(stream: ExpressionUnit[]): ExpressionUnit {
+
     // probably should not happen
     if (stream.length === 0) return { type: 'missing', id: this.id_counter++ };
 
@@ -1908,7 +1915,41 @@ export class Parser {
         }
       }
 
-      if (stack.length < 2) {
+      //
+      // why is this 2? are we thinking about combining complex numbers?
+      // or ranges? (those would be binary). or was this for dimensioned
+      // quantities? [actually that makes sense] [A: no, it wasn't that]
+      //
+      // actually what's the case where this is triggered and it's _not_
+      // an error? can we find that?
+      // 
+
+      if (stack.length < 2) { 
+
+        // we know that `element` is not an operator, because we 
+        // would have consumed it
+
+        if (stack.length === 1) {
+          const a = stack[0].type;
+
+          if (a !== 'operator') {
+
+            // console.warn("unexpected element", stack[0], element);
+
+            this.error = `unexpected element [3]: ${element.type}`;
+            this.error_position = (element.type === 'missing' || element.type === 'group' || element.type === 'dimensioned') ? -1 : element.position;
+            this.valid = false;
+            return {
+              type: 'group',
+              id: this.id_counter++,
+              elements: stream,
+              explicit: false,
+            };
+
+          }
+
+        }
+        
         stack.push(element);
       }
       else if (stack[stack.length - 1].type === 'operator') {
@@ -2353,6 +2394,7 @@ export class Parser {
         name: str,
         args,
         position,
+        end: this.index, // testing
       };
     }
 
