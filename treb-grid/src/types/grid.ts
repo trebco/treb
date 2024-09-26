@@ -2986,6 +2986,19 @@ export class Grid extends GridBase {
           this.editing_selection = { ...this.primary_selection };
           break;
 
+        case 'toll':
+
+          // this is basically "stop editing", with some special
+          // semantics to capture the editing state. it's intended
+          // for external clients, specifically for an "insert function"
+          // dialog.
+
+          this.editing_state = EditingState.NotEditing;
+          this.ClearAdditionalSelections();
+          this.ClearSelection(this.active_selection);
+          this.DelayedRender();
+          break;
+
         case 'discard':
 
           this.editing_state = EditingState.NotEditing;
@@ -4772,6 +4785,26 @@ export class Grid extends GridBase {
       || (this.formula_bar && this.formula_bar.selecting)
       || (!!this.external_editor_config);
       // || (this.select_argument);
+  }
+
+  /**
+   * for external clients. the expected pattern is 
+   *  - start overlay editor
+   *  - click on "insert function"
+   *  - do something
+   *  - release editor (this function)
+   */
+  public ReleaseOverlayEditor() {
+    this.editing_state = EditingState.NotEditing;
+    this.DismissEditor();
+    this.DelayedRender();
+  }
+
+  public RestoreOverlayEditor() {
+
+    // ?
+    this.overlay_editor?.FocusEditor();
+  
   }
 
   /**

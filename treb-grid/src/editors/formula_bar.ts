@@ -46,10 +46,16 @@ export interface AddressLabelEvent {
   text?: string;
 }
 
+export interface TollEvent {
+  type: 'toll';
+  value?: string;
+}
+
 export type FormulaBar2Event
   = FormulaButtonEvent
   // | FormulaBarResizeEvent
   | AddressLabelEvent
+  | TollEvent
   ;
 
 // ---
@@ -58,6 +64,8 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
 
 
   public committed = false;
+
+  public tolled?: { text: string, substring: string };
 
   /** is the _editor_ currently focused */
   // tslint:disable-next-line:variable-name
@@ -221,11 +229,16 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
     this.active_editor.node.spellcheck = false; // change the default back
 
     this.RegisterListener(descriptor, 'focusin', () => {
-     
+
+      const restore = this.tolled !== undefined;
+      this.tolled = undefined;
+
       // this.editor_node.addEventListener('focusin', () => {
 
       // can't happen
-      if (!this.active_editor) { return; }
+      if (!this.active_editor) { 
+        return; 
+      }
 
       // console.info('focus in');
 
@@ -243,6 +256,18 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
       this.UpdateText(this.active_editor);
       this.UpdateColors(undefined, true); // toll update event -- we will send in order, below
 
+      if (restore) {
+
+        // FIXME: we probably want to hold the caret so we can restore
+        // to a particular place. or set the caret explicitly.
+
+        const node = this.NodeAtIndex(text.length - 1);
+        console.info({text, node});
+        if (node) {
+          this.SetCaret({node: node as ChildNode, offset: (node.textContent || '').length});
+        }
+      }
+
       this.committed = false;
 
       this.Publish([
@@ -254,8 +279,15 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
 
     });
 
-    this.RegisterListener(descriptor, 'focusout', () => {
+    this.RegisterListener(descriptor, 'focusout', (event: FocusEvent) => {
 
+      // this is new, to support an external "insert function" dialog.
+      // still working out the semantics, but essentially we won't commit
+      // and we'll keep pending text. we need some sort of flag to indicate
+      // that we're in the editing state.
+
+      const toll = (event.relatedTarget instanceof HTMLElement && event.relatedTarget.dataset.tollEditor);
+      
       if (this.selecting) {
         console.info('focusout, but selecting...');
       }
@@ -265,7 +297,26 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
       const text = (this.active_editor ? 
         this.GetTextContent(this.active_editor.node).join('') : '').trim();
 
-      if (this.committed) {
+      if (toll) {
+
+        let substring = text;
+        if (this.active_editor?.node) {
+          const s2c = this.SubstringToCaret2(this.active_editor.node, true);
+          substring = s2c[0];
+        }
+
+        this.committed = true;
+        this.tolled = {
+          text,
+          substring,
+        };
+        
+        this.Publish({
+          type: 'toll',
+          value: text,
+        })
+      }
+      else if (this.committed) {
         this.Publish([
           { type: 'stop-editing' },
         ]);
@@ -278,14 +329,10 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
         });
       }
 
+      // huh? we're publishing this twice?
+
       this.Publish([
         { type: 'stop-editing' },
-        /*
-        {
-          type: 'commit',
-          value: text,
-        }
-          */
       ]);
 
       this.focused_ = false;
@@ -334,6 +381,31 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
 
     }
 
+  }
+
+  /**
+   * we might be overthinking this, we don't necessarily need to restore.
+   * 
+   * this method will focus the editor and set the caret (to the end, atm)
+   * in case of a tolled editor. the idea is you call Restore() after your 
+   * dialog is complete and it's like you are back where you started.
+   * 
+   * alternatively, call `Release()` to clean up any saved state.
+   */
+  public Restore() {
+    const target = this.container_node?.firstElementChild as HTMLDivElement;
+    if (target) {
+      target.focus();
+    }
+  }
+
+  /**
+   * release anything that's been tolled. call this if you toll the editor
+   * but don't want to restore it when you are done. I think this will be
+   * the default.
+   */
+  public Release() {
+    this.tolled = undefined;
   }
 
   public IsElement(element: HTMLElement): boolean {

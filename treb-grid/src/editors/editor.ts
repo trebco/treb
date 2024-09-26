@@ -1133,11 +1133,11 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
    * @param node 
    * @returns [substring to start of selection, substring to end of selection]
    */
-  protected SubstringToCaret2(node: HTMLElement): [string, string] {
+  protected SubstringToCaret2(node: HTMLElement, force = false): [string, string] {
 
     const result: [string, string] = ['', ''];
 
-    if (node !== node.ownerDocument.activeElement || node !== this.active_editor?.node) {
+    if (!force && node !== node.ownerDocument.activeElement || node !== this.active_editor?.node) {
       return result;
     }
    

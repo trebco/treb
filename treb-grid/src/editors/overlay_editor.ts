@@ -400,6 +400,17 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
 
   }
 
+  public GetEditState() {
+    const text = this.active_editor?.node?.textContent || '';
+
+    let substring = '';
+    if (this.active_editor?.node) {
+      substring = this.SubstringToCaret2(this.active_editor.node, true)[0];
+    }
+
+    return { text, substring };
+  }
+
   /**
    * check if we want to handle this key. we have some special cases (tab, 
    * enter, escape) where we do take some action but we also let the 
