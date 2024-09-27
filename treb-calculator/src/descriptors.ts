@@ -71,6 +71,12 @@ export interface ArgumentDescriptor {
    */
   boxed?: boolean;
 
+  /** 
+   * this argument repeasts. this has no impact on the function descriptor
+   * but it's useful to know for clients.
+   */
+  repeat?: boolean;
+
   /**
    * similar to collector, this flag will return metadata about the cell
    *

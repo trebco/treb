@@ -345,7 +345,11 @@ export const BaseFunctionLibrary: FunctionMap = {
 
   Sum: {
     description: 'Adds arguments and ranges',
-    arguments: [{ boxed: true, name: 'values or ranges' }],
+    arguments: [{ 
+      boxed: true, 
+      name: 'values or ranges' ,
+      repeat: true,
+    }],
     fn: (...args: UnionValue[]) => {
 
       const sum = { real: 0, imaginary: 0 };
@@ -374,7 +378,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
   SumSQ: {
     description: 'Returns the sum of the squares of all arguments',
-    arguments: [{ boxed: true, name: 'values or ranges' }],
+    arguments: [{ boxed: true, name: 'values or ranges', repeat: true, }],
     fn: (...args: UnionValue[]) => {
 
       const sum = { real: 0, imaginary: 0 };
