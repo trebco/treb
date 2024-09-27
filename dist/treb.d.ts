@@ -1,4 +1,4 @@
-/*! API v31.1. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v31.2. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -908,7 +908,7 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      *
      * @public
      */
-    FormatNumber(value: number, format?: string): string;
+    FormatNumber(value: number | Complex, format?: string): string;
 
     /**
      * convert a javascript date (or timestamp) to a spreadsheet date
