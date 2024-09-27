@@ -2818,7 +2818,7 @@ for (const name of Object.getOwnPropertyNames(Math)) {
 
   switch (type) {
   case 'number':
-    console.info("MATH CONSTANT", name);
+    // console.info("MATH CONSTANT", name);
     BaseFunctionLibrary[name] = {
       fn: () => { 
         return { type: ValueType.number, value }
@@ -2828,7 +2828,7 @@ for (const name of Object.getOwnPropertyNames(Math)) {
     break;
 
   case 'function':
-    console.info("MATH FUNC", name);
+    // console.info("MATH FUNC", name);
     BaseFunctionLibrary[name] = {
       // description: 'Math function',
       fn: (...args: unknown[]) => {
