@@ -4217,11 +4217,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @public
    */
-  public FormatNumber(value: number, format = 'General'): string {
+  public FormatNumber(value: number|Complex, format = 'General'): string {
 
-    // API v1 OK
-
+    if (IsComplex(value)) {
+      return NumberFormat.FormatPartsAsText(NumberFormatCache.Get(format).FormatComplex(value));
+    }
+   
     return NumberFormatCache.Get(format).Format(value);
+
   }
 
   /**
