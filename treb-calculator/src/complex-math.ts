@@ -175,6 +175,52 @@ export const Sin = (z: Complex) => {
 
 };
 
+export const ASin = (cpx: Complex) => {
+
+  if (cpx.imaginary === 0) {
+    return { 
+      real: Math.asin(cpx.real), 
+      imaginary: 0,
+    };
+  }
+
+  const x = Math.hypot(cpx.real + 1, cpx.imaginary) / 2;
+  const y = Math.hypot(cpx.real - 1, cpx.imaginary) / 2;
+
+  const sum = x + y;
+  const difference = x - y;
+
+  const result: Complex = {
+    real: Math.asin(difference),
+    imaginary: Math.log(sum + Math.sqrt(sum * sum - 1)),
+  };
+
+  if(cpx.imaginary < 0 || (cpx.imaginary === 0 && cpx.real > 1)) {
+    result.imaginary = -result.imaginary;
+  }
+
+  return result;
+
+};
+
+export const ACos = (cpx: Complex) => {
+
+  if (cpx.imaginary === 0) {
+    return {
+      real: Math.acos(cpx.real),
+      imaginary: 0,
+    };
+  }
+
+  const asin = ASin(cpx);
+
+  return {
+    real: Math.PI / 2 - asin.real,
+    imaginary: asin.imaginary,
+  }
+
+};
+
 export const Product = (...args: Complex[]): Complex => {
   let base = args.shift();
   if (!base) { 

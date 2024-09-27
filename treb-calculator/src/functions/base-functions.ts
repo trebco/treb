@@ -1986,7 +1986,13 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Log: {
-      arguments: [ { unroll: true }, { unroll: true } ], 
+      arguments: [ { 
+        name: 'number',
+        unroll: true 
+      }, { 
+        name: 'base',
+        unroll: true 
+      } ], 
 
       /** default is base 10; allow specific base */
       fn: (a: number, base = 10): UnionValue => {
@@ -1995,26 +2001,115 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Log10: {
-      arguments: [{ unroll: true }], 
+      arguments: [{ 
+        name: 'number',
+        unroll: true,
+      }], 
       fn: (a: number): UnionValue => {
         return { type: ValueType.number, value: Math.log(a) / Math.log(10) };
       },
     },
 
     Ln: {
-      arguments: [{ unroll: true }], 
+      arguments: [{ 
+        name: 'number',
+        unroll: true,
+      }], 
       fn: (a: number): UnionValue => {
         return { type: ValueType.number, value: Math.log(a) };
       },
     },
 
-    Ceiling: {
-      arguments: [ { unroll: true }, { unroll: true } ], // FIXME: lazy
+    'Ceiling.Math': {
+      arguments: [ { 
+        name: 'number',
+        unroll: true 
+      }, { 
+        name: 'significance',
+        unroll: true 
+      }, { 
+        name: 'away from zero',
+        unroll: true, 
+      } ],
 
-      fn: (a: number) => {
+      fn: (a: number, significance = 1, mode?: number) => {
+
+        let value = 0;
+
+        if (mode && a < 0) {
+          value = -Math.ceil(-a / significance) * significance;
+        }
+        else {
+          value = Math.ceil(a / significance) * significance;
+        }
+
         return { 
           type: ValueType.number, 
-          value: Math.ceil(a),
+          value,
+        };
+      },
+    },
+    
+    'Floor.Math': {
+      arguments: [ { 
+        name: 'number',
+        unroll: true 
+      }, { 
+        name: 'significance',
+        unroll: true 
+      }, { 
+        name: 'away from zero',
+        unroll: true, 
+      } ],
+
+      fn: (a: number, significance = 1, mode?: number) => {
+
+        let value = 0;
+
+        if (mode && a < 0) {
+          value = -Math.floor(-a / significance) * significance;
+        }
+        else {
+          value = Math.floor(a / significance) * significance;
+        }
+
+        return { 
+          type: ValueType.number, 
+          value,
+        };
+      },
+    },
+
+    Floor: {
+      arguments: [ { 
+        name: 'number',
+        unroll: true 
+      }, { 
+        name: 'significance',
+        unroll: true 
+      } ],
+
+      fn: (a: number, significance = 1) => {
+        return { 
+          type: ValueType.number, 
+          value: Math.floor(a / significance) * significance,
+        };
+      },
+    },
+
+    Ceiling: {
+      arguments: [ { 
+        name: 'number',
+        unroll: true 
+      }, { 
+        name: 'significance',
+        unroll: true 
+      } ],
+
+      fn: (a: number, significance = 1) => {
+        return { 
+          type: ValueType.number, 
+          value: Math.ceil(a / significance) * significance,
         };
       },
     },
@@ -2480,6 +2575,42 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    ASin: {
+      arguments: [
+        { name: 'number', boxed: true, unroll: true },
+      ],
+      fn: (a: UnionValue) => {
+
+        if (a.type === ValueType.number) {
+          return { type: ValueType.number, value: Math.asin(a.value) };
+        }
+        if (a.type === ValueType.complex) {
+          return { type: ValueType.complex, value: ComplexMath.ASin(a.value) }; 
+        }
+
+        return ArgumentError();
+
+      },
+    },
+
+    ACos: {
+      arguments: [
+        { name: 'number', boxed: true, unroll: true },
+      ],
+      fn: (a: UnionValue) => {
+
+        if (a.type === ValueType.number) {
+          return { type: ValueType.number, value: Math.acos(a.value) };
+        }
+        if (a.type === ValueType.complex) {
+          return { type: ValueType.complex, value: ComplexMath.ACos(a.value) }; 
+        }
+
+        return ArgumentError();
+
+      },
+    },
+
     SinH: {
       arguments: [
         { name: 'number', boxed: true, unroll: true },
@@ -2588,6 +2719,11 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    E: { fn: () => { return { type: ValueType.number, value: Math.E } } },
+    PI: { fn: () => { return { type: ValueType.number, value: Math.PI } } },
+    SQRT2: { fn: () => { return { type: ValueType.number, value: Math.SQRT2 } } },
+    SQRT1_2: { fn: () => { return { type: ValueType.number, value: Math.SQRT1_2 } } },
+
     Sequence: {
       arguments:[
         { name: 'rows', boxed: true },
@@ -2641,7 +2777,19 @@ for (const key of Object.keys(BaseFunctionLibrary)) {
 // block these names from auto-import from Math
 
 const block_list = [
+  'ceil',
   'pow', 
+  'ln10', 
+  'ln2', 
+  'log10', 
+  'log10e', 
+  'log1p', 
+  'log2', 
+  'log2e', 
+  'random',
+  'imul',
+  'clz32',
+  'fround',
 ];
 
 const block_map: Record<string, string> = {};
@@ -2670,7 +2818,7 @@ for (const name of Object.getOwnPropertyNames(Math)) {
 
   switch (type) {
   case 'number':
-    // console.info("MATH CONSTANT", name);
+    console.info("MATH CONSTANT", name);
     BaseFunctionLibrary[name] = {
       fn: () => { 
         return { type: ValueType.number, value }
@@ -2680,7 +2828,7 @@ for (const name of Object.getOwnPropertyNames(Math)) {
     break;
 
   case 'function':
-    // console.info("MATH FUNC", name);
+    console.info("MATH FUNC", name);
     BaseFunctionLibrary[name] = {
       // description: 'Math function',
       fn: (...args: unknown[]) => {

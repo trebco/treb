@@ -1,9 +1,5 @@
 {
   "extends": "../tsproject.json",
-  "references": [
-    { "path": "../treb-grid/tsconfig.json" },
-    { "path": "../treb-utils/tsconfig.json" }
-  ],
   "include": [
     "../treb-base-types/**/*.ts"
   ]
