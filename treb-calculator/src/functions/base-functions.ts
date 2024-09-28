@@ -2626,8 +2626,6 @@ export const BaseFunctionLibrary: FunctionMap = {
             return ArgumentError();
           }
 
-          console.info("still here", value);
-
           return {
             type: ValueType.complex, value,
           }
