@@ -262,7 +262,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
         // to a particular place. or set the caret explicitly.
 
         const node = this.NodeAtIndex(text.length - 1);
-        console.info({text, node});
+        // console.info({text, node});
         if (node) {
           this.SetCaret({node: node as ChildNode, offset: (node.textContent || '').length});
         }
@@ -287,7 +287,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
       // that we're in the editing state.
 
       const toll = (event.relatedTarget instanceof HTMLElement && event.relatedTarget.dataset.tollEditor);
-      
+
       if (this.selecting) {
         console.info('focusout, but selecting...');
       }
@@ -314,7 +314,8 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
         this.Publish({
           type: 'toll',
           value: text,
-        })
+        });
+
       }
       else if (this.committed) {
         this.Publish([

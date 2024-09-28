@@ -220,6 +220,9 @@ export class Grid extends GridBase {
   private editing_annotation?: Annotation;
 
   /** */
+  private pending_reset_selection = false;
+
+  /** */
   private view_node?: HTMLElement;
 
   /** containing element, passed in */
@@ -1742,8 +1745,15 @@ export class Grid extends GridBase {
     if (this.selected_annotation) {
 
       if (click) {
-        this.selected_annotation = undefined;
-        this.ShowGridSelection();
+
+        if (this.editing_annotation === this.selected_annotation) {
+          this.pending_reset_selection = true;
+        }
+        else {
+          this.selected_annotation = undefined;
+          this.ShowGridSelection();
+        }
+
       }
       else {
         // console.info("reselect annotation...", this.selected_annotation);
@@ -2964,6 +2974,10 @@ export class Grid extends GridBase {
 
         case 'stop-editing':
 
+          if (this.pending_reset_selection) {
+            this.ShowGridSelection();
+          }
+          this.pending_reset_selection = false;
           this.editing_state = EditingState.NotEditing;
           break;
 
@@ -3050,10 +3064,14 @@ export class Grid extends GridBase {
             this.ClearAdditionalSelections();
             this.ClearSelection(this.active_selection);
             annotation.data.formula = event.value ? this.FixFormula(event.value) : '';
-            const node = this.editing_annotation.view[this.view_index]?.node;
-            if (node) {
-              node.focus();
+
+            if (!this.pending_reset_selection) {
+              const node = this.editing_annotation.view[this.view_index]?.node;
+              if (node) {
+                node.focus();
+              }
             }
+
             this.grid_events.Publish({ type: 'annotation', event: 'update', annotation });
             this.editing_annotation = undefined;
             this.DelayedRender();
