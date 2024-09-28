@@ -264,15 +264,17 @@ export const ATan2 = (y: Complex, x: Complex): Complex|false => {
     const x2 = z.real * z.real;
     const y2 = z.imaginary * z.imaginary;
   
-    let realPart = 0.5 * Math.atan2(2 * z.real, 1 - x2 - y2);
-    const imagPart = 0.25 * Math.log((x2 + (z.imaginary + 1) * (z.imaginary + 1)) / (x2 + (z.imaginary - 1) * (z.imaginary - 1)));
-  
+    const result = {
+      real: 0.5 * Math.atan2(2 * z.real, 1 - x2 - y2),
+      imaginary: 0.25 * Math.log((x2 + (z.imaginary + 1) * (z.imaginary + 1)) / (x2 + (z.imaginary - 1) * (z.imaginary - 1))),
+    };
+ 
     // Adjust the real part based on the quadrant of x
     if (x.real < 0) {
-      realPart += (y.real >= 0 || y.imaginary >= 0) ? Math.PI : -Math.PI;
+      result.real += (y.real >= 0 || y.imaginary >= 0) ? Math.PI : -Math.PI;
     }
   
-    return { real: realPart, imaginary: imagPart };
+    return result;
   
 
 };

@@ -489,6 +489,14 @@ export class NumberFormat {
     //     all zeros
     // (5) change default fraction to #/## (actually we should do that always)
 
+    if (value.imaginary === Infinity || value.imaginary === -Infinity || 
+        value.real === Infinity || value.real === -Infinity) {
+      return [
+        {
+          text: 'Infinity',
+        }
+      ]
+    }
 
     // check if the imaginary format will render as 0.00i -- we want to 
     // handle this differently.

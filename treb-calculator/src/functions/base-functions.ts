@@ -19,7 +19,7 @@
  * 
  */
 
-import type { FunctionMap, IntrinsicValue } from '../descriptors';
+import type { CompositeFunctionDescriptor, FunctionMap, IntrinsicValue } from '../descriptors';
 import * as Utils from '../utilities';
 // import { StringUnion, NumberUnion } from '../utilities';
 import { ReferenceError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
@@ -212,6 +212,27 @@ const NumberArgument = (argument?: UnionValue, default_value: number|false = fal
   return false;
 
 };
+
+/**
+ * helper for trig functions, curious what this does to size
+ */
+const TrigFunction = (real: (value: number) => number, complex: (value: Complex) => Complex, description?: string): CompositeFunctionDescriptor => {
+  return {
+    description,
+    arguments: [
+      { name: 'number', boxed: true, unroll: true },
+    ],
+    fn: (a: UnionValue) => {
+      if (a.type === ValueType.number) {
+        return { type: ValueType.number, value: real(a.value) };
+      }
+      if (a.type === ValueType.complex) {
+        return { type: ValueType.complex, value: complex(a.value) }; 
+      }
+      return ArgumentError();
+    },
+  };
+}
 
 /**
  * alternate functions. these are used (atm) only for changing complex 
@@ -2575,61 +2596,6 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
-    ASin: {
-      arguments: [
-        { name: 'number', boxed: true, unroll: true },
-      ],
-      fn: (a: UnionValue) => {
-
-        if (a.type === ValueType.number) {
-          return { type: ValueType.number, value: Math.asin(a.value) };
-        }
-        if (a.type === ValueType.complex) {
-          return { type: ValueType.complex, value: ComplexMath.ASin(a.value) }; 
-        }
-
-        return ArgumentError();
-
-      },
-    },
-
-    ACos: {
-      arguments: [
-        { name: 'number', boxed: true, unroll: true },
-      ],
-      fn: (a: UnionValue) => {
-
-        if (a.type === ValueType.number) {
-          return { type: ValueType.number, value: Math.acos(a.value) };
-        }
-        if (a.type === ValueType.complex) {
-          return { type: ValueType.complex, value: ComplexMath.ACos(a.value) }; 
-        }
-
-        return ArgumentError();
-
-      },
-    },
-
-    ATan: {
-      arguments: [
-        { name: 'number', boxed: true, unroll: true },
-      ],
-      fn: (a: UnionValue) => {
-
-        if (a.type === ValueType.number) {
-          return { type: ValueType.number, value: Math.atan(a.value) };
-        }
-        if (a.type === ValueType.complex) {
-          return { type: ValueType.complex, value: ComplexMath.ATan(a.value) }; 
-        }
-
-        return ArgumentError();
-
-      },
-    },
-
-    /*
     ATan2: {
       arguments: [
         { name: 'y', boxed: true, unroll: true },
@@ -2653,9 +2619,14 @@ export const BaseFunctionLibrary: FunctionMap = {
           
           const value = ComplexMath.ATan2(y.value, x.value);
 
+          // should we have an error for infinities? not sure. not sure
+          // why this hasn't come up before...
+
           if (value === false) {
             return ArgumentError();
           }
+
+          console.info("still here", value);
 
           return {
             type: ValueType.complex, value,
@@ -2666,115 +2637,18 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       },
     },
-    */
 
-    SinH: {
-      arguments: [
-        { name: 'number', boxed: true, unroll: true },
-      ],
-      fn: (a: UnionValue) => {
+    Sin: TrigFunction(Math.sin, ComplexMath.Sin),
+    SinH: TrigFunction(Math.sinh, ComplexMath.SinH),
+    ASin: TrigFunction(Math.asin, ComplexMath.ASin),
 
-        if (a.type === ValueType.number) {
-          return { type: ValueType.number, value: Math.sinh(a.value) };
-        }
-        if (a.type === ValueType.complex) {
-          return { type: ValueType.complex, value: ComplexMath.SinH(a.value) }; 
-        }
+    Cos: TrigFunction(Math.cos, ComplexMath.Cos),
+    CosH: TrigFunction(Math.cosh, ComplexMath.CosH),
+    ACos: TrigFunction(Math.acos, ComplexMath.ACos),
 
-        return ArgumentError();
-
-      },
-    },
-
-    Sin: {
-      arguments: [
-        { name: 'angle in radians', boxed: true, unroll: true, }
-      ],
-      fn: (a: UnionValue) => {
-
-        if (a.type === ValueType.number) {
-          return { type: ValueType.number, value: Math.sin(a.value) };
-        }
-        if (a.type === ValueType.complex) {
-          return { type: ValueType.complex, value: ComplexMath.Sin(a.value) }; 
-        }
-
-        return ArgumentError();
-
-      },
-    },
-
-    CosH: {
-      arguments: [
-        { name: 'number', boxed: true, unroll: true },
-      ],
-      fn: (a: UnionValue) => {
-
-        if (a.type === ValueType.number) {
-          return { type: ValueType.number, value: Math.cosh(a.value) };
-        }
-        if (a.type === ValueType.complex) {
-          return { type: ValueType.complex, value: ComplexMath.CosH(a.value) }; 
-        }
-
-        return ArgumentError();
-
-      },
-    },
-
-    Cos: {
-      arguments: [
-        { name: 'angle in radians', boxed: true, unroll: true, }
-      ],
-      fn: (a: UnionValue) => {
-
-        if (a.type === ValueType.number) {
-          return { type: ValueType.number, value: Math.cos(a.value) };
-        }
-        if (a.type === ValueType.complex) {
-          return { type: ValueType.complex, value: ComplexMath.Cos(a.value) }; 
-        }
-
-        return ArgumentError();
-
-      },
-    },
-
-    TanH: {
-      arguments: [
-        { name: 'number', boxed: true, unroll: true, }
-      ],
-      fn: (a: UnionValue) => {
-
-        if (a.type === ValueType.number) {
-          return { type: ValueType.number, value: Math.tanh(a.value) };
-        }
-        if (a.type === ValueType.complex) {
-          return { type: ValueType.complex, value: ComplexMath.TanH(a.value) }; 
-        }
-
-        return ArgumentError();
-
-      },
-    },
-
-    Tan: {
-      arguments: [
-        { name: 'angle in radians', boxed: true, unroll: true, }
-      ],
-      fn: (a: UnionValue) => {
-
-        if (a.type === ValueType.number) {
-          return { type: ValueType.number, value: Math.tan(a.value) };
-        }
-        if (a.type === ValueType.complex) {
-          return { type: ValueType.complex, value: ComplexMath.Tan(a.value) }; 
-        }
-
-        return ArgumentError();
-
-      },
-    },
+    Tan: TrigFunction(Math.tan, ComplexMath.Tan),
+    TanH: TrigFunction(Math.tanh, ComplexMath.TanH),
+    ATan: TrigFunction(Math.atan, ComplexMath.ATan),
 
     E: { fn: () => { return { type: ValueType.number, value: Math.E } } },
     PI: { fn: () => { return { type: ValueType.number, value: Math.PI } } },
