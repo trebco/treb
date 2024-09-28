@@ -1075,5 +1075,6 @@ export const StatisticsFunctionAliases: {[index: string]: string} = {
   'Quartile': 'Quartile.Inc',
   'NormSInv': 'Norm.S.Inv',
   'NormSDist': 'Norm.S.Dist',
+  'NormDist': 'Norm.Dist',
 
 };

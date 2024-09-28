@@ -221,6 +221,62 @@ export const ACos = (cpx: Complex) => {
 
 };
 
+export const ATan = (cpx: Complex): Complex => {
+
+  const { real: x, imaginary: y } = cpx;
+  
+  // Handle special case where z is purely imaginary
+  if (x === 0) {
+    if (y > 1) {
+      return { real: Math.PI / 2, imaginary: 0.5 * Math.log((y - 1) / (y + 1)) };
+    } else if (y < -1) {
+      return { real: -Math.PI / 2, imaginary: 0.5 * Math.log((1 - y) / (-1 - y)) };
+    }
+  }
+  
+  const x2 = x * x;
+  const y2 = y * y;
+  
+  // Calculate real and imaginary parts
+  const realPart = 0.5 * Math.atan2(2 * x, 1 - x2 - y2);
+  const imagPart = 0.25 * Math.log((x2 + (y + 1) * (y + 1)) / (x2 + (y - 1) * (y - 1)));
+  
+  return { real: realPart, imaginary: imagPart };
+
+};
+
+export const ATan2 = (y: Complex, x: Complex): Complex|false => {
+
+    // Special case: both arguments are zero
+    if (x.real === 0 && x.imaginary === 0 && y.real === 0 && y.imaginary === 0) {
+      // throw new Error("Both arguments of arctan2 are zero");
+      return false;
+    }
+  
+    // Calculate z = y / x
+    const denominator = x.real * x.real + x.imaginary * x.imaginary;
+    const z: Complex = {
+      real: (y.real * x.real + y.imaginary * x.imaginary) / denominator,
+      imaginary: (y.imaginary * x.real - y.real * x.imaginary) / denominator
+    };
+  
+    // Now calculate arctan(z)
+    const x2 = z.real * z.real;
+    const y2 = z.imaginary * z.imaginary;
+  
+    let realPart = 0.5 * Math.atan2(2 * z.real, 1 - x2 - y2);
+    const imagPart = 0.25 * Math.log((x2 + (z.imaginary + 1) * (z.imaginary + 1)) / (x2 + (z.imaginary - 1) * (z.imaginary - 1)));
+  
+    // Adjust the real part based on the quadrant of x
+    if (x.real < 0) {
+      realPart += (y.real >= 0 || y.imaginary >= 0) ? Math.PI : -Math.PI;
+    }
+  
+    return { real: realPart, imaginary: imagPart };
+  
+
+};
+
 export const Product = (...args: Complex[]): Complex => {
   let base = args.shift();
   if (!base) { 

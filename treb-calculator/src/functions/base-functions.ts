@@ -2611,6 +2611,63 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    ATan: {
+      arguments: [
+        { name: 'number', boxed: true, unroll: true },
+      ],
+      fn: (a: UnionValue) => {
+
+        if (a.type === ValueType.number) {
+          return { type: ValueType.number, value: Math.atan(a.value) };
+        }
+        if (a.type === ValueType.complex) {
+          return { type: ValueType.complex, value: ComplexMath.ATan(a.value) }; 
+        }
+
+        return ArgumentError();
+
+      },
+    },
+
+    /*
+    ATan2: {
+      arguments: [
+        { name: 'y', boxed: true, unroll: true },
+        { name: 'x', boxed: true, unroll: true },
+      ],
+      fn: (y: UnionValue, x: UnionValue) => {
+
+        if (y.type === ValueType.number && x.type === ValueType.number) {
+          return { type: ValueType.number, value: Math.atan2(y.value, x.value) };
+        }
+
+        if (y.type === ValueType.number) {
+          y = { type: ValueType.complex, value: { real: y.value, imaginary: 0 }};
+        }
+
+        if (x.type === ValueType.number) {
+          x = { type: ValueType.complex, value: { real: x.value, imaginary: 0 }};
+        }
+
+        if (y.type === ValueType.complex && x.type === ValueType.complex) {
+          
+          const value = ComplexMath.ATan2(y.value, x.value);
+
+          if (value === false) {
+            return ArgumentError();
+          }
+
+          return {
+            type: ValueType.complex, value,
+          }
+        }
+        
+        return ArgumentError();
+
+      },
+    },
+    */
+
     SinH: {
       arguments: [
         { name: 'number', boxed: true, unroll: true },
