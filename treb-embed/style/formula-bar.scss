@@ -121,6 +121,10 @@
         flex-direction: column;
         justify-content: center;
 
+        & > .treb-editor-shadow {
+          opacity: .4;
+        }
+
       }
 
       &[expanded] {

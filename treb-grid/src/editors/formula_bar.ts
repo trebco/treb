@@ -67,6 +67,26 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
 
   public tolled?: { text: string, substring: string };
 
+  /** 
+   * if we're showing a spill array and it's not the first cell, show
+   * the formula using a shadow style (and it's not editable).
+   */
+  public shadow_ = false;
+
+  public get shadow() { return this.shadow_; }
+
+  public set shadow(shadow: boolean) { 
+    this.shadow_ = shadow;
+    if (this.active_editor?.node) {
+      if (shadow) {
+        this.active_editor.node.classList.add('treb-editor-shadow');
+      }
+      else {
+        this.active_editor.node.classList.remove('treb-editor-shadow');
+     }
+    }
+  }
+
   /** is the _editor_ currently focused */
   // tslint:disable-next-line:variable-name
   public focused_ = false;
@@ -244,6 +264,12 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
 
       let text = this.active_editor.node.textContent || '';
 
+      if (this.shadow) {
+        this.shadow = false;
+        text = '';
+        this.active_editor.node.textContent = text;
+        this.active_editor.formatted_text = undefined; // why do we clear this here? 
+      }
       if (text[0] === '{' && text[text.length - 1] === '}') {
         text = text.substring(1, text.length - 1);
         this.active_editor.node.textContent = text;
@@ -555,6 +581,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
     case 'Escape':
     case 'Esc':
       // this.selecting_ = false;
+      this.committed = true;
       this.Publish({ type: 'discard' });
       // this.FlushReference();
       break;

@@ -6692,6 +6692,7 @@ export class Grid extends GridBase {
 
     if (override) {
       if (this.formula_bar) {
+        this.formula_bar.shadow = false;
         this.formula_bar.formula = override;
       }
       return;
@@ -6699,6 +6700,7 @@ export class Grid extends GridBase {
 
     if (this.primary_selection.empty) {
       if (this.formula_bar) {
+        this.formula_bar.shadow = false;
         this.formula_bar.formula = '';
       }
     }
@@ -6708,11 +6710,14 @@ export class Grid extends GridBase {
       // optimally we would do this check prior to this call, but
       // it's the uncommon case... not sure how important that is
 
-      const head = data.merge_area || data.area;
+      const head = data.merge_area || data.area || data.spill;
+      let shadow = false;
+      
       if (head) {
         if (head.start.column !== this.primary_selection.target.column
           || head.start.row !== this.primary_selection.target.row) {
           data = this.active_sheet.CellData(head.start);
+          if (data.spill) { shadow = true; }
         }
       }
 
@@ -6752,12 +6757,13 @@ export class Grid extends GridBase {
 
       if (this.formula_bar) {
 
-        // add braces for area
+        this.formula_bar.shadow = shadow;
+
         if (data.area) {
           this.formula_bar.formula = '{' + (value || '') + '}';
         }
         else {
-          this.formula_bar.formula = (typeof value !== 'undefined') ? value.toString() : ''; // value || ''; // what about zero?
+          this.formula_bar.formula = (value ?? '').toString();
         }
 
       }
