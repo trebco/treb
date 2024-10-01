@@ -5484,14 +5484,20 @@ export class Grid extends GridBase {
     this was here to use the currently selected font stack, but it's broken - it 
     clears backgrounds. temp removed in advance of proper fix.
 
+    ...because it was missing the `delta` parameter. I guess that defaults to false?
+
+    we never specified, and it's a boolean in an interface, so it defaults to false
+
+    */
+
     if (apply_style) {
       commands.push({
         key: CommandKey.UpdateStyle,
         style: apply_style,
+        delta: true,
         area: array ? selection.area : selection.target,
       })
     }
-    */
 
     // first check functions
 
