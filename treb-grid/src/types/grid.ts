@@ -1474,6 +1474,18 @@ export class Grid extends GridBase {
 
   }
 
+  /** set scale directly */
+  public SetScale(scale: number) {
+    scale = Math.round(scale * 1000) / 1000;
+    scale = Math.min(2, Math.max(scale, .5));
+
+    if (this.options.persist_scale_key) {
+      localStorage.setItem(this.options.persist_scale_key, JSON.stringify({scale}));
+    }
+
+    this.scale = scale;
+  }
+
   /**
    * @param container html container element
    */
@@ -5399,7 +5411,7 @@ export class Grid extends GridBase {
    */
   private SetInferredType(selection: GridSelection, value: string|undefined, array = false, exec = true, apply_style?: CellStyle) {
 
-    console.info("SIT", {apply_style});
+    // console.info("SIT", {apply_style});
 
     // validation: cannot change part of an array without changing the
     // whole array. so check the array. separately, if you are entering
