@@ -407,6 +407,42 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      */
     ExternalEditor(config?: Partial<ExternalEditorConfig>): void;
 
+    /**
+     * @internalRemarks removing internal flag
+     */
+    ConditionalFormatDuplicateValues(range: RangeReference | undefined, options: ConditionalFormatDuplicateValuesOptions): ConditionalFormat;
+
+    /**
+     * @internalRemarks removing internal flag
+     */
+    ConditionalFormatGradient(range: RangeReference | undefined, options: ConditionalFormatGradientOptions | StandardGradient): ConditionalFormat;
+
+    /**
+     * @internalRemarks removing internal flag
+     */
+    ConditionalFormatCellMatch(range: RangeReference | undefined, options: ConditionalFormatCellMatchOptions): ConditionalFormat;
+
+    /**
+     * @internalRemarks removing internal flag
+     */
+    ConditionalFormatExpression(range: RangeReference | undefined, options: CondifionalFormatExpressionOptions): ConditionalFormat;
+
+    /**
+     * remove conditional format
+     *
+     * @internalRemarks removing internal flag
+     */
+    RemoveConditionalFormat(format: ConditionalFormat): void;
+
+    /**
+     * clear conditional formats from the target range (or currently selected
+     * range). we operate on format objects, meaning we'll remove the whole
+     * format object rather than clip the area.
+     *
+     * @internalRemarks removing internal flag
+     */
+    RemoveConditionalFormats(range?: RangeReference): void;
+
     /** dynamically load language module */
     LoadLanguage(language?: string): Promise<void>;
 
@@ -1152,42 +1188,79 @@ export interface FreezePane {
     rows: number;
     columns: number;
 }
+export interface CondifionalFormatExpressionOptions {
+    style: CellStyle;
+    expression: string;
+    options?: EvaluateOptions;
+}
+export interface ConditionalFormatGradientOptions {
+
+    /** property defaults to fill */
+    property?: 'fill' | 'text';
+
+    /** defaults to RGB */
+    color_space?: 'HSL' | 'RGB';
+
+    /** gradient stops, required */
+    stops: Array<{
+        value: number;
+        color: Color;
+    }>;
+
+    /** min and max are optional. if not provided, we use the min/max of the range of data. */
+    min?: number;
+
+    /** min and max are optional. if not provided, we use the min/max of the range of data. */
+    max?: number;
+}
+export type StandardGradient = keyof typeof StandardGradientsList;
+export interface ConditionalFormatCellMatchOptions {
+    style: CellStyle;
+    expression: string;
+    options?: EvaluateOptions;
+}
+export interface ConditionalFormatDuplicateValuesOptions {
+    style: CellStyle;
+
+    /** true to highlight unique cells, false to highlight duplicates. defaults to false. */
+    unique?: boolean;
+}
 
 /**
- * options for serializing data
+ * union, plus we're adding a state used to track application.
+ * that state is serialized if it's true.
+ * we also add an internal field that will be type-specific, and not serialized.
+ *
+ * ...everybody has a vertex now, we could standardize it
+ *
+ * update: adding a priority field, optional
+ *
  */
-export interface SerializeOptions {
+export type ConditionalFormat = {
+    internal?: unknown;
+    priority?: number;
+} & (ConditionalFormatDuplicateValues | ConditionalFormatExpression | ConditionalFormatCellMatch | ConditionalFormatGradient);
 
-    /** optimize for size */
-    optimize?: 'size' | 'speed';
-
-    /** include the rendered/calculated value in export */
-    rendered_values?: boolean;
-
-    /** translate colors to xlsx-friendly values */
-    export_colors?: boolean;
-
-    /** export cells that have no value, but have a border or background color */
-    decorated_cells?: boolean;
-
-    /** prune unused rows/columns */
-    shrink?: boolean;
-
-    /**
-     * include tables. tables will be serialized in the model, so we can
-     * drop them from cells. but you can leave them in if that's useful.
-     */
-    tables?: boolean;
-
-    /** share resources (images, for now) to prevent writing data URIs more than once */
-    share_resources?: boolean;
-
-    /**
-     * if a function has an export() handler, call that
-     */
-    export_functions?: boolean;
+/**
+ * conditional format predicated on an expression. if the expression
+ * evaluates to true, we apply the style. otherwise no.
+ */
+export interface ConditionalFormatExpression extends CondifionalFormatExpressionOptions {
+    type: 'expression';
+    area: IArea;
 }
-export type AnnotationType = 'treb-chart' | 'image' | 'textbox' | 'external';
+export interface ConditionalFormatGradient extends ConditionalFormatGradientOptions {
+    type: 'gradient';
+    area: IArea;
+}
+export interface ConditionalFormatCellMatch extends ConditionalFormatCellMatchOptions {
+    type: 'cell-match';
+    area: IArea;
+}
+export interface ConditionalFormatDuplicateValues extends ConditionalFormatDuplicateValuesOptions {
+    type: 'duplicate-values';
+    area: IArea;
+}
 
 /**
  * Structure represents a 2d range of cells.
@@ -1196,18 +1269,7 @@ export interface IArea {
     start: ICellAddress;
     end: ICellAddress;
 }
-export interface Point {
-    x: number;
-    y: number;
-}
-
-/** structure represents rectangle coordinates */
-export interface IRectangle {
-    top: number;
-    left: number;
-    width: number;
-    height: number;
-}
+export type Color = ThemeColor | HTMLColor | NullColor;
 
 /**
  * style properties applied to a single cell, row, column, or sheet.
@@ -1315,11 +1377,78 @@ export interface ThemeColor {
 }
 export interface NullColor {
 }
-export type Color = ThemeColor | HTMLColor | NullColor;
 export declare const ThemeColorIndex: (color: ThemeColor) => number;
 export declare const IsHTMLColor: (color?: Color) => color is HTMLColor;
 export declare const IsThemeColor: (color?: Color) => color is ThemeColor;
 export declare const IsDefinedColor: (color?: Color) => color is (ThemeColor | HTMLColor);
+
+/**
+ * options for the evaluate function
+ */
+export interface EvaluateOptions {
+
+    /**
+     * argument separator to use when parsing input. set this option to
+     * use a consistent argument separator independent of current locale.
+     */
+    argument_separator?: ',' | ';';
+
+    /**
+     * allow R1C1-style references. the Evaluate function cannot use
+     * relative references (e.g. R[-1]C[0]), so those will always fail.
+     * however it may be useful to use direct R1C1 references (e.g. R3C4),
+     * so we optionally support that behind this flag.
+     */
+    r1c1?: boolean;
+}
+
+/**
+ * options for serializing data
+ */
+export interface SerializeOptions {
+
+    /** optimize for size */
+    optimize?: 'size' | 'speed';
+
+    /** include the rendered/calculated value in export */
+    rendered_values?: boolean;
+
+    /** translate colors to xlsx-friendly values */
+    export_colors?: boolean;
+
+    /** export cells that have no value, but have a border or background color */
+    decorated_cells?: boolean;
+
+    /** prune unused rows/columns */
+    shrink?: boolean;
+
+    /**
+     * include tables. tables will be serialized in the model, so we can
+     * drop them from cells. but you can leave them in if that's useful.
+     */
+    tables?: boolean;
+
+    /** share resources (images, for now) to prevent writing data URIs more than once */
+    share_resources?: boolean;
+
+    /**
+     * if a function has an export() handler, call that
+     */
+    export_functions?: boolean;
+}
+export type AnnotationType = 'treb-chart' | 'image' | 'textbox' | 'external';
+export interface Point {
+    x: number;
+    y: number;
+}
+
+/** structure represents rectangle coordinates */
+export interface IRectangle {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+}
 export type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
 
 /**
@@ -1395,26 +1524,6 @@ export interface TableSortOptions {
     asc: boolean;
 }
 export type TableSortType = 'text' | 'numeric' | 'auto';
-
-/**
- * options for the evaluate function
- */
-export interface EvaluateOptions {
-
-    /**
-     * argument separator to use when parsing input. set this option to
-     * use a consistent argument separator independent of current locale.
-     */
-    argument_separator?: ',' | ';';
-
-    /**
-     * allow R1C1-style references. the Evaluate function cannot use
-     * relative references (e.g. R[-1]C[0]), so those will always fail.
-     * however it may be useful to use direct R1C1 references (e.g. R3C4),
-     * so we optionally support that behind this flag.
-     */
-    r1c1?: boolean;
-}
 
 /** clipboard data is a 2d array */
 export type ClipboardData = ClipboardDataElement[][];

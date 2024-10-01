@@ -23,7 +23,7 @@ export interface BorderToolbarMessage {
 }
 
 export interface AnnotationToolbarMessage {
-  command: 'insert-image'|'insert-donut-chart'|'insert-line-chart'|'insert-column-chart'|'insert-bar-chart';
+  command: 'insert-image'|'insert-donut-chart'|'insert-line-chart'|'insert-column-chart'|'insert-bar-chart'|'insert-scatter-plot';
 }
 
 export interface LayoutToolbarMessage {
@@ -53,6 +53,11 @@ export interface JustifyToolbarMessage {
 export interface FontScaleToolbarMessage {
   command: 'font-scale';
   scale?: number;
+}
+
+export interface AdjustFontScaleToolbarMessage {
+  command: 'adjust-font-scale';
+  delta: number;
 }
 
 export interface FontStackToolbarMessage {
@@ -108,5 +113,6 @@ export type ToolbarMessage
   | IndentMessage
   | NumberFormatToolbarMessage
   | FontScaleToolbarMessage
+  | AdjustFontScaleToolbarMessage
   | FontStackToolbarMessage
   ;

@@ -1698,6 +1698,19 @@ export class Grid extends GridBase {
 
   }
 
+  /** 
+   *
+   */
+  public GetAnnotationStyle(): CellStyle|undefined {
+    if (this.selected_annotation) {
+      if (this.selected_annotation.data?.style) {
+        return JSON.parse(JSON.stringify(this.selected_annotation.data.style));
+      }
+      return {};
+    }
+    return undefined;
+  }
+
   /**
    * 
    */
@@ -2612,7 +2625,7 @@ export class Grid extends GridBase {
 
     const current_width = sheet.GetColumnWidth(column);
     let max_width = 0;
-    const padding = 12; // 4 * 2; // FIXME: parameterize
+    const padding = 14; // 4 * 2; // FIXME: parameterize
 
     for (let row = 0; row < sheet.cells.rows; row++) {
       const cell = sheet.CellData({ row, column });
@@ -5386,6 +5399,8 @@ export class Grid extends GridBase {
    */
   private SetInferredType(selection: GridSelection, value: string|undefined, array = false, exec = true, apply_style?: CellStyle) {
 
+    console.info("SIT", {apply_style});
+
     // validation: cannot change part of an array without changing the
     // whole array. so check the array. separately, if you are entering
     // an array, make sure that no affected cell is part of an existing
@@ -5464,6 +5479,11 @@ export class Grid extends GridBase {
 
     const commands: Command[] = [];
 
+    /* 
+
+    this was here to use the currently selected font stack, but it's broken - it 
+    clears backgrounds. temp removed in advance of proper fix.
+
     if (apply_style) {
       commands.push({
         key: CommandKey.UpdateStyle,
@@ -5471,6 +5491,7 @@ export class Grid extends GridBase {
         area: array ? selection.area : selection.target,
       })
     }
+    */
 
     // first check functions
 

@@ -1481,7 +1481,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       
   }
 
-  /** @internal */
+  /** 
+   * @internalRemarks removing internal flag
+   */
   public ConditionalFormatDuplicateValues(range: RangeReference|undefined, options: ConditionalFormatDuplicateValuesOptions): ConditionalFormat {
       
     return this.AddConditionalFormat({
@@ -1493,7 +1495,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /**
-   * @internal
+   * @internalRemarks removing internal flag
    */
   public ConditionalFormatGradient(range: RangeReference|undefined, options: ConditionalFormatGradientOptions|StandardGradient): ConditionalFormat {
 
@@ -1512,7 +1514,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   }
 
-  /** @internal */
+  /** 
+   * @internalRemarks removing internal flag
+   */
   public ConditionalFormatCellMatch(range: RangeReference|undefined, options: ConditionalFormatCellMatchOptions): ConditionalFormat {
 
     const format: ConditionalFormatCellMatch = {
@@ -1528,7 +1532,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /**
-   * @internal
+   * @internalRemarks removing internal flag
    */
   public ConditionalFormatExpression(range: RangeReference|undefined, options: CondifionalFormatExpressionOptions): ConditionalFormat {
 
@@ -1561,7 +1565,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   /**
    * remove conditional format
    * 
-   * @internal
+   * @internalRemarks removing internal flag
    */
   public RemoveConditionalFormat(format: ConditionalFormat) {
     this.grid.RemoveConditionalFormat({ format });
@@ -1572,7 +1576,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * range). we operate on format objects, meaning we'll remove the whole
    * format object rather than clip the area.
    * 
-   * @internal
+   * @internalRemarks removing internal flag
    */
   public RemoveConditionalFormats(range?: RangeReference) {
     const area = this.RangeOrSelection(range);
@@ -1602,6 +1606,23 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       // only handle a limited set of commands, then
 
       switch (event.command) {
+        case 'adjust-font-scale':
+          {
+            const delta = Number(event.delta || 0);
+            let scale = this.grid.GetAnnotationStyle()?.font_size;
+
+            if (!scale || scale.unit !== 'em') {
+              scale = { unit: 'em', value: 1 };
+            }
+
+            if (scale) {
+              scale.value += delta;
+              updated_style.font_size = scale;
+              this.grid.ApplyAnnotationStyle(updated_style);
+            }
+          }
+          break;
+
         case 'font-scale':
           {
             const scale = Number(event.scale || 1);
@@ -1629,7 +1650,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       const selection = this.grid.GetSelection();
       if (selection && !selection.empty) {
         const label = selection.area.spreadsheet_label;
-        this.InsertAnnotation(`=${func}(${label},,"${label}")`, undefined, undefined, ',');
+
+        if (func === 'Scatter.Plot' || func === 'Scatter.Line') {
+          this.InsertAnnotation(`=${func}(Series(,,${label}),"${label}")`, undefined, undefined, ',');
+        }
+        else {
+          this.InsertAnnotation(`=${func}(${label},,"${label}")`, undefined, undefined, ',');
+        }
       }
     };
 
@@ -1682,6 +1709,41 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           }
           break;
 
+        case 'adjust-font-scale':
+          {
+            let scale = this.selection_state.style?.font_size;
+            const selection = this.grid.GetSelection();
+            const area = this.grid.active_sheet.RealArea(selection.area);
+            const delta = Number(event.delta || 0);
+
+            if (!scale || scale.unit !== 'em') {
+              scale = { unit: 'em', value: 1 };
+            }
+
+            // console.info({scale, delta});
+
+            if (scale && delta && !isNaN(delta)) {
+              scale.value += delta;
+              this.grid.ApplyStyle(undefined, {
+                font_size: scale,
+              }, true);
+              const rows: number[] = [];
+              for (let row = area.start.row; row <= area.end.row; row++) {
+                rows.push(row);
+              }
+
+              // tweak: don't resize row if merged, even if the merged
+              // area is too small
+
+              if (!this.selection_state?.merge) {
+                this.grid.SetRowHeight(rows, undefined, false);
+              }
+
+            }
+            
+          }
+          break;
+
         case 'font-scale':
 
           // above we handle 'font-size' events; this comes from a dropdown,
@@ -1695,6 +1757,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             const scale = Number(event.scale || 1);
 
             if (scale && !isNaN(scale)) {
+
+              console.info("FS", scale);
+
               this.grid.ApplyStyle(undefined, {
                 //font_size_unit: 'em', font_size_value: scale 
                 font_size: {
@@ -1708,6 +1773,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
               // tweak: don't resize row if merged, even if the merged
               // area is too small
+
+              // this should wait, because apply style is async.
+              // actually shouldn't it do that automatically because
+              // this is _also_ async? TODO: check that
 
               if (!this.selection_state?.merge) {
                 this.grid.SetRowHeight(rows, undefined, false);
@@ -1773,6 +1842,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         case 'insert-column-chart': insert_annotation('Column.Chart'); break;
         case 'insert-bar-chart': insert_annotation('Bar.Chart'); break;
         case 'insert-line-chart': insert_annotation('Line.Chart'); break;
+        case 'insert-scatter-plot': insert_annotation('Scatter.Plot'); break;
 
         case 'increase-precision':
         case 'decrease-precision':
