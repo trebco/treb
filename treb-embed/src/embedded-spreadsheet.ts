@@ -1651,7 +1651,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       if (selection && !selection.empty) {
         const label = selection.area.spreadsheet_label;
 
-        if (func === 'Scatter.Plot' || func === 'Scatter.Line') {
+        if (func === 'Scatter.Plot' || func === 'Scatter.Line' || func === 'Box.Plot') {
           this.InsertAnnotation(`=${func}(Series(,,${label}),"${label}")`, undefined, undefined, ',');
         }
         else {
