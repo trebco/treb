@@ -1843,6 +1843,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         case 'insert-bar-chart': insert_annotation('Bar.Chart'); break;
         case 'insert-line-chart': insert_annotation('Line.Chart'); break;
         case 'insert-scatter-plot': insert_annotation('Scatter.Plot'); break;
+        case 'insert-box-plot': insert_annotation('Box.Plot'); break;
 
         case 'increase-precision':
         case 'decrease-precision':

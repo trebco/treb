@@ -2153,6 +2153,11 @@ export interface AnnotationChartData extends AnnotationDataBase {
 }
 export interface AnnotationTextBoxData extends AnnotationDataBase {
     type: 'textbox';
+
+    /**
+     * @internalRemarks
+     * what's with this weird structure? did we inherit it? can we clean it up?
+     */
     data: {
         style?: CellStyle;
         paragraphs: {

@@ -23,7 +23,7 @@ export interface BorderToolbarMessage {
 }
 
 export interface AnnotationToolbarMessage {
-  command: 'insert-image'|'insert-donut-chart'|'insert-line-chart'|'insert-column-chart'|'insert-bar-chart'|'insert-scatter-plot';
+  command: 'insert-image'|'insert-donut-chart'|'insert-line-chart'|'insert-column-chart'|'insert-bar-chart'|'insert-scatter-plot'|'insert-box-plot';
 }
 
 export interface LayoutToolbarMessage {
