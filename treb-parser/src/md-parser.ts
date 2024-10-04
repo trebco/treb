@@ -228,8 +228,6 @@ export class MDParser {
     return formatted ; // this.Consolidate(tokens) as FormattedString[][];
     */
 
-    console.info({tokens});
-
    return this.Consolidate(tokens) as FormattedString[][];
 
   }

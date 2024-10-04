@@ -3953,8 +3953,6 @@ export class Grid extends GridBase {
 
       const parsed = MDParser.instance.Parse(cell.note);
 
-      console.info({note: cell.note, parsed});
-
       const md = this.options.comment_markdown ? MDParser.instance.HTML(parsed, { br: false }) : undefined;
       this.layout.ShowNote(cell.note, address, event, md);
 
