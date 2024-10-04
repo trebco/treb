@@ -21,7 +21,7 @@
 
 import { UA } from 'treb-grid';
 import { Measurement } from 'treb-utils';
-import { type FontSize, Style } from './style';
+import { Style, type FontSize } from './style';
 
 /**
  * these are the stacks we're currently supporting. 

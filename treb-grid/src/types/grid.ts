@@ -3946,7 +3946,16 @@ export class Grid extends GridBase {
     if (cell?.note) {
 
       // optional MD formatting
-      const md = this.options.markdown ? MDParser.instance.HTML(MDParser.instance.Parse(cell.note)) : undefined;
+
+      // UPDATE: we should allow MD in notes irrespective of the cell 
+      // markdown setting. or maybe split the two settings? it makes
+      // a lot of sense in comments, even if you don't want it in cells.
+
+      const parsed = MDParser.instance.Parse(cell.note);
+
+      console.info({note: cell.note, parsed});
+
+      const md = this.options.comment_markdown ? MDParser.instance.HTML(parsed, { br: false }) : undefined;
       this.layout.ShowNote(cell.note, address, event, md);
 
       this.hover_data.note = true;

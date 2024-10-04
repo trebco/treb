@@ -90,6 +90,9 @@ export interface GridOptions {
   /** support MD formatting in text */
   markdown?: boolean;
 
+  /** support MD formatting in comments */
+  comment_markdown?: boolean;
+
   /** support font stacks */
   support_font_stacks?: boolean;
 
@@ -104,6 +107,7 @@ export const DefaultGridOptions: GridOptions = {
   // insert_function_button: false,
   expand_formula_button: false,
   expand: true,
+  comment_markdown: true,
   repaint_on_cell_change: true,
   grid_over_background: false, // true,
 };

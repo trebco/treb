@@ -103,8 +103,16 @@ export class MDParser {
    * 
    * also the way this works adds extra tags if you have nested styles. not
    * an issue if it's just for testing though.
+   * 
+   * update to optionally not add breaking spaces (<br/>). we need this for
+   * containers that are set to white-space: pre-line, where we will already
+   * get a linebreak.
+   * 
    */
-  public HTML(formatted: FormattedString[][]): string {
+  public HTML(formatted: FormattedString[][], options: { br?: boolean } = {}): string {
+
+    // default options
+    options = { br: true, ...options };
 
     const lines: string[] = [];
 
@@ -128,7 +136,7 @@ export class MDParser {
       lines.push(text.join(''));
     }
 
-    return lines.join('<br/>\n');
+    return lines.join(options.br ? '<br/>\n' : '\n');
     
   }
 
@@ -219,6 +227,8 @@ export class MDParser {
 
     return formatted ; // this.Consolidate(tokens) as FormattedString[][];
     */
+
+    console.info({tokens});
 
    return this.Consolidate(tokens) as FormattedString[][];
 
@@ -454,7 +464,12 @@ export class MDParser {
           tokens.push({ type: 'text', text: current_token });
         }
 
-        let tmp = char;
+        tokens.push({
+          type: 'newline',
+          text: char,
+        })
+
+        let tmp = '';
         for (;;) { // while (true) {
           const next_char = text[index+1];
           if (this.IsNewline(next_char)) {
@@ -465,10 +480,13 @@ export class MDParser {
             break;
           }
         }
-        tokens.push({
-          type: 'newline',
-          text: tmp,
-        })
+
+        if (tmp.length) {
+          tokens.push({
+            type: 'newline',
+            text: tmp,
+          });
+        }
         escape = false;
         current_token = '';
 
