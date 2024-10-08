@@ -105,7 +105,8 @@ import type {
   ActivateSheetCommand, DataValidationCommand, 
   ResizeRowsCommand, ResizeColumnsCommand, 
   SelectCommand,
-  CreateAnnotationCommand
+  CreateAnnotationCommand,
+  RemoveAnnotationCommand
 } from './grid_command';
 import { CommandKey
 } from './grid_command';
@@ -1098,21 +1099,17 @@ export class Grid extends GridBase {
    * the parent (although the node still exists in the annotation, if
    * it existed before).
    */
-  public RemoveAnnotation(annotation: Annotation): void {
-    for (let i = 0; i < this.active_sheet.annotations.length; i++) {
-      if (annotation === this.active_sheet.annotations[i]) {
-        this.active_sheet.annotations.splice(i, 1);
+  public RemoveAnnotation(annotation: Annotation, sheet = this.active_sheet): void {
+    this.ExecCommand({
+      key: CommandKey.RemoveAnnotation,
+      annotation,
+      sheet,
+    });
+  }
 
-        this.layout.RemoveAnnotation(annotation);
-
-        this.grid_events.Publish({
-          type: 'annotation',
-          annotation,
-          event: 'delete',
-        });
-        return;
-      }
-    }
+  protected RemoveAnnotationInternal(command: RemoveAnnotationCommand) {
+    super.RemoveAnnotationInternal(command);
+    this.layout.RemoveAnnotation(command.annotation);
   }
 
   /**
@@ -2480,6 +2477,9 @@ export class Grid extends GridBase {
     this.DelayedRender(force, area);
   }
 
+  /**
+   * update annotation layouts (not content)
+   */
   public UpdateAnnotations() {
     if (this.active_sheet.annotations.length) {
       this.layout.UpdateAnnotation(this.active_sheet.annotations, this.theme);
@@ -2732,6 +2732,18 @@ export class Grid extends GridBase {
     
   }
 
+  /**
+   * this is intended to synchronize views when annotations are added/removed.
+   * there should be no need to call it if there's only one view.
+   */
+  public RefreshAnnotations() {
+
+    this.RemoveAnnotationNodes();
+    for (const element of this.active_sheet.annotations) {
+      this.AddAnnotation(element, true, true);
+    }
+
+  }
 
   /**
    * specialization for grid. note that we don't call superclass,

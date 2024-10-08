@@ -1411,8 +1411,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       if (event.type === 'structure') {
         this.grid.EnsureActiveSheet();
         this.grid.UpdateLayout();
-        // (this.grid as any).tab_bar?.Update();
         this.grid.UpdateTabBar();
+        
+        if (event.update_annotations) {
+          this.grid.RefreshAnnotations();
+          this.InflateAnnotations();
+        }
+
       }
     });
 
@@ -1432,9 +1437,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       if (event.type === 'structure') {
         view.grid.EnsureActiveSheet();
         view.grid.UpdateLayout();
-        view.grid.UpdateAnnotations();
-        // (view.grid as any).tab_bar?.Update();
         view.grid.UpdateTabBar();
+
+        if (event.update_annotations) {
+          view.grid.RefreshAnnotations();
+          view.InflateAnnotations();
+        }
+
       }
     });
 
@@ -5517,7 +5526,17 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
           // set all views dirty in this case
           for (const view of annotation.view) {
-            view.dirty = true;
+
+            // if !view, that usually means it was just created. it should
+            // get taken care of soon, so don't worry about it.
+
+            if (view) {
+              view.dirty = true;
+            }
+            // else {
+            //   console.info("empty view")
+            // }
+
           }
         }
 
@@ -5536,6 +5555,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
         // either we just set this dirty for all views, or another
         // view set it dirty for us: in either case, update
+
+        view.dirty = false;
 
         if (view.update_callback) {
           view.update_callback();

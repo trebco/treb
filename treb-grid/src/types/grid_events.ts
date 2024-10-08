@@ -83,7 +83,13 @@ export interface StructureEvent {
    * we can use this when conditional formats are modified/added/removed 
    */
   conditional_format?: boolean;
-  
+
+  /**
+   * this flag should be set if annotations have been added or removed,
+   * so parent/child views can update as necessary
+   */
+  update_annotations?: boolean;
+
 }
 
 export interface AnnotationEvent {

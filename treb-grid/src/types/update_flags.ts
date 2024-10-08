@@ -68,6 +68,12 @@ export interface UpdateFlags {
   structure_event?: boolean;
   structure_rebuild_required?: boolean;
 
+  /** 
+   * new, an indication to split views that we might need to update/reinflate
+   * annotations.
+  */
+  annotation_event?: boolean;
+
   render_area?: Area;
   data_area?: Area;
   style_area?: Area;

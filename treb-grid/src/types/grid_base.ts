@@ -53,7 +53,7 @@ import { NumberFormat, ValueParser } from 'treb-format';
 
 import type { GridEvent } from './grid_events';
 import { ErrorCode } from './grid_events';
-import type { CommandRecord, CreateAnnotationCommand, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand, SortTableCommand } from './grid_command';
+import type { CommandRecord, CreateAnnotationCommand, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, RemoveAnnotationCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand, SortTableCommand } from './grid_command';
 import { DefaultGridOptions, type GridOptions } from './grid_options';
 
 import { BorderConstants } from './border_constants';
@@ -811,6 +811,28 @@ export class GridBase {
       console.error('auto size not supported');
     }
 
+  }
+
+  protected RemoveAnnotationInternal(command: RemoveAnnotationCommand) {
+
+    for (let i = 0; i < command.sheet.annotations.length; i++) {
+      if (command.annotation === command.sheet.annotations[i]) {
+        command.sheet.annotations.splice(i, 1);
+
+        // subclass only // this.layout.RemoveAnnotation(annotation);
+
+        // do we still need this message? not sure
+
+        this.grid_events.Publish({
+          type: 'annotation',
+          annotation: command.annotation,
+          event: 'delete',
+        });
+
+        return;
+      }
+    }
+    
   }
 
   /** placeholder */
@@ -1921,6 +1943,7 @@ export class GridBase {
         case CommandKey.ReorderSheet:
         case CommandKey.Reset:
         case CommandKey.CreateAnnotation:
+        case CommandKey.RemoveAnnotation:
           break;
 
         /*
@@ -4255,11 +4278,18 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.CreateAnnotation:
+        case CommandKey.RemoveAnnotation:
+          this.RemoveAnnotationInternal(command);
+          flags.structure_event = true;
+          flags.structure_rebuild_required = true;
+          flags.annotation_event = true;
+          break;          
 
+        case CommandKey.CreateAnnotation:
           this.CreateAnnotationInternal(command);
           flags.structure_event = true;
           flags.structure_rebuild_required = true;
+          flags.annotation_event = true;
           break;
 
         case CommandKey.ResizeRows:
@@ -4520,6 +4550,7 @@ export class GridBase {
         type: 'structure',
         rebuild_required: flags.structure_rebuild_required,
         conditional_format: flags.conditional_formatting_event,
+        update_annotations: flags.annotation_event,
       });
     }
 

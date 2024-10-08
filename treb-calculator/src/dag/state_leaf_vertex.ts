@@ -37,6 +37,15 @@ import { Color } from './vertex';
  * FIXME: it might be better to have an intermediate class/interface and
  * have both leaf- and spreadsheet-vertex extend that.
  *
+ * UPDATE: we're removing the internal "state" representation because (1)
+ * it should be unnecessary, if we are only updating when dependencies
+ * change, and (2) it was broken anyway.
+ * 
+ * Now we rely on the calculation graph to indicate when the leaf is 
+ * dirty and needs to update. This will result in extra calculation when
+ * you do a hard recalc, but that seems reasonable (and we could possibly
+ * work around that).
+ * 
  */
 export class StateLeafVertex extends SpreadsheetVertex {
 
@@ -54,42 +63,6 @@ export class StateLeafVertex extends SpreadsheetVertex {
    */
   public color = Color.black;
 
-  protected state_representation = '';
-
-  /**
-   * construct the state, compare, and increment the state id if
-   * it changes. this is expected to be called from Calculate(), but
-   * we can also call it on init if we already know the state.
-   *
-   * FIXME: what's more expensive, generating this state field or
-   * re-rendering a chart with the same data? (...?)
-   * especially since it's only called on dirty...
-   *
-   * what is the case where the depenendency is dirty but state
-   * does not change? you type in the same value? (...) or maybe
-   * there's a volatile function that doesn't change value (e.g. Today())
-   *
-   * still, it seems like a waste here. let's test without the state.
-   * (meaning just update the flag anytime it's dirty)
-   *
-   * Actually I think the case is manual recalc, when values don't change
-   * (especially true for MC charts).
-   *
-   * TODO: perf
-   */
-  public UpdateState(): void {
-
-    // FIXME: hash!
-    //const state = JSON.stringify(this.edges_in.map((edge) => (edge as SpreadsheetVertex).result));
-    const state = JSON.stringify(Array.from(this.edges_in).map((edge) => (edge as SpreadsheetVertex).result));
-
-    if (state !== this.state_representation) {
-      this.state_representation = state;
-      this.state_id++;
-    }
-
-  }
-
   /** overrides calculate function */
   public Calculate(): void {
 
@@ -103,11 +76,15 @@ export class StateLeafVertex extends SpreadsheetVertex {
       }
     }
 
-    // ok, we can evaluate... all we are doing here is checking state consistency
-    this.UpdateState();
+    // ok update state so clients know they need to refresh
+    // (see note above re: internal state)
+
+    this.state_id++; 
+
+    // and we're clean
+
     this.dirty = false;
 
-    // we are not allowed to have edges out, so nothing to do
   }
 
   public AddDependent(): void {

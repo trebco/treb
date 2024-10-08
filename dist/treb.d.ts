@@ -1,4 +1,4 @@
-/*! API v31.5. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v31.7. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -517,10 +517,8 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      * @param options - evaluate options. because this function used to take
      *  the argument separator, we allow that to be passed directly, but this
      *  is deprecated. new code should use the options object.
-     *
-     * @param inflate - inflate immediately
      */
-    InsertAnnotation(formula: string, type?: AnnotationType, rect?: IRectangle | RangeReference, options?: EvaluateOptions | ',' | ';', inflate?: boolean): void;
+    InsertAnnotation(formula: string, type?: AnnotationType, rect?: IRectangle | RangeReference, options?: EvaluateOptions | ',' | ';'): void;
 
     /**
      * Insert an image. This method will open a file chooser and (if an image
