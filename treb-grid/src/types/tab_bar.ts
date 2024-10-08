@@ -443,6 +443,8 @@ export class TabBar extends EventSource<TabEvent> {
    */
   public Update(): void {
 
+    this.tab_color_cache.clear(); // we're setting tab color but it's not getting updated otherwise
+
     // this is a hack to normalize behavior if you try to re-order
     // a tab that's not the active tab. what ordinarily happens is
     // we start the drag, but then Update is called again which rebuilds

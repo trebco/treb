@@ -43,7 +43,7 @@ import type { DataModel, ConditionalFormat, // MacroFunction, SerializedModel, S
 import type { Parser, UnitAddress} from 'treb-parser';
 import { type ExpressionUnit, IllegalSheetNameRegex, ParseCSV, DecimalMarkType } from 'treb-parser';
 import { Area, IsCellAddress, ValueType, DefaultTableSortOptions } from 'treb-base-types';
-import type { ICellAddress, IArea, Cell, CellValue, CellStyle, Table, TableSortOptions, TableTheme, Complex, PatchOptions as PatchAreaOptions } from 'treb-base-types';
+import type { ICellAddress, IArea, Cell, CellValue, CellStyle, Table, TableSortOptions, TableTheme, Complex, PatchOptions as PatchAreaOptions, Color } from 'treb-base-types';
 
 import { Sheet, type SerializeOptions, type Annotation } from 'treb-data-model';
 
@@ -53,7 +53,7 @@ import { NumberFormat, ValueParser } from 'treb-format';
 
 import type { GridEvent } from './grid_events';
 import { ErrorCode } from './grid_events';
-import type { CommandRecord, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand, SortTableCommand } from './grid_command';
+import type { CommandRecord, CreateAnnotationCommand, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand, SortTableCommand } from './grid_command';
 import { DefaultGridOptions, type GridOptions } from './grid_options';
 
 import { BorderConstants } from './border_constants';
@@ -811,6 +811,12 @@ export class GridBase {
       console.error('auto size not supported');
     }
 
+  }
+
+  /** placeholder */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected CreateAnnotationInternal(command: CreateAnnotationCommand) {
+    
   }
 
   /**
@@ -1904,6 +1910,7 @@ export class GridBase {
         
         // nothing
         case CommandKey.Null:
+        case CommandKey.TabColor:
         case CommandKey.ShowHeaders:
         case CommandKey.ShowSheet:
         case CommandKey.AddSheet:
@@ -1913,6 +1920,7 @@ export class GridBase {
         case CommandKey.RenameSheet:
         case CommandKey.ReorderSheet:
         case CommandKey.Reset:
+        case CommandKey.CreateAnnotation:
           break;
 
         /*
@@ -2007,6 +2015,14 @@ export class GridBase {
 
     return commands;
 
+  }
+
+  public TabColor(sheet: Sheet, color?: Color) {
+    this.ExecCommand({
+      key: CommandKey.TabColor,
+      sheet,
+      color,
+    });
   }
 
   /**
@@ -4183,6 +4199,20 @@ export class GridBase {
           flags.structure_event = true;
           break;
 
+        case CommandKey.TabColor:
+          command.sheet.tab_color = command.color;
+
+          // NOTE: the flag.sheets originally did not update tab colors,
+          // which were cached. we could create a new flag for that, or 
+          // we could just refresh the colors. since there aren't that
+          // many of them, it's probably OK to just refresh the colors any
+          // time this flag is set. if that becomes a perf issue in the 
+          // future we could add a new flag.
+
+          flags.sheets = true; // repaint tab bar
+          flags.structure_event = true;
+          break;
+
         case CommandKey.ReorderSheet:
           {
             // COEDITING: seems OK, irrespective of active sheet
@@ -4223,6 +4253,13 @@ export class GridBase {
               flags.structure_event = true;
             }
           }
+          break;
+
+        case CommandKey.CreateAnnotation:
+
+          this.CreateAnnotationInternal(command);
+          flags.structure_event = true;
+          flags.structure_rebuild_required = true;
           break;
 
         case CommandKey.ResizeRows:

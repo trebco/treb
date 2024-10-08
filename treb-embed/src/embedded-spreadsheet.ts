@@ -1417,12 +1417,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     });
 
     view.Subscribe(event => {
+
       switch (event.type) {
         case 'selection':
           break;
         default:
           view.UpdateAnnotations();
           this.grid.Update(true);
+          this.grid.UpdateAnnotations();
       }
     });
 
@@ -1430,6 +1432,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       if (event.type === 'structure') {
         view.grid.EnsureActiveSheet();
         view.grid.UpdateLayout();
+        view.grid.UpdateAnnotations();
         // (view.grid as any).tab_bar?.Update();
         view.grid.UpdateTabBar();
       }
@@ -1444,12 +1447,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         case 'reset':
           view.grid.EnsureActiveSheet(true); // force update of annotations
           view.UpdateAnnotations();
+          view.grid.UpdateAnnotations();
           view.grid.Update(true);
           break;
 
         default:
           view.UpdateAnnotations();
           view.grid.Update(true);
+          view.grid.UpdateAnnotations();
       }
     });
 
@@ -1757,8 +1762,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             const scale = Number(event.scale || 1);
 
             if (scale && !isNaN(scale)) {
-
-              console.info("FS", scale);
 
               this.grid.ApplyStyle(undefined, {
                 //font_size_unit: 'em', font_size_value: scale 
@@ -2231,12 +2234,22 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // FIXME: sheet change events (affects annotations)
     // TODO: sheet change events (affects annotations)
 
+    // console.info({events});
+
     for (const event of events) {
-      if (event.type === 'data') {
-        recalc = true;
-      }
-      else if (event.type === 'structure') {
-        if (event.rebuild_required) reset = true;
+      switch (event.type) {
+        case 'data':
+          recalc = true;
+          break;
+
+        case 'structure':
+          if (event.rebuild_required) {
+            reset = true;
+          }
+          break;
+
+        default:
+          // console.info('unhandled event:', event.type, { event });
       }
     }
 
@@ -2418,6 +2431,17 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   }
 
+  public SetTabColor(sheet?: number|string, color?: Color) {
+    const target = (typeof sheet === 'undefined') ? 
+      this.grid.active_sheet :
+      this.model.sheets.Find(sheet);
+
+    if (target) {
+      this.grid.TabColor(target, color);
+    }
+
+  }
+
   /**
    * Add a sheet, optionally named. 
    */
@@ -2586,9 +2610,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    *  the argument separator, we allow that to be passed directly, but this
    *  is deprecated. new code should use the options object.
    */
-  public InsertAnnotation(formula: string, type: AnnotationType = 'treb-chart', rect?: IRectangle|RangeReference, options?: EvaluateOptions|','|';'): void {
+  public InsertAnnotation(
+      formula: string, 
+      type: AnnotationType = 'treb-chart', 
+      rect?: IRectangle|RangeReference, 
+      options?: EvaluateOptions|','|';'): void {
 
-    let target: IRectangle | Partial<Area> | undefined;
+    let target: IRectangle | IArea | undefined;
     let argument_separator: ','|';'|undefined = undefined;
     let r1c1 = false;
 
@@ -2665,7 +2693,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       type,
       formula,
       // class_name,
-    }, undefined, undefined, target || { top: y / scale + 30, left: x / scale + 30, ...auto_size });
+    }, undefined, undefined, undefined, target || { top: y / scale + 30, left: x / scale + 30, ...auto_size });
 
   }
 
@@ -5354,7 +5382,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
                 src: contents,
                 original_size: { width: img.width || 300, height: img.height || 300 },
               },
-            }, undefined, undefined, {
+            }, undefined, undefined, undefined, {
               top: 30,
               left: 30,
               width: img.width || 300,

@@ -104,7 +104,8 @@ import type {
   InsertRowsCommand, InsertColumnsCommand, SetNameCommand,
   ActivateSheetCommand, DataValidationCommand, 
   ResizeRowsCommand, ResizeColumnsCommand, 
-  SelectCommand
+  SelectCommand,
+  CreateAnnotationCommand
 } from './grid_command';
 import { CommandKey
 } from './grid_command';
@@ -705,6 +706,26 @@ export class Grid extends GridBase {
     return undefined;
   }
   
+  public CreateAnnotation(
+        properties: Partial<AnnotationData> = {}, 
+        sheet: Sheet = this.active_sheet,
+        add_to_sheet = true, 
+        offset = false, 
+        target?: IArea|IRectangle,
+        focus?: boolean ) {
+
+    this.ExecCommand({
+      key: CommandKey.CreateAnnotation,
+      properties,
+      add_to_sheet,
+      offset,
+      target,
+      focus,
+      sheet,
+    });
+
+  }
+
   /**
    * create an annotation, with properties, without an original object.
    * optionally (and by default) add to sheet.
@@ -716,10 +737,11 @@ export class Grid extends GridBase {
    * @param target new parameter allows setting annotation as rect or as
    * cell range
    */
-  public CreateAnnotation(properties: Partial<AnnotationData> = {}, add_to_sheet = true, offset = false, target?: Partial<Area>|IRectangle): Annotation {
-    const annotation = new Annotation(properties);
+  protected CreateAnnotationInternal(command: CreateAnnotationCommand) {
 
-    if (offset) {
+    const annotation = new Annotation(command.properties);
+
+    if (command.offset) {
 
       // to offset, we have to have layout (or at least scaled rect)
       if (!annotation.data.layout && annotation.scaled_rect) {
@@ -734,7 +756,7 @@ export class Grid extends GridBase {
         let recheck = true;
         while (recheck) {
           recheck = false;
-          for (const test of this.active_sheet.annotations) {
+          for (const test of command.sheet.annotations) {
             if (test === annotation) { continue; }
             if (test.scaled_rect && test.scaled_rect.top === target_rect.top && test.scaled_rect.left === target_rect.left) {
               target_rect = target_rect.Shift(20, 20);
@@ -747,28 +769,44 @@ export class Grid extends GridBase {
       }
     }
 
-    if (target) {
-      if (Rectangle.IsRectangle(target)) {
+    if (command.target) {
+      if (Rectangle.IsRectangle(command.target)) {
         // console.info('creating from rectangle,', target);
         annotation.data.layout = undefined;
-        annotation.rect = Rectangle.Create(target);
+        annotation.rect = Rectangle.Create(command.target);
       }
-      else if (target.start) {
+      else if (command.target.start) {
         annotation.rect = undefined;
-        annotation.data.layout = this.layout.AddressToAnnotationLayout(target.start, target.end||target.start);
+        annotation.data.layout = this.layout.AddressToAnnotationLayout(command.target.start, command.target.end||command.target.start);
       }
     }
     
-    if (add_to_sheet) {
+    if (command.add_to_sheet) {
 
       // ensure we haven't already added this
-      if (!this.active_sheet.annotations.some((test) => test === annotation)) {
-        this.active_sheet.annotations.push(annotation);
+      if (!command.sheet.annotations.some((test) => test === annotation)) {
+        command.sheet.annotations.push(annotation);
       }
 
       this.AddAnnotation(annotation);
     }
-    return annotation;
+
+    if (command.focus) {
+
+      // pending... we need to know which view it was pasted in. maybe this
+      // should be the index?
+
+      const view = annotation.view[this.view_index];
+      if (view && view.node) {
+        const node = view.node;
+        setTimeout(() => {
+          node.focus();
+        }, 1);
+      }
+
+    }
+
+    // return annotation;
   }
 
   /** placeholder */
@@ -2440,6 +2478,12 @@ export class Grid extends GridBase {
   /** repaint after an external event (calculation) */
   public Update(force = false, area?: IArea|IArea[]): void {
     this.DelayedRender(force, area);
+  }
+
+  public UpdateAnnotations() {
+    if (this.active_sheet.annotations.length) {
+      this.layout.UpdateAnnotation(this.active_sheet.annotations, this.theme);
+    }
   }
 
   /* *
@@ -7304,6 +7348,9 @@ export class Grid extends GridBase {
             }
           }
         }
+
+        this.CreateAnnotation(composite.data, undefined, true, true, undefined, true);
+        /*
         const annotation = this.CreateAnnotation(composite.data, true, true);
         const view = annotation.view[this.view_index];
         if (view && view.node) {
@@ -7312,6 +7359,7 @@ export class Grid extends GridBase {
             node.focus();
           }, 1);
         }
+        */
       }
       catch (e) {
         console.error(e);

@@ -498,6 +498,7 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     InsertTable(range?: RangeReference, options?: InsertTableOptions): void;
     RemoveTable(range?: RangeReference): void;
     UpdateTableStyle(range?: RangeReference, theme?: TableTheme | number): void;
+    SetTabColor(sheet?: number | string, color?: Color): void;
 
     /**
      * Add a sheet, optionally named.
@@ -516,8 +517,10 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      * @param options - evaluate options. because this function used to take
      *  the argument separator, we allow that to be passed directly, but this
      *  is deprecated. new code should use the options object.
+     *
+     * @param inflate - inflate immediately
      */
-    InsertAnnotation(formula: string, type?: AnnotationType, rect?: IRectangle | RangeReference, options?: EvaluateOptions | ',' | ';'): void;
+    InsertAnnotation(formula: string, type?: AnnotationType, rect?: IRectangle | RangeReference, options?: EvaluateOptions | ',' | ';', inflate?: boolean): void;
 
     /**
      * Insert an image. This method will open a file chooser and (if an image

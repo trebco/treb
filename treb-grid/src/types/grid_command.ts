@@ -19,10 +19,10 @@
  * 
  */
 
-import type { ICellAddress, IArea, CellStyle, Color, CellValue, Table, TableSortType, TableTheme } from 'treb-base-types';
+import type { ICellAddress, IArea, CellStyle, Color, CellValue, Table, TableSortType, TableTheme, IRectangle } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 import type { BorderConstants } from './border_constants';
-import type { ConditionalFormat } from 'treb-data-model';
+import type { AnnotationData, ConditionalFormat, Sheet } from 'treb-data-model';
 
 /**
  * switching to an exec-command based model, so we can serialize
@@ -77,6 +77,20 @@ export enum CommandKey {
 
   AddConditionalFormat,
   RemoveConditionalFormat,
+
+  TabColor,
+  CreateAnnotation,
+
+}
+
+export interface CreateAnnotationCommand {
+  key: CommandKey.CreateAnnotation;
+  sheet: Sheet;
+  properties: Partial<AnnotationData>;
+  add_to_sheet?: boolean;
+  offset?: boolean;
+  target?: IArea|IRectangle;
+  focus?: boolean;
 
 }
 
@@ -439,6 +453,12 @@ export interface AddConditionalFormatCommand {
   format: ConditionalFormat;
 }
 
+export interface TabColorCommand {
+  key: CommandKey.TabColor;
+  sheet: Sheet;
+  color?: Color;
+}
+
 /**
  * remove conditional format, either as an object or from a target 
  * area. as an object, we'll match using object equivalence and not 
@@ -480,6 +500,7 @@ export type Command =
   | SetNameCommand
   | AddSheetCommand
   | SetRangeCommand
+  | TabColorCommand
   | SortTableCommand
   | ShowSheetCommand
   | MergeCellsCommand
@@ -499,6 +520,7 @@ export type Command =
   | ActivateSheetCommand
   | DataValidationCommand
   | DuplicateSheetCommand
+  | CreateAnnotationCommand
   | AddConditionalFormatCommand
   | RemoveConditionalFormatCommand
   ) ; // & Ephemeral;
