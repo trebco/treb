@@ -945,6 +945,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
         switch (event.type) {
 
+          // these messages can stack, they don't have undo effect
+
           case 'error':
             this.dialog?.ShowDialog({
               type: DialogType.error,
@@ -965,6 +967,34 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             this.UpdateSelectionStyle();
             break;
 
+          case 'scale':
+            this.RebuildAllAnnotations();
+            this.Publish({ type: 'view-change' });
+            break;
+  
+          case 'cell-event':
+            this.HandleCellEvent(event);
+            break;
+
+          // messages that trigger undo need some special handling, 
+          // because we don't want to stack a sequence of messages
+          // and push multiple undo events. that applies to data, 
+          // style, structure, and (maybe?) annotations
+
+          // OK, temp we have a composite event for data+style
+          
+          case 'composite':
+            {
+              const cached_selection = this.last_selection;
+              if (this.calculation === CalculationOptions.automatic) {
+                this.Recalculate(event);
+              }
+              this.DocumentChange(cached_selection);
+              this.UpdateDocumentStyles();
+              this.UpdateSelectionStyle();
+            }
+            break;
+
           case 'data':
             {
               // because this is async (more than once), we can't expect the 
@@ -972,13 +1002,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
               // to preserve the current selection and pass it through.
 
               const cached_selection = this.last_selection;
-
-              /*
-              ((this.calculation === CalculationOptions.automatic) ?
-                this.Recalculate(event) : Promise.resolve()).then(() => {
-                  this.DocumentChange(cached_selection);
-                });
-              */
 
               // recalc is no longer async
 
@@ -988,17 +1011,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
               this.DocumentChange(cached_selection);
 
-              /*
-              if (this.calculation === CalculationOptions.automatic) {
-                this.Recalculate(event).then(() => {
-                  this.DocumentChange(cached_selection);
-                });
-              }
-              else {
-                Promise.resolve().then(() => this.DocumentChange(cached_selection));
-              }
-              */
-
             }
             break;
 
@@ -1006,11 +1018,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             this.DocumentChange();
             this.UpdateDocumentStyles();
             this.UpdateSelectionStyle();
-            break;
-
-          case 'scale':
-            this.RebuildAllAnnotations();
-            this.Publish({ type: 'view-change' });
             break;
 
           case 'annotation':
@@ -1083,13 +1090,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
               if (event.rebuild_required) {
                 this.calculator.Reset();
 
-                /*
-                ((this.calculation === CalculationOptions.automatic) ?
-                  this.Recalculate(event) : Promise.resolve()).then(() => {
-                    this.DocumentChange(cached_selection);
-                  });
-                */
-
                 // recalculate is no longer async
 
                 if (this.calculation === CalculationOptions.automatic) {
@@ -1103,10 +1103,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
               }
             }
             this.UpdateSelectionStyle();
-            break;
-
-          case 'cell-event':
-            this.HandleCellEvent(event);
             break;
 
         }
@@ -5835,6 +5831,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    */
   protected DocumentChange(undo_selection?: string): void {
 
+    console.info("DC");
+    console.trace();
+
     Promise.resolve().then(() => {
 
       // console.info('serializing');
@@ -5924,6 +5923,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     const selection = last_selection || this.last_selection;
 
     // console.info('push undo', JSON.stringify(selection));
+    // console.trace();
 
     if (this.undo_stack[this.undo_pointer - 1]) {
       this.undo_stack[this.undo_pointer - 1].selection = selection;
@@ -6479,12 +6479,15 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    */
   protected HandleKeyDown(event: KeyboardEvent): void {
 
-    // can we drop the event.code stuff in 2024? (YES)
-
-    if (event.ctrlKey && (event.code === 'KeyZ' || event.key === 'z')) {
-      event.stopPropagation();
-      event.preventDefault();
-      this.Undo();
+    // handle osx properly, but leave the old combination on osx
+    // in case anyone is using it. we can maybe drop it in the future
+    
+    if (event.key === 'z') {
+      if ((UA.is_mac && event.metaKey) || event.ctrlKey) {
+        event.stopPropagation();
+        event.preventDefault();
+        this.Undo();
+      }
     }
     else if (event.key === 'F9' && this.options.recalculate_on_f9) {
       event.stopPropagation();

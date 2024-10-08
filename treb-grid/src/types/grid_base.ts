@@ -51,7 +51,7 @@ import type { FunctionDescriptor} from '../editors/autocomplete_matcher';
 import { AutocompleteMatcher } from '../editors/autocomplete_matcher';
 import { NumberFormat, ValueParser } from 'treb-format';
 
-import type { GridEvent } from './grid_events';
+import type { DataEvent, GridEvent, StyleEvent } from './grid_events';
 import { ErrorCode } from './grid_events';
 import type { CommandRecord, CreateAnnotationCommand, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, RemoveAnnotationCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand, SortTableCommand } from './grid_command';
 import { DefaultGridOptions, type GridOptions } from './grid_options';
@@ -4525,24 +4525,47 @@ export class GridBase {
 
     // consolidate events and merge areas
 
+    let data_event: DataEvent|undefined;
+    let style_event: StyleEvent|undefined;
+
     if (flags.data_area) {
       if (!flags.data_area.start.sheet_id) {
         flags.data_area.SetSheetID(this.active_sheet.id);
       }
-      events.push({ type: 'data', area: flags.data_area });
+      // events.push({ type: 'data', area: flags.data_area });
+      data_event = { type: 'data', area: flags.data_area };
     }
     else if (flags.data_event) {
-      events.push({ type: 'data' });
+      // events.push({ type: 'data' });
+      data_event = { type: 'data' };
     }
 
     if (flags.style_area) {
       if (!flags.style_area.start.sheet_id) {
         flags.style_area.SetSheetID(this.active_sheet.id);
       }
-      events.push({ type: 'style', area: flags.style_area });
+      // events.push({ type: 'style', area: flags.style_area });
+      style_event = { type: 'style', area: flags.style_area };
     }
     else if (flags.style_event) {
-      events.push({ type: 'style' });
+      // events.push({ type: 'style' });
+      style_event = { type: 'style' };
+    }
+
+    if (data_event && style_event) {
+      events.push({
+        type: 'composite',
+        data_area: data_event.area,
+        style_area: style_event.area,
+      });
+    }
+    else {
+      if (data_event) {
+        events.push(data_event);
+      } 
+      if (style_event) {
+        events.push(style_event);
+      }
     }
 
     if (flags.structure_event) {

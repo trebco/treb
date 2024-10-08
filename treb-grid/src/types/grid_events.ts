@@ -112,6 +112,15 @@ export interface CellEvent {
   data?: HyperlinkCellEventData;
 }
 
+/**
+ * data + style. temporary while I figure out a better solution.
+ */
+export interface CompositeEvent {
+  type: 'composite';
+  data_area?: Area;
+  style_area?: Area;
+}
+
 export interface DataEvent {
   type: 'data';
   area?: Area;
@@ -137,6 +146,7 @@ export type GridEvent
   | StyleEvent
   | FlushEvent
   | ScaleEvent
+  | CompositeEvent
   | GridErrorEvent
   | StructureEvent
   | AnnotationEvent
