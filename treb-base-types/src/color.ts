@@ -125,14 +125,22 @@ export const ColorFunctions = {
   ////////////////
 
 
-  GetLuminance: (r: number, g: number, b: number): number => {
+  GetLuminance: ([r, g, b]: number[],): number => {
     const a = [r, g, b].map(v => {
         v /= 255;
         return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
     });
     return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
   },
-  
+ 
+  WeightedLuminance: ([r, g, b]: number[], weights: number[] = [1,1,1]): number => {
+    const a = [r, g, b].map(v => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * a[0] * weights[0] + 0.7152 * a[1] * weights[1] + 0.0722 * a[2] * weights[2];
+  },
+ 
   GetContrastRatio: (data: [number, number]): number => {
     data.sort((a, b) => b - a);
     return (data[0] + 0.05) / (data[1] + 0.05);
@@ -140,14 +148,39 @@ export const ColorFunctions = {
   
   GetTextColor: (background: [number, number, number], a: [number, number, number], b: [number, number, number]) => {
 
-    const luminance = ColorFunctions.GetLuminance(...background);
-    const luminance_a = ColorFunctions.GetLuminance(...a); 
-    const luminance_b = ColorFunctions.GetLuminance(...b);
+    // weighted contrast ratio: assign more weight to the r channel.
+
+    const weights = [0.4, 0.3, 0.3];
+      
+    const luminance = ColorFunctions.WeightedLuminance(background, weights);
+    const luminance_a = ColorFunctions.WeightedLuminance(a, weights); 
+    const luminance_b = ColorFunctions.WeightedLuminance(b, weights);
 
     const contrast_a = ColorFunctions.GetContrastRatio([luminance_a, luminance]);
     const contrast_b = ColorFunctions.GetContrastRatio([luminance_b, luminance]);
 
     return contrast_a > contrast_b ? a : b;
+
+    // perceptual lightness (actually I like this one)
+
+    /*
+    const background_lightness = ColorFunctions.RGBToHSL(...background).l;
+    const a_lightness = ColorFunctions.RGBToHSL(...a).l;
+    const b_lightness = ColorFunctions.RGBToHSL(...b).l;
+
+    console.info("background", background_lightness, "a", a_lightness, "b", b_lightness);
+
+    const lighter = a_lightness > b_lightness ? a : b;
+    const darker = a_lightness > b_lightness ? b : a;
+    
+    if (background_lightness < .6) {
+      return lighter;
+    }
+    else {
+      return darker;
+    }
+    */
+
   },
   
 };
