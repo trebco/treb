@@ -982,7 +982,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           // style, structure, and (maybe?) annotations
 
           // OK, temp we have a composite event for data+style
-          
+
           case 'composite':
             {
               const cached_selection = this.last_selection;
@@ -5830,9 +5830,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    */
   protected DocumentChange(undo_selection?: string): void {
-
-    console.info("DC");
-    console.trace();
 
     Promise.resolve().then(() => {
 
