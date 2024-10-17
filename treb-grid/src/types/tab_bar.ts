@@ -244,6 +244,12 @@ export class TabBar extends EventSource<TabEvent> {
         tab.style.backgroundColor = `color-mix(in srgb, ${tab.dataset.background_color} 20%, var(--treb-tab-bar-active-tab-background, #fff))`;
         tab.style.color = '';
       }
+
+      requestAnimationFrame(() => {
+        console.info("Calling SIV2.1");
+        tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest'});
+      });
+
     }
     else {
       // tab.classList.remove('treb-selected');
