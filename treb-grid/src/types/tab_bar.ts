@@ -246,7 +246,6 @@ export class TabBar extends EventSource<TabEvent> {
       }
 
       requestAnimationFrame(() => {
-        console.info("Calling SIV2.1");
         tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest'});
       });
 
