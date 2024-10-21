@@ -186,7 +186,8 @@ export class Sheet {
   private id_: number;
 
   // tslint:disable-next-line:variable-name
-  private row_height_: number[] = [];
+  // private row_height_: number[] = [];
+  private row_height_map: Map<number, number> = new Map();
 
   // tslint:disable-next-line:variable-name
   private column_width_: number[] = [];
@@ -715,26 +716,21 @@ export class Sheet {
 
     // ok
 
+    sheet.row_height_map = new Map();
+    if (source.row_height) {
+      for (const [key, value] of Object.entries(source.row_height)) {
+        sheet.row_height_map.set(Number(key), value);
+      }
+    }
 
-    // if (hints && !hints.data) sheet.FlushCellStyles();
-
-    // sheet.default_row_height = obj.default_row_height;
-    // sheet.default_column_width = obj.default_column_width;
-
-    sheet.row_height_ = [];
-    unflatten_numeric_array(sheet.row_height_, source.row_height || {},
-    ); // sheet.default_row_height);
-    // obj.default_row_height);
-
-    if (sheet.row_height_.length) {
-      sheet.cells.EnsureRow(sheet.row_height_.length - 1);
+    if (sheet.row_height_map.size > 0) {
+      const max = Math.max(...sheet.row_height_map.keys());
+      sheet.cells.EnsureRow(max);
     }
 
     sheet.column_width_ = [];
-    unflatten_numeric_array(sheet.column_width_, source.column_width || {},
-    ); // sheet.default_column_width);
-    // obj.default_column_width);
-
+    unflatten_numeric_array(sheet.column_width_, source.column_width || {}, );
+    
     if (sheet.column_width_.length) {
       sheet.cells.EnsureColumn(sheet.column_width_.length - 1);
     }
@@ -1011,13 +1007,13 @@ export class Sheet {
   }
 
   public GetRowHeight(row: number): number {
-    const height = this.row_height_[row];
+    const height = this.row_height_map.get(row);
     if (typeof height === 'undefined') return this.default_row_height;
     return height;
   }
 
   public SetRowHeight(row: number, height: number): number {
-    this.row_height_[row] = height;
+    this.row_height_map.set(row, height);
     this.cells.EnsureRow(row);
     return height;
   }
@@ -1241,7 +1237,7 @@ export class Sheet {
    * @see NextVisibleColumn
    */
   public NextVisibleRow(row: number): number {
-    for (++row; this.row_height_[row] === 0; row++) { /* */ }
+    for (++row; this.GetRowHeight(row) === 0; row++) { /* */ }
     return row;
   }
 
@@ -1249,7 +1245,7 @@ export class Sheet {
    * @see PreviousVisibleColumn
    */
   public PreviousVisibleRow(row: number): number {
-    for (--row; row >= 0 && this.row_height_[row] === 0; row--) { /* */ }
+    for (--row; row >= 0 && this.GetRowHeight(row) === 0; row--) { /* */ }
     return row;
   }
 
@@ -1281,10 +1277,19 @@ export class Sheet {
       return result;
     }
 
+
+    // oh these loops are a problem if the table is very large. need to 
+    // address, maybe we can cache? not sure. as a hint, we have a list 
+    // of non-default row heights.
+
+
+
     // how we handle last row depends on totals. if we have a totals
     // row, and it's visible, we don't need to do the "last row" thing.
 
     const totals_visible = (table.totals_row && (this.GetRowHeight(table.area.end.row) > 0));
+
+    // this one is probably ok
 
     if (!totals_visible) {
       let last = table.area.end.row;
@@ -1296,7 +1301,40 @@ export class Sheet {
       }
     }
 
+
+    // this is an improvement if the table is mostly not hidden. but
+    // if the table is mostly hidden we'll run into the same problem
+    // again. not sure the most effective way to address this. we probably
+    // need to cache this information somewhere.
+    
+    // ACTUALLY this does not work (at least not the way you think it 
+    // does). row_height_ is a sparse array so iterating will still 
+    // check every skipped index.
+
+    // OK now it's a map
+
+    const start = table.area.start.row + 1 ; // (table.headers ? 1 : 0);
+
+    let delta = row - start;
+    for (const [index, height] of this.row_height_map.entries()) {
+      if (index < start) { 
+        continue; 
+      }
+      if (index > table.area.end.row) {
+        break;
+      }
+      if (!height) {
+        delta--;
+      }
+    }
+
+    result.alternate = (delta % 2 === 1);
+
+    // this one looks bad
+
+    /*
     let start = table.area.start.row + 1 ; // (table.headers ? 1 : 0);
+
     for ( ; start <= table.area.end.row; start++ ) {
       if (!this.GetRowHeight(start)) {
         continue;
@@ -1307,6 +1345,7 @@ export class Sheet {
         break;
       }
     }
+    */
 
     return result;
   }
@@ -1338,10 +1377,10 @@ export class Sheet {
     let row_above = address.row - 1;
 
     for (; this.column_width_[column_right] === 0; column_right++) { /* */ }
-    for (; this.row_height_[row_below] === 0; row_below++) { /* */ }
+    for (; this.GetRowHeight(row_below) === 0; row_below++) { /* */ }
 
     for (; column_left >= 0 && this.column_width_[column_left] === 0; column_left--) { /* */ }
-    for (; row_above >= 0 && this.row_height_[row_above] === 0; row_above--) { /* */ }
+    for (; row_above >= 0 && this.GetRowHeight(row_above) === 0; row_above--) { /* */ }
 
     if (column_left >= 0 && row_above >= 0) {
       map[7] = this.CellStyleData({ row: row_above, column: column_left }, table) || {};
@@ -1901,8 +1940,35 @@ export class Sheet {
 
     // row heights
 
+    // row heights is now a map, so this has to change...
+
     // eslint-disable-next-line prefer-spread
-    this.row_height_.splice.apply(this.row_height_, args as [number, number, number]);
+    // this.row_height_.splice.apply(this.row_height_, args as [number, number, number]);
+
+    const tmp: Map<number, number> = new Map();
+    if (count > 0) {
+      for (const [row, height] of this.row_height_map) {
+        if (row >= before_row) {
+          tmp.set(row + count, height);
+        }
+        else {
+          tmp.set(row, height);
+        }
+      }
+    }
+    else if (count < 0) {
+      for (const [row, height] of this.row_height_map) {
+        if (row >= before_row) {
+          if (row >= before_row - count) {
+            tmp.set(row + count, height);
+          }
+        }
+        else {
+          tmp.set(row, height);
+        }
+      }
+    }
+    this.row_height_map = tmp;
 
     // invalidate style cache
     this.FlushCellStyles();
@@ -2737,6 +2803,10 @@ export class Sheet {
 
     const data_validations = this.data_validation.length ? JSON.parse(JSON.stringify(this.data_validation)) : undefined;
      
+    const row_height: Record<number, number> = {};
+    for (const [key, value] of this.row_height_map.entries()) {
+      row_height[key] = value;
+    }
 
     const result: SerializedSheet = {
 
@@ -2771,7 +2841,7 @@ export class Sheet {
       default_row_height: this.default_row_height,
       default_column_width: this.default_column_width,
 
-      row_height: flatten_numeric_array(this.row_height_, this.default_row_height),
+      row_height, // : flatten_numeric_array(this.row_height_, this.default_row_height),
       column_width: flatten_numeric_array(this.column_width_, this.default_column_width),
 
       selection: JSON.parse(JSON.stringify(this.selection)),
