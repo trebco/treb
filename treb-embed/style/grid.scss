@@ -84,6 +84,8 @@
     -webkit-tap-highlight-color: transparent;
     outline: none;
 
+    overscroll-behavior: none;
+
     // --- merging from old (split) layout ---
 
     display: grid;
