@@ -1214,7 +1214,7 @@ export interface ConditionalFormatGradientOptions {
     /** min and max are optional. if not provided, we use the min/max of the range of data. */
     max?: number;
 }
-export type StandardGradient = keyof typeof StandardGradientsList;
+export type StandardGradient = 'red-green' | 'green-red' | 'red-yellow-green' | 'green-yellow-red';
 export interface ConditionalFormatCellMatchOptions {
     style: CellStyle;
     expression: string;

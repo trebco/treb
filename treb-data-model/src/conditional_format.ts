@@ -68,6 +68,7 @@ export interface ConditionalFormatGradientOptions {
 }
 
 /**
+ * 
  * @internal
  * 
  * @privateRemarks
@@ -107,7 +108,10 @@ export const StandardGradientsList = {
     ] as GradientStop[],
   },
 } as const; 
-export type StandardGradient = keyof typeof StandardGradientsList;
+
+// temp while I figure out what's wrong with the API generator
+// export type StandardGradient = keyof typeof StandardGradientsList;
+export type StandardGradient = 'red-green' | 'green-red' | 'red-yellow-green' | 'green-yellow-red';
 
 export interface ConditionalFormatGradient extends ConditionalFormatGradientOptions {
   type: 'gradient';
