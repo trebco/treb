@@ -76,7 +76,8 @@ import type {
 
 import {
   IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
-  Localization, Style, type Color, ResolveThemeColor, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext 
+  Localization, Style, type Color, ResolveThemeColor, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext,
+  ValueType, 
 } from 'treb-base-types';
 
 import { EventSource, ValidateURI } from 'treb-utils';
@@ -5209,13 +5210,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // now we have to inflate them on sheet change
 
     for (const annotation of event.activate.annotations) {
-      // if (annotation.update_callback) {
-      //   annotation.update_callback();
-      // }
-
       this.InflateAnnotation(annotation);
       this.calculator.UpdateAnnotations(annotation, event.activate);
-
     }
 
     // we also need to update annotations that are already inflated
@@ -5529,21 +5525,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             if (view) {
               view.dirty = true;
             }
-            // else {
-            //   console.info("empty view")
-            // }
 
           }
         }
-
-          /*
-          const view: AnnotationViewData = annotation.view[this.grid.view_index] || {};
-          if (view.update_callback) {
-            view.update_callback();
-          }
-
-          this.grid.AnnotationUpdated(annotation);
-          */
       }
 
       const view: AnnotationViewData = annotation.view[this.grid.view_index] || {};
@@ -5670,18 +5654,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       if (annotation.data.type === 'treb-chart') {
 
-        // if (!(self as any).TREB || !(self as any).TREB.CreateChart2) {
-        //    console.warn('missing chart library');
-        // }
-        // else 
         {
 
           const chart = this.CreateChart();
           chart.Initialize(view.content_node);
-
-          //if (this.calculator.RegisterLibrary('treb-charts', ChartFunctions)) {
-          //  this.UpdateAC();
-          //}
 
           const update_chart = () => {
 
@@ -5766,11 +5742,15 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       else if (annotation.data.type === 'textbox') {
 
         if (annotation.data.data) {
+
+          let target: HTMLElement|undefined;
+
           const container = document.createElement('div');
           container.classList.add('treb-annotation-textbox');
 
           for (const paragraph of annotation.data.data.paragraphs) {
             const p = document.createElement('p');
+
             if (paragraph.style) {
               if (paragraph.style.horizontal_align === 'right' || 
                   paragraph.style.horizontal_align === 'center') {
@@ -5779,17 +5759,36 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             }
 
             for (const entry of paragraph.content) {
+              
               const span = document.createElement('span');
-              span.textContent = entry.text || '';
+              
+              if (!target) { target = span; }
+
+              if (!annotation.data.formula) {
+                span.textContent = entry.text || '';
+              }
+              
               if (entry.style?.bold) {
                 span.style.fontWeight = '600';
               }
+              
               if (entry.style?.italic) {
                 span.style.fontStyle = 'italic';
               }
+              
               p.appendChild(span);
+
+              if (annotation.data.formula) {
+                break; // only one text node allowed for formula (?)
+              }
+
             }
             container.append(p);
+
+            if (annotation.data.formula) {
+              break; // only one text node allowed for formula (?)
+            }
+
           }
 
           view.content_node.append(container);
@@ -5807,12 +5806,68 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             };
 
             view.update_callback = () => {
+
               if (!this.grid.headless) {
                 update_textbox();
               }
+
+              if (target && annotation.data.formula) {
+
+                const parse_result = this.parser.Parse(annotation.data.formula);
+                if (parse_result && parse_result.expression) {
+
+                  // FIXME: make a method for doing this
+
+                  this.parser.Walk(parse_result.expression, (unit) => {
+                    if (unit.type === 'address' || unit.type === 'range') {
+                      this.model.ResolveSheetID(unit, undefined, this.grid.active_sheet);
+                    }
+                    return true;
+                  });
+
+                  const result = this.calculator.CalculateExpression(parse_result.expression);
+
+                  let format = NumberFormatCache.Get('General');
+                  let source: ICellAddress|undefined;
+                  switch (parse_result.expression.type) {
+                    case 'address':
+                      source = parse_result.expression;
+                      break;
+                    case 'range':
+                      source = parse_result.expression.start;
+                      break;
+                  }
+
+                  if (source) {
+                    const sheet = source.sheet_id ? this.model.sheets.Find(source.sheet_id) : this.grid.active_sheet;
+                    const style = sheet?.CellStyleData(source);
+                    if (style?.number_format) {
+                      format = NumberFormatCache.Get(style.number_format);
+                    }
+                  }
+
+                  switch (result.type) {
+                    case ValueType.number:
+                    case ValueType.string:
+                    case ValueType.complex:
+                      target.textContent = format.Format(result.value);
+                      break;
+
+                    default:
+                      target.textContent = result.value?.toString() || '';
+                  }
+
+
+                  // TODO: use reference number format
+
+                }
+
+              }
+
             };
 
-            update_textbox();
+            // update_textbox();
+            view.update_callback();
 
           }
 

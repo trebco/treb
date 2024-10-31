@@ -1104,14 +1104,20 @@ export class Importer {
 
       // console.info({descriptor});
 
-      annotations.push({
+      const anchored_annotation: AnchoredAnnotation = {
         layout, 
         type: 'textbox',
         data: {
           style: descriptor.style,
           paragraphs: descriptor.paragraphs,
-        }
-      });
+        },
+      };
+
+      if (descriptor.reference) {
+        anchored_annotation.formula = `=` + descriptor.reference;
+      }
+
+      annotations.push(anchored_annotation);
       
     }
 

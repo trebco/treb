@@ -36,7 +36,7 @@ import { Theme } from './workbook-theme2';
 import { Sheet, VisibleState } from './workbook-sheet2';
 import type { RelationshipMap } from './relationship';
 import { ZipWrapper } from './zip-wrapper';
-import type { CellStyle, ThemeColor } from 'treb-base-types';
+import type { CellStyle, ICellAddress, ThemeColor } from 'treb-base-types';
 import type { SerializedNamed } from 'treb-data-model';
 
 /**
@@ -86,11 +86,13 @@ export interface AnchoredChartDescription {
 export interface AnchoredTextBoxDescription {
   type: 'textbox';
   style?: CellStyle;
+  reference?: string;
   paragraphs: { 
     style?: CellStyle,
     content: {
       text: string, 
       style?: CellStyle 
+      reference?: boolean,
     }[],
   }[];
   anchor: TwoCellAnchor,
@@ -397,100 +399,122 @@ export class Workbook {
 
           let style: CellStyle|undefined;
 
-          const sppr = XMLUtils.FindAll(anchor_node, 'xdr:sp/xdr:spPr')[0];
-          if (sppr) {
-            style = {};
-            const fill = sppr['a:solidFill'];
-            if (fill) {
-              if (fill['a:schemeClr']?.a$?.val) {
-                const m = (fill['a:schemeClr'].a$.val).match(/accent(\d+)/);
-                if (m) {
-                  style.fill = { theme: Number(m[1]) + 3 }
-                  if (fill['a:schemeClr']['a:lumOff']?.a$?.val) {
-                    const num = Number(fill['a:schemeClr']['a:lumOff'].a$.val);
-                    if (!isNaN(num)) {
-                      (style.fill as ThemeColor).tint = num / 1e5;
-                    }
-                  }
-                }
+          const sp = XMLUtils.FindAll(anchor_node, 'xdr:sp')[0];
+          if (sp) {
 
-              }
-            }
-          }
+            const reference = sp.a$?.textlink || undefined;
 
-          const tx = XMLUtils.FindAll(anchor_node, 'xdr:sp/xdr:txBody')[0];
-          if (tx) {
-
-            const paragraphs: { 
-              style?: CellStyle,
-              content: {
-                text: string, 
-                style?: CellStyle 
-              }[],
-            }[] = [];
-
-            /*
-            const content: {
-              text: string,
-              style?: CellStyle,
-            }[][] = [];
-            */
-
-            const p_list = XMLUtils.FindAll(tx, 'a:p');
-            for (const paragraph of p_list) {
-              const para: { text: string, style?: CellStyle }[] = [];
-              let style: CellStyle|undefined;
-
-              const appr = paragraph['a:pPr'];
-              if (appr) {
-                style = {};
-                if (appr.a$?.algn === 'r') {
-                  style.horizontal_align = 'right';
-                }
-                else if (appr.a$?.algn === 'ctr') {
-                  style.horizontal_align = 'center';
-                }
-              }
-
-              let ar = paragraph['a:r'];
-              if (ar) {
-                if (!Array.isArray(ar)) {
-                  ar = [ar];
-                }
-                for (const line of ar) {
-
-                  const entry: { text: string, style?: CellStyle } = { 
-                    text: line['a:t'] || '',
-                  };
-
-                  // format
-                  const fmt = line['a:rPr'];
-                  if (fmt) {
-                    entry.style = {};
-                    if (fmt.a$?.b === '1') {
-                      entry.style.bold = true;
-                    }
-                    if (fmt.a$?.i === '1') {
-                      entry.style.italic = true;
+            const sppr = XMLUtils.FindAll(sp, 'xdr:spPr')[0];
+            if (sppr) {
+              style = {};
+              const fill = sppr['a:solidFill'];
+              if (fill) {
+                if (fill['a:schemeClr']?.a$?.val) {
+                  const m = (fill['a:schemeClr'].a$.val).match(/accent(\d+)/);
+                  if (m) {
+                    style.fill = { theme: Number(m[1]) + 3 }
+                    if (fill['a:schemeClr']['a:lumOff']?.a$?.val) {
+                      const num = Number(fill['a:schemeClr']['a:lumOff'].a$.val);
+                      if (!isNaN(num)) {
+                        (style.fill as ThemeColor).tint = num / 1e5;
+                      }
                     }
                   }
 
-                  para.push(entry);
-
                 }
               }
+            }
 
-              paragraphs.push({ content: para, style });
+            const tx = XMLUtils.FindAll(sp, 'xdr:txBody')[0];
+            if (tx) {
+
+              const paragraphs: { 
+                style?: CellStyle,
+                content: {
+                  text: string, 
+                  style?: CellStyle 
+                  reference?: boolean;
+                }[],
+              }[] = [];
+
+              const p_list = XMLUtils.FindAll(tx, 'a:p');
+              for (const paragraph of p_list) {
+                const para: { text: string, style?: CellStyle, reference?: boolean }[] = [];
+                let style: CellStyle|undefined;
+
+                const fld = paragraph['a:fld'];
+                if (fld) {
+                  if (fld.a$?.type === 'TxLink') {
+                    const entry: {text: string, reference?: boolean, style?: CellStyle } = { text: `{${reference}}`, reference: true };
+
+                    // format
+                    const fmt = fld['a:rPr'];
+                    if (fmt) {
+                      entry.style = {};
+                      if (fmt.a$?.b === '1') {
+                        entry.style.bold = true;
+                      }
+                      if (fmt.a$?.i === '1') {
+                        entry.style.italic = true;
+                      }
+                    }
+
+                    para.push(entry);
+                  }
+                }
+  
+                const appr = paragraph['a:pPr'];
+                if (appr) {
+                  style = {};
+                  if (appr.a$?.algn === 'r') {
+                    style.horizontal_align = 'right';
+                  }
+                  else if (appr.a$?.algn === 'ctr') {
+                    style.horizontal_align = 'center';
+                  }
+                }
+
+                let ar = paragraph['a:r'];
+                if (ar) {
+                  if (!Array.isArray(ar)) {
+                    ar = [ar];
+                  }
+                  for (const line of ar) {
+
+                    const entry: { text: string, style?: CellStyle } = { 
+                      text: line['a:t'] || '',
+                    };
+
+                    // format
+                    const fmt = line['a:rPr'];
+                    if (fmt) {
+                      entry.style = {};
+                      if (fmt.a$?.b === '1') {
+                        entry.style.bold = true;
+                      }
+                      if (fmt.a$?.i === '1') {
+                        entry.style.italic = true;
+                      }
+                    }
+
+                    para.push(entry);
+
+                  }
+                }
+
+                paragraphs.push({ content: para, style });
+
+              }
+              
+              results.push({
+                type: 'textbox', 
+                style,
+                paragraphs,
+                anchor,
+                reference,
+              });
 
             }
-            
-            results.push({
-              type: 'textbox', 
-              style,
-              paragraphs,
-              anchor,
-            });
-
           }
 
         }

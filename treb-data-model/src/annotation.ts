@@ -201,7 +201,7 @@ export interface AnnotationTextBoxData extends AnnotationDataBase {
       style?: CellStyle,
       content: {
         text: string, 
-        style?: CellStyle 
+        style?: CellStyle ,
       }[],
     }[];
   };
