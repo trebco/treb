@@ -10,6 +10,7 @@
     "../treb-format/**/*.ts",
     "../treb-parser/**/*.ts",
     "../treb-calculator/**/*.ts",
+    "../treb-data-model/**/*.ts",
     "../treb-base-types/**/*.ts"
   ],
   "exclude": [
