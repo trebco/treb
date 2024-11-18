@@ -78,7 +78,7 @@ export class SVGSelectionBlock {
       // and use currentColor, but we can't set opacity separately so we
       // need another node. which is a waste, but ergonomics ftw!
 
-      this.fill = DOM.SVG('rect', 'fill');
+      this.fill = DOM.SVG('rect', 'treb-selection-fill');
 
       // this.SetThemeColor(0);
       // if (theme.additional_selection_line_dash_array) {
@@ -94,42 +94,6 @@ export class SVGSelectionBlock {
   public Offset(offset: SelectionOffset): void {
     this.g.setAttribute('transform', `translate(${offset.x}, ${offset.y})`);
   }
-
-  /*
-  public SetThemeColor(index = 0) {
-
-    if (Array.isArray(this.theme.additional_selection_color)) {
-      if (index >= this.theme.additional_selection_color.length) {
-        index = index % this.theme.additional_selection_color.length;
-      }
-    }
-
-    if (this.theme.additional_selection_overlay_color) {
-      if (typeof this.theme.additional_selection_overlay_color === 'string') {
-        this.outline.setAttribute('fill', this.theme.additional_selection_overlay_color);
-      }
-      else {
-        this.outline.setAttribute('fill', this.theme.additional_selection_overlay_color[index] || '');
-      }
-    }
-    else {
-      this.outline.setAttribute('fill', '');
-    }
-
-    if (this.theme.additional_selection_color) {
-      if (typeof this.theme.additional_selection_color === 'string') {
-        this.outline.setAttribute('stroke', this.theme.additional_selection_color);
-      }
-      else {
-        this.outline.setAttribute('stroke', this.theme.additional_selection_color[index] || '');
-      }
-    }
-    else {
-      this.outline.setAttribute('stroke', '');
-    }
-
-  }
-  */
 
   public Show(show = true) {
     this.g.style.display = show ? 'block' : 'none';

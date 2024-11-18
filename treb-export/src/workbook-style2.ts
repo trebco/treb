@@ -983,45 +983,6 @@ export class StyleCache {
     const new_fill: Fill = {...fill};
     this.fills.push(new_fill);
 
-    /*
-    // add the node structure
-
-    if (!this.dom) throw new Error('missing dom');
-    const fills = this.dom.find('./fills');
-
-    if (!fills) throw new Error('fills not found');
-    fills.attrib.count = (Number(fills.attrib.count || 0) + 1).toString();
-
-    const new_element = Element('fill');
-    const pattern_fill = Element('patternFill', { patternType: fill.pattern_type });
-
-    switch (fill.pattern_type) {
-      case 'none':
-        break;
-      case 'solid':
-        if (fill.fg_color) {
-          const attrs: Record<string, string> = {};
-
-          if (fill.fg_color.argb) { attrs.rgb = fill.fg_color.argb; }
-          if (fill.fg_color.indexed) { attrs.indexed = fill.fg_color.indexed.toString(); }
-          if (fill.fg_color.tint) { attrs.tint = fill.fg_color.tint.toString(); }
-          if (typeof fill.fg_color.theme !== 'undefined') { attrs.theme = fill.fg_color.theme.toString(); }
-
-          pattern_fill.append(Element('fgColor', attrs));
-        }
-        break;
-      case 'gray':
-
-        // ...
-
-        break;
-    }
-
-    new_element.append(pattern_fill);
-
-    fills.append(new_element);
-    */
-
     return this.fills.length - 1;
   }
 
