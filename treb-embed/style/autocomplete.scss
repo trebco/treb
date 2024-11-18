@@ -19,6 +19,10 @@
  * 
  */
 
+@use 'z-index.scss' as *;
+@use 'defaults.scss' as *;
+ 
+
 /**
  * this is getting attached to the document (why? b/c fixed pos?)
  * so it inherits a lot. that's not good.

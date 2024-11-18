@@ -19,6 +19,9 @@
  * 
  */
 
+@use 'z-index.scss' as *;
+@use 'defaults.scss' as *;
+
 .treb-main.treb-main {
 
   .treb-sort-button {

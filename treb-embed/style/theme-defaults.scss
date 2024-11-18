@@ -19,6 +19,8 @@
  * 
  */
 
+@use './defaults.scss' as *;
+
 /**
  * we're using variables for selection colors because the colors are used
  * in more than one place; that's a drawback of using CSS, but I think overall

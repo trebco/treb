@@ -19,6 +19,10 @@
  * 
  */
 
+@use 'z-index.scss' as *;
+@use 'defaults.scss' as *;
+ 
+
 .treb-main.treb-main {
 
   // are these exactly the same? clearly we copied-and-pasted

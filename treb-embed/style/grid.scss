@@ -21,20 +21,20 @@
 
 // sass vars only
 
-@import 'z-index.scss';
-@import 'defaults.scss';
+@use 'z-index.scss' as *;
+@use 'defaults.scss' as *;
 
 // clean, no imports (but use sass vars)
 
-@import 'mouse-mask.scss';
-@import 'note.scss';
-@import 'table.scss';
-@import 'tooltip.scss';
-@import 'dropdown-select.scss';
-@import 'autocomplete.scss';
-@import 'formula-bar.scss';
-@import 'tab-bar.scss';
-@import 'overlay-editor.scss';
+@use 'mouse-mask.scss';
+@use 'note.scss';
+@use 'table.scss';
+@use 'tooltip.scss';
+@use 'dropdown-select.scss';
+@use 'autocomplete.scss';
+@use 'formula-bar.scss';
+@use 'tab-bar.scss';
+@use 'overlay-editor.scss';
 
 .treb-main.treb-main {
 

@@ -1,13 +1,16 @@
 
-@import './grid.scss';
-@import './theme-defaults.scss';
-@import './dark-theme.scss';
-@import '../../treb-charts/style/charts.scss';
-@import './dialog.scss';
-@import './spinner.scss';
-@import './treb-icons.scss';
-@import './toolbar.scss';
-@import './font-stacks.scss';
+@use './defaults.scss' as *;
+@use './z-index.scss' as *;
+
+@use './grid.scss';
+@use './theme-defaults.scss';
+@use './dark-theme.scss';
+@use '../../treb-charts/style/charts.scss';
+@use './dialog.scss';
+@use './spinner.scss';
+@use './treb-icons.scss';
+@use './toolbar.scss';
+@use './font-stacks.scss';
 
 /*
  * switching to a double-selector to increase specificity. the particular
