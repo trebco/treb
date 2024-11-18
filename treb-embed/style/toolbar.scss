@@ -367,11 +367,7 @@ $swatch-size: 18px;
 
       }
 
-      .treb-swatches {
-
-        display: grid;
-        grid-template-columns: repeat(10, 1fr);
-        gap: .5rem;
+      .treb-swatches, .treb-default-swatch {
 
         button {
           width: $swatch-size;
@@ -399,6 +395,22 @@ $swatch-size: 18px;
           mask-size: 24px 24px;
           -webkit-mask-size: 24px 24px;
         }
+
+      }
+
+      .treb-default-swatch {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: .5rem;
+        align-items: center;
+      }
+
+      .treb-swatches {
+
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: .5rem;
+
       }
     }
 

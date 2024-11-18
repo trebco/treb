@@ -956,6 +956,33 @@ export class Grid extends GridBase {
 
           const elements = [node, ...this.layout.GetFrozenAnnotations(annotation)];
 
+          if (event.ctrlKey || (UA.is_mac && event.metaKey)) {
+
+            const annotation_style = annotation.data.style ? { ...annotation.data.style } : {};
+            let handled = true;
+
+            switch (event.key) {
+              case 'b':
+                this.ApplyAnnotationStyle({bold: !annotation_style.bold});
+                break;
+              case 'i':
+                this.ApplyAnnotationStyle({italic: !annotation_style.italic});
+                break;
+              case 'u':
+                this.ApplyAnnotationStyle({underline: !annotation_style.underline});
+                break;
+              default: 
+                handled = false;
+            }
+
+            if (handled) {
+              event.stopPropagation();
+              event.preventDefault();
+              return;
+            }
+
+          }
+          
           const target = { x: rect.left, y: rect.top };
           switch (event.key) {
             case 'ArrowUp':
@@ -1773,9 +1800,17 @@ export class Grid extends GridBase {
     if (this.selected_annotation) {
 
       const annotation = this.selected_annotation;
+
+      // we need to adjust textbox paragraph styles so they don't 
+      // override the annotation style. OR, we need to apply this
+      // styling to the paragraphs. the former sounds better to me,
+      // but then if we allow you to edit the paragraphs we'll have
+      // to adjust the annotation style later. not sure which is 
+      // preferable.
+
       annotation.data.style = JSON.parse(JSON.stringify( 
-        delta ? Style.Composite([annotation.data.style || {}, style]) : style
-      ));
+        delta ? Style.Composite([annotation.data.style || {}, style]) : style));
+
       const node = annotation.view[this.view_index]?.node;
 
       this.layout.UpdateAnnotation(annotation, this.theme);

@@ -52,7 +52,7 @@ export class SVGSelectionBlock {
     this.g = DOM.SVG('g');
     this.g.setAttribute('transform', `translate(${offset.x}, ${offset.y})`);
     
-    this.outline = DOM.SVG('rect', 'outline');
+    this.outline = DOM.SVG('rect', 'treb-selection-outline');
 
     if (primary) {
 
@@ -61,8 +61,8 @@ export class SVGSelectionBlock {
       // primary selections have a separate fill, plus the nub. separate
       // fill because the "target" is unfilled.
 
-      this.fill = DOM.SVG('path', 'fill');
-      this.nub = DOM.SVG('rect', 'nub');
+      this.fill = DOM.SVG('path', 'treb-selection-fill');
+      this.nub = DOM.SVG('rect', 'treb-selection-nub');
 
       this.g.appendChild(this.fill);
       this.g.appendChild(this.outline);

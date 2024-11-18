@@ -730,6 +730,27 @@ export abstract class BaseLayout {
           view.node.style.fontVariant = '';
         }
 
+        if (annotation.data.style?.bold) {
+          view.node.style.fontWeight = '600';
+        }
+        else {
+          view.node.style.fontWeight = '400';
+        }
+
+        if (annotation.data.style?.italic) {
+          view.node.style.fontStyle = 'italic';
+        }
+        else {
+          view.node.style.fontStyle = '';
+        }
+
+        if (annotation.data.style?.underline) {
+          view.node.style.textDecoration = 'underline';
+        }
+        else {
+          view.node.style.textDecoration = '';
+        }
+
         view.node.style.fontSize = `${font_size_pt}pt`;
 
         // update the layout here if necessary. after that it should

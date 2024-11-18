@@ -5751,6 +5751,12 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           for (const paragraph of annotation.data.data.paragraphs) {
             const p = document.createElement('p');
 
+            // FIXME: styling should move (to layout?) so we can 
+            // update it. possibly content as well? although we 
+            // can leave the formula in here, I guess. 
+            // 
+            // how about we move styling to the update routine? 
+
             if (paragraph.style) {
               if (paragraph.style.horizontal_align === 'right' || 
                   paragraph.style.horizontal_align === 'center') {

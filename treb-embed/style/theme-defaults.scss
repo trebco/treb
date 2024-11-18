@@ -356,12 +356,12 @@ $text-reference-color-5: rgb(254, 47, 1);
     .selection {
       stroke-width: var(--treb-selection-stroke-width, 2px);
 
-      .outline {
+      .treb-selection-outline {
         stroke: currentColor;
         fill: none;
       }
 
-      .fill {
+      .treb-selection-fill {
         stroke: none;
         fill: currentColor;
         opacity: var(--treb-selection-fill-opacity, .1);
@@ -405,7 +405,7 @@ $text-reference-color-5: rgb(254, 47, 1);
     .primary-selection {
       color: var(--treb-selection-color-unfocused, var(--treb-selection-color, $primary-selection-color));
 
-      .nub {
+      .treb-selection-nub {
         stroke: #fff; // <-- ? maybe grid background color?
         fill: currentColor;
         stroke-width: 1px;

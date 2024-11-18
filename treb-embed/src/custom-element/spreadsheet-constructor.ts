@@ -778,12 +778,15 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
       this.swatch_lists.theme?.replaceChildren(fragment);
 
       fragment = this.DOM.Fragment();
+
+      /*
       this.DOM.Create('button', 'treb-default-color', fragment, {
         attrs: { title: 'Default color' },
         data: { command: 'set-color', color: JSON.stringify({}) },
       });
+      */
 
-      const colors = ['Black', 'White', 'Gray', 'Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Violet'];
+      const colors = ['Black', 'White', 'Gray', 'Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet'];
 
       const lc = colors.map(color => color.toLowerCase());
       const additional_colors = sheet.document_styles.colors.filter(test => {
@@ -1320,6 +1323,10 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
 
         if (parent.dataset.colorCommand) {
           color_chooser.querySelector('.treb-default-color')?.setAttribute('title', parent.dataset.defaultColorText || 'Default color');
+          const label = color_chooser.querySelector('.treb-default-color-label');
+          if (label) {
+            label.textContent = parent.dataset.defaultColorText || 'Default color';
+          }
 
           parent.appendChild(color_chooser);
           color_chooser.dataset.colorCommand = parent.dataset.colorCommand;
