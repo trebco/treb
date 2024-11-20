@@ -21,3 +21,11 @@ esbuild-metafile.json
 
 treb-export/test
 treb-parser/test
+
+#
+# build artifacts don't need to be in git
+#
+
+dist/treb.d.ts
+dist/*.mjs
+
