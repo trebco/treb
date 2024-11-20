@@ -351,6 +351,54 @@ export const BaseFunctionLibrary: FunctionMap = {
     fn: () => { return { type: ValueType.number, value: Math.random() }},
   },
 
+  RandArray: {
+    volatile: true,
+    arguments: [
+      {name: 'rows'},
+      {name: 'columns'},
+      {name: 'min'}, 
+      {name: 'max'},
+      {name: 'integer'},
+    ],
+    description: 'Returns an array of uniformly-distributed random numbers',
+    fn: (rows = 1, columns = 1, min = 0, max = 1, integer = false) => {
+      const value: UnionValue[][] = [];
+
+      if (integer) {
+        const range = max - min + 1;
+        for (let i = 0; i < rows; i++) {
+          const row: UnionValue[] = [];
+          for (let j = 0; j < columns; j++) {
+            row.push({
+              type: ValueType.number,
+              value: Math.floor(Math.random() * range + min),
+            });
+          }
+          value.push(row);
+        }
+      }
+      else {
+        const range = max - min;
+
+        for (let i = 0; i < rows; i++) {
+          const row: UnionValue[] = [];
+          for (let j = 0; j < columns; j++) {
+            row.push({
+              type: ValueType.number,
+              value: Math.random() * range + min,
+            });
+          }
+          value.push(row);
+        }
+      }
+
+      return {
+        type: ValueType.array,
+        value,
+      }
+    },
+  },
+
   RandBetween: {
     arguments: [{name: 'min'}, {name: 'max'}],
     volatile: true,
