@@ -898,7 +898,9 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      *
      * @public
      */
-    Resolve(reference: string): ICellAddress | IArea | undefined;
+    Resolve(reference: string, options?: {
+        r1c1?: boolean;
+    }): ICellAddress | IArea | undefined;
 
     /**
      * Convert an address/range object to a string. this is a convenience

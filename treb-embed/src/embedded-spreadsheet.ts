@@ -4172,7 +4172,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @public
    */
-  public Resolve(reference: string): ICellAddress | IArea | undefined {
+  public Resolve(reference: string, options?: { r1c1?: boolean }): ICellAddress | IArea | undefined {
 
     // API v1 OK
 
@@ -4183,7 +4183,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // FIXME: we're using the sheet EnsureAddress method, but that should
     // move either in here or into some sort of helper class
 
-    const result = this.model.ResolveAddress(reference, this.grid.active_sheet);
+    const result = this.model.ResolveAddress(reference, this.grid.active_sheet, options);
 
     if (IsCellAddress(result)) {
       return result.sheet_id ? result : undefined;
