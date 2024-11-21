@@ -32,9 +32,10 @@ import { ValueType, GetValueType, Area } from 'treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference } from 'treb-parser';
 import type { DataModel, MacroFunction, Sheet } from 'treb-data-model';
-import { NameError, ReferenceError, ExpressionError, UnknownError, SpillError, ValueError } from './function-error';
+import { NameError, ReferenceError, ExpressionError, UnknownError, SpillError, ValueError, ArgumentError } from './function-error';
 
 import * as Primitives from './primitives';
+import type { ContextResult } from './descriptors';
 
 //////////
 
@@ -82,10 +83,16 @@ export interface ReferenceMetadata {
   format?: string;
 }
 
+export type BindingFrame = Record<string, ExpressionUnit>; // FIXME (type?)
+
 export interface CalculationContext {
   address: ICellAddress;
   area?: IArea;
   volatile: boolean;
+
+  /** new for lambdas */
+  bindings: BindingFrame[];
+
 }
 
 export class ExpressionCalculator {
@@ -93,6 +100,7 @@ export class ExpressionCalculator {
   public context: CalculationContext = {
     address: { row: -1, column: -1 },
     volatile: false,
+    bindings: [],
   };
 
   // --- public API -----------------------------------------------------------
@@ -474,9 +482,45 @@ export class ExpressionCalculator {
       let skip_argument_index = -1;
       let argument_error: UnionValue|undefined;
 
-      const argument_descriptors = func.arguments || []; // map
+      // possibly create a binding frame. if we do that we may need
+      // to adjust the arguments as well (and the descriptors)
 
-      const mapped_args = expr.args.map((arg, arg_index) => {
+      let args = expr.args;
+      let argument_descriptors = func.arguments || []; // map
+
+      let binding: ContextResult|undefined;
+      if (func.create_binding_context) {
+
+        // if this does not return a binding frame, there's 
+        // an error.
+
+        binding = func.create_binding_context.call(0, {
+          args: expr.args, descriptors: argument_descriptors
+        }); 
+
+        if (binding) {
+
+          args = binding.args;
+          if (binding.argument_descriptors) {
+            argument_descriptors = binding.argument_descriptors;
+          }
+
+          // bindings need to be normalized. should we do that here? not sure
+
+          const frame: Record<string, ExpressionUnit> = {};
+          for (const [key, value] of Object.entries(binding.context)) {
+            frame[key.toUpperCase()] = value;
+          }
+          this.context.bindings.unshift(frame);
+
+        }
+        else {
+          argument_error = ArgumentError();
+        }
+
+      }
+
+      const mapped_args = args.map((arg, arg_index) => {
 
         // short circuit
         if (argument_error) { 
@@ -558,6 +602,10 @@ export class ExpressionCalculator {
         }
 
       });
+
+      if (binding) {
+        this.context.bindings.shift();
+      }
 
       if (argument_error) {
         return argument_error;
@@ -1025,6 +1073,11 @@ export class ExpressionCalculator {
 
     return () => {
 
+      const binding = this.LookupBinding(upper_case);
+      if (binding) {
+        return this.CalculateExpression(binding as ExtendedExpressionUnit);
+      }
+      
       const named = this.data_model.GetName(upper_case, this.context.address.sheet_id || 0);
       
       switch (named?.type) {
@@ -1044,6 +1097,23 @@ export class ExpressionCalculator {
 
     };
 
+  }
+
+  /**
+   * look up an identifier in any binding frames. we do LIFO binding.
+   * 
+   * @param name 
+   * @returns 
+   */
+  protected LookupBinding(name: string) {
+    name = name.toUpperCase();
+    for (const frame of this.context.bindings) {
+      const value = frame[name];
+      if (value) {
+        return value;
+      }
+    }
+    return undefined;
   }
 
   protected GroupExpression(x: UnitGroup): (expr: UnitGroup) => UnionValue /*UnionOrArray*/ {

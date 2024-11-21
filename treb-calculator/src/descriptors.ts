@@ -20,6 +20,7 @@
  */
 
 import type { RenderFunction, ClickFunction, UnionValue, ICellAddress, IArea } from 'treb-base-types';
+import type { ExpressionUnit } from 'treb-parser';
 
 /**
  * FIXME: possible to add stuff in here if we need it
@@ -73,7 +74,9 @@ export interface ArgumentDescriptor {
 
   /** 
    * this argument repeasts. this has no impact on the function descriptor
-   * but it's useful to know for clients.
+   * but it's useful to know for clients. UPDATE: going to use this for 
+   * let, which repeats arguments at the front. not sure what that's going
+   * to do to clients. maybe it will just magically work!
    */
   repeat?: boolean;
 
@@ -98,6 +101,28 @@ export interface ArgumentDescriptor {
   unroll?: boolean;
 
 }
+
+/**
+ * @internal
+ */
+export interface ContextResult {
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: Record<string, ExpressionUnit>;
+
+  /**
+   * rewrite args
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  args: any[];
+
+  /** possibly rewrite argument descriptors, not required */
+  argument_descriptors?: ArgumentDescriptor[];
+
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type FunctionImplementation = (this: FunctionContext|undefined, ...args: any[]) => UnionValue; 
 
 /**
  * merging the old function descriptor and decorated function types, since
@@ -140,8 +165,7 @@ export interface CompositeFunctionDescriptor {
    * if your function is defined as a function (i.e. not an arrow function).
    * 
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fn: (this: FunctionContext|undefined, ...args: any[]) => UnionValue; 
+  fn: FunctionImplementation; 
 
   /**
    * limited visibility
@@ -195,6 +219,18 @@ export interface CompositeFunctionDescriptor {
    * @internal
    */
   unrolled?: boolean;
+
+  /**
+   * this is new: custom binding context for lambda functions (lambda, let, 
+   * and maybe others?) still working out the semantics of this.
+   * 
+   * @internal
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  create_binding_context?: (context: {
+    args: ExpressionUnit[];
+    descriptors: ArgumentDescriptor[];
+  }) => ContextResult | undefined;
 
 }
 
