@@ -189,6 +189,14 @@ export interface UnitOperator extends BaseUnit {
 }
 
 /**
+ * also not an output type
+ */
+export interface UnitGroupSeparator extends BaseUnit {
+  type: 'group-separator';
+  position: number;
+}
+
+/**
  * expression unit representing a binary operation. operations may be
  * re-ordered based on precendence.
  */
@@ -274,6 +282,7 @@ export type BaseExpressionUnit =
 | UnitMissing
 | UnitGroup
 | UnitOperator
+| UnitGroupSeparator
 | UnitBinary
 | UnitUnary
 | UnitAddress

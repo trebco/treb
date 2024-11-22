@@ -85,6 +85,11 @@ export interface ExtendedUnion {
   key?: string;
 }
 
+export interface FunctionUnion {
+  type: ValueType.function,
+  value: unknown;
+}
+
 /** potentially recursive structure */
 export interface ArrayUnion {
   type: ValueType.array;
@@ -102,6 +107,7 @@ export type UnionValue
     | FormulaUnion
     | UndefinedUnion
     | BooleanUnion
+    | FunctionUnion
     | ErrorUnion
     ;
 

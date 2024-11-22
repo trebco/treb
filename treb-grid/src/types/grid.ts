@@ -2350,11 +2350,10 @@ export class Grid extends GridBase {
       
 
     // this is public so we need to (un)translate.
-    data = this.model.UntranslateData(data);
+    data = this.model.UntranslateData(data, { r1c1 });
     
      // single value, easiest
     if (!Array.isArray(data)) {
-
       if (recycle || array) {
         this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array, r1c1 });
       }

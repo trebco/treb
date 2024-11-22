@@ -47,6 +47,9 @@ export interface ArgumentDescriptor {
   description?: string;
   default?: number|string|boolean;
 
+  /** @internal TODO: rename */
+  passthrough?: boolean;
+
   // moved from function arrays:
 
   /**

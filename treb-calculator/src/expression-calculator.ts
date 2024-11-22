@@ -30,7 +30,8 @@ import type { Cell, ICellAddress,
          IArea} from 'treb-base-types';
 import { ValueType, GetValueType, Area } from 'treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
-         UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference } from 'treb-parser';
+         UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference, 
+         UnitImplicitCall} from 'treb-parser';
 import type { DataModel, MacroFunction, Sheet } from 'treb-data-model';
 import { NameError, ReferenceError, ExpressionError, UnknownError, SpillError, ValueError, ArgumentError } from './function-error';
 
@@ -84,6 +85,7 @@ export interface ReferenceMetadata {
 }
 
 export type BindingFrame = Record<string, ExpressionUnit>; // FIXME (type?)
+export type PositionalFrame = ExpressionUnit[];
 
 export interface CalculationContext {
   address: ICellAddress;
@@ -447,6 +449,72 @@ export class ExpressionCalculator {
   }
 
   /** 
+   * this method can take a `call` type if it looked like a call at 
+   * the parsing stage, it's a simple translation between the two
+   */
+  protected ImplicitCall(): (expr: UnitImplicitCall|UnitCall) => UnionValue {
+    return (expr: UnitImplicitCall|UnitCall) => {
+
+      if (expr.type === 'call') {
+        expr = {
+          type: 'implicit-call',
+          args: expr.args,
+          call: {
+            type: 'identifier',
+            name: expr.name,
+            position: expr.position,
+            id: 0,
+          },
+          position: expr.position,
+          id: 0,
+        };
+      }
+
+      const result = this.CalculateExpression(expr.call as ExtendedExpressionUnit);
+
+      if (result.type === ValueType.function) {
+
+        const value = result.value as {
+          create_binding_context: (positional_arguments: ExpressionUnit[]) => BindingFrame|undefined;
+          exec: () => ExpressionUnit|undefined;
+        };
+
+        const frame = value.create_binding_context(expr.args);
+        // console.info({frame});
+
+        if (!frame) {
+          return ExpressionError();
+        }
+
+        // normalize bindings
+
+        this.context.bindings.unshift(this.NormalizeBindings(frame));
+
+        const exec = value.exec();
+        const exec_result = exec ? this.CalculateExpression(exec as ExtendedExpressionUnit) : undefined;
+
+        // console.info({exec, exec_result});
+
+        this.context.bindings.shift();
+
+        return exec_result || ExpressionError();
+
+      }
+
+      return ExpressionError();
+      
+    };
+  }
+
+  protected NormalizeBindings(context: BindingFrame) {
+    const frame: Record<string, ExpressionUnit> = {};
+    for (const [key, value] of Object.entries(context)) {
+      frame[key.toUpperCase()] = value;
+    }
+    return frame;
+  }
+
+  /** 
    * excute a function call 
    */
   protected CallExpression(outer: UnitCall, return_reference = false): (expr: UnitCall) => UnionValue /*UnionOrArray*/ {
@@ -459,6 +527,12 @@ export class ExpressionCalculator {
 
     if (!func) {
 
+      const upper_case = outer.name.toUpperCase();
+      const named = this.data_model.GetName(upper_case, this.context.address.sheet_id || 0);
+      if (named) {
+        return this.ImplicitCall();
+      }
+      
       if (process.env.NODE_ENV !== 'production') {
         console.info('(dev) missing function', outer.name);
       }
@@ -495,24 +569,16 @@ export class ExpressionCalculator {
         // an error.
 
         binding = func.create_binding_context.call(0, {
-          args: expr.args, descriptors: argument_descriptors
+          args: expr.args, 
+          descriptors: argument_descriptors,
         }); 
 
         if (binding) {
-
           args = binding.args;
           if (binding.argument_descriptors) {
             argument_descriptors = binding.argument_descriptors;
           }
-
-          // bindings need to be normalized. should we do that here? not sure
-
-          const frame: Record<string, ExpressionUnit> = {};
-          for (const [key, value] of Object.entries(binding.context)) {
-            frame[key.toUpperCase()] = value;
-          }
-          this.context.bindings.unshift(frame);
-
+          this.context.bindings.unshift(this.NormalizeBindings(binding.context));
         }
         else {
           argument_error = ArgumentError();
@@ -529,8 +595,18 @@ export class ExpressionCalculator {
 
         // get descriptor. if the number of arguments exceeds 
         // the number of descriptors, recycle the last one
+
+        // FIXME: we have a repeat flag, so we should repeat the 
+        // correct argument(s). I guess we could default to this
+        // behavior.
+
         const descriptor = argument_descriptors[Math.min(arg_index, argument_descriptors.length - 1)] || {}; 
-        
+
+        // new for lambdas
+        if (descriptor.passthrough) {
+          return arg;
+        }
+
         // if function, wrong branch
         if (arg_index === skip_argument_index) { 
           return descriptor.boxed ? { type: ValueType.undefined } : undefined;
@@ -1145,6 +1221,10 @@ export class ExpressionCalculator {
     }
 
     switch (expr.type){
+
+    case 'implicit-call':
+      return (expr.fn = this.ImplicitCall())(expr);
+
     case 'call':
       {
         const macro = this.data_model.macro_functions.get(expr.name.toUpperCase());

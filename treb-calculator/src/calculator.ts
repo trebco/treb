@@ -1433,6 +1433,7 @@ export class Calculator extends Graph {
         switch (v.type) {
           case ValueType.object:
           case ValueType.array:
+          case ValueType.function:
             break;
           default:
             cell.SetCalculatedValue(v.value, v.type);
@@ -1501,6 +1502,7 @@ export class Calculator extends Graph {
               switch (indexed_value.type) {
                 case ValueType.array:
                 case ValueType.object:
+                case ValueType.function:
                   cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(undefined); // error?
                     break;
 
@@ -1540,7 +1542,7 @@ export class Calculator extends Graph {
 
         let applied: UnionValue = { ...value };
         
-        if (applied.type === ValueType.object) {
+        if (applied.type === ValueType.object || applied.type === ValueType.function) {
           applied = { type: ValueType.undefined, value: undefined };
         }
 
@@ -2687,6 +2689,10 @@ export class Calculator extends Graph {
    *
    * this might cause issues if we ever try to actually resolve from the
    * sheet name, though, so (...)
+   * 
+   * 
+   * Q: why does this not use the parser Walk/Walk2 routine? 
+   * 
    */
   protected RebuildDependencies(
       unit: ExpressionUnit,
@@ -2879,6 +2885,15 @@ export class Calculator extends Graph {
       case 'group':
         unit.elements.forEach((element) =>
           this.RebuildDependencies(element, relative_sheet_id, relative_sheet_name, dependencies, context_address));//, sheet_name_map));
+        break;
+
+      case 'implicit-call':
+        {
+          for (const arg of unit.args) {
+            this.RebuildDependencies(arg, relative_sheet_id, relative_sheet_name, dependencies, context_address);
+          }
+          this.RebuildDependencies(unit.call, relative_sheet_id, relative_sheet_name, dependencies, context_address);
+        }
         break;
 
       case 'call':

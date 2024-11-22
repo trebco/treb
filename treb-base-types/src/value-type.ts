@@ -84,6 +84,11 @@ export const IsDimensionedQuantity = (value: unknown): value is DimensionedQuant
           && (typeof (value as DimensionedQuantity).unit === 'string');
 };
 
+/** temp until we have a solid type */
+export const IsFunctionType = (value: unknown) => {
+  return (typeof value === 'object' && (value as { type: string }).type === 'function');
+};
+
 /** 
  * this is the list of value types. internally, we use an enum. I don't 
  * want to change that, at least not at the moment, but that presents a
@@ -102,6 +107,7 @@ export const ValueTypeList = [
   'number',
   'boolean',
   'object',
+  'function',
   'error',
   'complex',
   'array',
@@ -123,6 +129,7 @@ export type SerializedValueType = // typeof ValueTypeList[number];
   'number' |
   'boolean' |
   'object' |
+  'function' |
   'error' |
   'complex' |
   'array' |
@@ -174,6 +181,9 @@ export enum ValueType {
   // adding DQ to union
   dimensioned_quantity = 9,
 
+  // new for lambdas
+  function = 10,
+
 }
 
 /** @internal */
@@ -193,6 +203,9 @@ export const GetValueType = (value: unknown): ValueType => {
     case 'object':
       if (value === null) {
         return ValueType.undefined;
+      }
+      else if (IsFunctionType(value)) {
+        return ValueType.function;
       }
       else if (IsComplex(value)) {
         return ValueType.complex;

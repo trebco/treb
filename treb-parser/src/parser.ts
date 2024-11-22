@@ -773,7 +773,7 @@ export class Parser {
 
       case 'implicit-call':
         return this.Render(unit.call, options) + 
-          '(' + unit.args.map(element => this.Render(element, options)).join(', ') + ')';
+          '(' + unit.args.map(element => this.Render(element, options)).join(separator) + ')';
 
       case 'call':
         return (
@@ -1029,11 +1029,12 @@ export class Parser {
    *
    * @param exit exit on specific characters
    */
-  protected ParseGeneric(exit: number[] = [0]): ExpressionUnit | null {
+  protected ParseGeneric(exit: number[] = [0], explicit_group = false): ExpressionUnit | null {
     let stream: ExpressionUnit[] = [];
 
     for (; this.index < this.length;) {
       const unit = this.ParseNext(stream.length === 0);
+
       if (typeof unit === 'number') {
 
         if (exit.some((test) => unit === test)) {
@@ -1045,8 +1046,11 @@ export class Parser {
           // so we only have to worry about grouping. parse
           // up to the closing paren...
 
+          // actually now we have implicit calls, so we need
+          // to manage that here. 
+
           this.index++; // open paren
-          const group = this.ParseGeneric([CLOSE_PAREN]);
+          const group = this.ParseGeneric([CLOSE_PAREN], true);
           this.index++; // close paren
 
           // and wrap up in a group element to prevent reordering.
@@ -1070,6 +1074,21 @@ export class Parser {
           const operator = this.ConsumeOperator();
           if (operator) {
             stream.push(operator);
+          }
+          else if (explicit_group && unit === this.argument_separator_char) {
+
+            // adding a new unit type here to explicitly show we're in
+            // a group; prevents later passes from treating arguments as 
+            // fractions or something else. we just need to remove these
+            // later
+
+            stream.push({
+              type: 'group-separator',
+              position: this.index,
+              id: this.id_counter++,
+            });
+
+            this.index++;
           }
           else {
             this.error = `unexpected character [1]: ${String.fromCharCode(unit)}, 0x${unit.toString(16)}`;
@@ -1250,13 +1269,6 @@ export class Parser {
 
     // fix ordering of binary operations based on precedence; also
     // convert and validate ranges
-
-    // return this.BinaryToRange(this.ArrangeUnits(stream));
-    // return this.ArrangeUnits(stream);
-
-    // const arranged = this.ArrangeUnits(stream);
-    // const result = this.BinaryToComplex(arranged);
-    // return result;
 
     return this.BinaryToComplex(this.ArrangeUnits(stream));
 
@@ -1632,155 +1644,13 @@ export class Parser {
 
 
   /**
-   * converts binary operations with a colon operator to ranges. this also
-   * validates that there are no colon operations with non-address operands
-   * (which is why it's called after precendence reordering; colon has the
-   * highest preference). recursive only over binary ops AND unary ops.
-   * 
-   * NOTE: there are other legal arguments to a colon operator. specifically:
-   * 
-   * (1) two numbers, in either order
-   *
-   * 15:16
-   * 16:16
-   * 16:15
-   *
-   * (2) with one or both optionally having a $
-   *
-   * 15:$16
-   * $16:$16
-   *
-   * (3) two column identifiers, in either order
-   * 
-   * A:F
-   * B:A
-   *
-   * (4) and the same with $
-   *
-   * $A:F
-   * $A:$F
-   * 
-   * because none of these are legal in any other context, we leave the 
-   * default treatment of them UNLESS they are arguments to the colon 
-   * operator, in which case we will grab them. that does mean we parse
-   * them twice, but (...)
-   * 
-   * FIXME: will need some updated to rendering these, we don't have any
-   * handler for rendering infinity
-   * /
-  protected BinaryToRangeX(unit: ExpressionUnit): ExpressionUnit {
-    if (unit.type === 'binary') {
-      if (unit.operator === ':') {
-
-        let range: UnitRange|undefined;
-        let label = '';
-
-        if (unit.left.type === 'address' && unit.right.type === 'address') {
-          // construct a label using the full text. there's a possibility,
-          // I suppose, that there are spaces (this should probably not be
-          // legal). this is a canonical label, though (generated)
-
-          // it might be better to let this slip, or treat it as an error
-          // and force a correction... not sure (TODO/FIXME)
-
-          const start_index = unit.left.position + unit.left.label.length;
-          const end_index = unit.right.position;
-
-          range = {
-            type: 'range',
-            id: this.id_counter++,
-            position: unit.left.position,
-            start: unit.left,
-            end: unit.right,
-            label:
-              unit.left.label +
-              this.expression.substring(start_index, end_index) +
-              unit.right.label,
-          };
-
-          label = range.start.label + ':' + range.end.label;
-
-          this.address_refcount[range.start.label]--;
-          this.address_refcount[range.end.label]--;
-
-          // remove entries from the list for start, stop
-          const positions = [unit.left.position, unit.right.position];
-          this.full_reference_list = this.full_reference_list.filter((test) => {
-            return (
-              test.position !== positions[0] && test.position !== positions[1]
-            );
-          });
-
-        }
-        else if ((unit.left.type === 'literal' || unit.left.type === 'identifier')
-                && (unit.right.type === 'literal' || unit.right.type === 'identifier')) {
-
-          // see if we can plausibly interpret both of these as rows or columns
-
-          const left = this.UnitToAddress(unit.left);
-          const right = this.UnitToAddress(unit.right);
-
-          // and they need to match
-
-          if (left && right
-              && ((left.column === Infinity && right.column === Infinity)
-                  || (left.row === Infinity && right.row === Infinity))) {
-
-            label = left.label + ':' + right.label;
-
-            // we don't support out-of-order ranges, so we should correct.
-            // they just won't work otherwise. (TODO/FIXME)
-           
-            range = {
-              type: 'range',
-              id: this.id_counter++,
-              position: unit.left.position,
-              start: left,
-              end: right,
-              label,
-            };
-
-          }
-                    
-        }
-
-        if (range) {
-
-          this.dependencies.ranges[label] = range;
-
-          // and add the range
-          this.full_reference_list.push(range);
-
-          return range;
-
-        }
-        else {
-          this.error = `unexpected character: :`;
-          this.valid = false;
-          // console.info('xx', unit);
-        }
-
-      }
-
-      // recurse
-
-      unit.left = this.BinaryToRangeX(unit.left);
-      unit.right = this.BinaryToRangeX(unit.right);
-    }
-
-    // this should no longer be required, because we explicitly check
-    // when we construct the unary operations...
-
-    // else if (unit.type === 'unary') {
-    //   unit.operand = this.BinaryToRange(unit.operand);
-    // }
-
-    return unit;
-  }
-  */
-
-  /**
    * reorders operations for precendence
+   * 
+   * this method was written with the assumption that groups were
+   * always an error. that's no longer true, with implicit calls.
+   * we should still error if it's not an _explicit_ group, i.e. there's
+   * just a bunch of naked tokens.
+   * 
    */
   protected ArrangeUnits(stream: ExpressionUnit[]): ExpressionUnit {
 
@@ -1807,6 +1677,10 @@ export class Parser {
     for (let index = 0; index < stream.length; index++) {
       let element = stream[index];
 
+      if (element.type === 'group-separator') {
+        continue; // drop 
+      }
+
       // given that we need to support unary operators, the logic needs
       // to be a little different. operators are OK at any position, provided
       // we can construct either a unary or binary operation.
@@ -1817,14 +1691,7 @@ export class Parser {
           // in this case we do it with recursion.
 
           if (unary_operators[element.operator]) {
-
-            // MARK X
-
-            // const right = this.BinaryToRange(
-            //  this.ArrangeUnits(stream.slice(index + 1)),
-            //);
-
-            // const right = this.ArrangeUnits(stream.slice(index + 1));
+            
             const right = this.BinaryToComplex(this.ArrangeUnits(stream.slice(index + 1)));
 
             // this ensures we return the highest-level group, even if we recurse
@@ -1928,6 +1795,7 @@ export class Parser {
 
             }
           }
+          /*
           else if (a !== 'operator') {
 
             // console.warn("unexpected element", stack[0], element);
@@ -1943,6 +1811,7 @@ export class Parser {
             };
 
           }
+          */
 
         }
         
@@ -1992,6 +1861,8 @@ export class Parser {
         stack.splice(-2, 2, operation);
       }
       else {
+
+        /*
         this.error = `multiple expressions`;
         this.error_position = (element as {position?: number}).position;
         this.valid = false;
@@ -2001,7 +1872,20 @@ export class Parser {
           elements: stream,
           explicit: false,
         };
+        */
+
+        stack.push(element);
+
       }
+    }
+
+    if (stack.length > 1) {
+      return {
+        type: 'group',
+        id: this.id_counter++,
+        elements: stack,
+        explicit: false,
+      };
     }
 
     return stack[0];
@@ -2381,6 +2265,20 @@ export class Parser {
 
     this.ConsumeWhiteSpace();
 
+    // UPDATE: UNLESS the token is an address, because that's not
+    // a legal function name. so change that precedence rule, address
+    // comes first.
+
+    // erm -- that's not 100% correct. LOG10 is a valid cell address
+    // and a valid function name. there might be others as well.
+
+    if (this.flags.spreadsheet_semantics) {
+      const address = this.ConsumeAddress(str, position);
+      if (address) return address;
+    }
+
+    // [FIXME: what about braces? (...)]
+
     const next_char = this.data[this.index];
     if (next_char === OPEN_PAREN) {
       const args = this.ConsumeArguments();
@@ -2400,8 +2298,9 @@ export class Parser {
       // range operator, and a second address. that will be turned into a range
       // later.
 
-      const address = this.ConsumeAddress(str, position);
-      if (address) return address;
+      // moved up
+      // const address = this.ConsumeAddress(str, position);
+      // if (address) return address;
 
       // check for structured reference, if we had square brackets
 
@@ -2633,6 +2532,14 @@ export class Parser {
 
     if (!r) return null; 
     position = r.position;
+
+    // special hack for LOG10. ugh. can't find any other functions with
+    // this problem, in english at least. btw what's the translation for
+    // log10?
+
+    if (c.column === 8508 && r.row === 9) {
+      return null;
+    }
 
     const label = sheet ?
       sheet + token.substr(sheet.length, position - index).toUpperCase() :

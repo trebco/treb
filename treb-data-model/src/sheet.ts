@@ -1631,6 +1631,11 @@ export class Sheet {
       cell.rendered_type = ValueType.dimensioned_quantity; // who cares about rendered_type? (...)
 
     }
+    else if (type === ValueType.function) {
+      cell.formatted = '𝑓()'; // FIXME
+      cell.rendered_type = ValueType.string;
+
+    }
     else {
 
       // why is this being treated as a number? (...)

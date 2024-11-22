@@ -1,12 +1,57 @@
 
 import type { FunctionMap } from '../descriptors';
-import type { CellValue, NumberUnion, UnionValue} from 'treb-base-types';
-import { IsComplex, ValueType } from 'treb-base-types';
-import { ValueError } from '../function-error';
-import { RectangularToPolar } from '../complex-math';
+import type { UnionValue} from 'treb-base-types';
+import { ValueType } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 
 export const LambdaFunctionLibrary: FunctionMap = {
+
+  Lambda: {
+
+    // FIXME: we could use the create_binding_context callback
+    // here to validate the original parameters, might be useful
+
+    description: 'Creates a function',
+    arguments: [
+      { name: 'Argument', repeat: true, boxed: true, passthrough: true },
+      { name: 'Function', boxed: true, passthrough: true },
+    ],
+
+    fn: (...args: ExpressionUnit[]) => {
+
+      // OK so args gets in a closure. these will be the original 
+      // function args, even if this is called through a reference.
+
+      // we can use that to create a binding context, but we'll
+      // do that when the function is called dynamically
+
+      return {
+        type: ValueType.function, 
+        value: {
+          create_binding_context: (positional_arguments: ExpressionUnit[]) => {
+            const context: Record<string, ExpressionUnit> = {};
+            for (let i = 0; i < args.length - 1; i++) {
+              const name = args[i];
+              if (name?.type === 'identifier') {
+                context[name.name] = positional_arguments[i] || { type: 'missing' };
+              }
+              else { 
+                return false;
+              }
+            }
+            return context;
+          },
+          exec: () => {
+            return args[args.length - 1];
+          },
+          alt: 'LAMBDA',    // metadata
+          type: 'function', // metadata
+        },
+      };
+
+    }
+
+  },
 
   Let: {
 

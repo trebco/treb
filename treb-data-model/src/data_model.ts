@@ -601,9 +601,9 @@ export class DataModel {
    * be inlined (assuming it's only called in one place), but we are breaking
    * it out so we can develop/test/manage it.
    */
-  public TranslateFunction(value: string): string {
+  public TranslateFunction(value: string, options?: { r1c1?: boolean }): string {
     if (this.language_map) {
-      return this.TranslateInternal(value, this.language_map, this.language_model?.boolean_true, this.language_model?.boolean_false);
+      return this.TranslateInternal(value, this.language_map, this.language_model?.boolean_true, this.language_model?.boolean_false, options);
     }
     return value;
   }
@@ -612,14 +612,14 @@ export class DataModel {
    * translate from local language -> common (english).
    * @see TranslateFunction
    */
-  public UntranslateFunction(value: string): string {
+  public UntranslateFunction(value: string, options?: { r1c1?: boolean }): string {
     if (this.reverse_language_map) {
-      return this.TranslateInternal(value, this.reverse_language_map, 'TRUE', 'FALSE');
+      return this.TranslateInternal(value, this.reverse_language_map, 'TRUE', 'FALSE', options);
     }
     return value;
   }
 
-  public UntranslateData(value: CellValue|CellValue[]|CellValue[][]): CellValue|CellValue[]|CellValue[][] {
+  public UntranslateData(value: CellValue|CellValue[]|CellValue[][], options?: { r1c1?: boolean }): CellValue|CellValue[]|CellValue[][] {
 
     if (Array.isArray(value)) {
 
@@ -628,7 +628,7 @@ export class DataModel {
       if (Is2DArray(value)) {
         return value.map(row => row.map(entry => {
           if (entry && typeof entry === 'string' && entry[0] === '=') {
-            return this.UntranslateFunction(entry);
+            return this.UntranslateFunction(entry, options);
           }
           return entry;
         }));
@@ -636,7 +636,7 @@ export class DataModel {
       else {
         return value.map(entry => {
           if (entry && typeof entry === 'string' && entry[0] === '=') {
-            return this.UntranslateFunction(entry);
+            return this.UntranslateFunction(entry, options);
           }
           return entry;
         });
@@ -646,7 +646,7 @@ export class DataModel {
     else if (value && typeof value === 'string' && value[0] === '=') {
 
       // single value
-      value = this.UntranslateFunction(value);
+      value = this.UntranslateFunction(value, options);
 
     }
 
@@ -663,7 +663,10 @@ export class DataModel {
    * FIXME: it's about time we started using proper maps, we dropped 
    * support for IE11 some time ago.
    */
-  private TranslateInternal(value: string, map: Record<string, string>, boolean_true?: string, boolean_false?: string): string {
+  private TranslateInternal(value: string, map: Record<string, string>, boolean_true?: string, boolean_false?: string, options?: { r1c1?: boolean }): string {
+
+    this.parser.Save();
+    this.parser.flags.r1c1 = options?.r1c1;
 
     const parse_result = this.parser.Parse(value);
 
@@ -698,6 +701,7 @@ export class DataModel {
       }
     }
 
+    this.parser.Restore();
     return value;
 
   }
