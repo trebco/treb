@@ -697,6 +697,7 @@ export class DataModel {
       if (modified) {
         return '=' + this.parser.Render(parse_result.expression, { 
           missing: '', boolean_true, boolean_false,
+          r1c1: options?.r1c1,
         });
       }
     }

@@ -968,8 +968,13 @@ export class Parser {
         '\'' + address.sheet + '\'' : address.sheet) + '!';
     }
 
+    const row = address.offset_row ? `[${address.row}]` : address.row + 1;
+    const column = address.offset_column ? `[${address.column}]` : address.column + 1;
+
+    /*    
     const row = (address.absolute_row || !base) ? (address.row + 1).toString() : `[${address.row - base.row}]`;
     const column = (address.absolute_column || !base) ? (address.column + 1).toString() : `[${address.column - base.column}]`;
+    */
 
     label += `R${row}C${column}`;
 

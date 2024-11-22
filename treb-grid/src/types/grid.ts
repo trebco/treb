@@ -2350,7 +2350,9 @@ export class Grid extends GridBase {
       
 
     // this is public so we need to (un)translate.
+    // console.info("PRE", {r1c1}, data);
     data = this.model.UntranslateData(data, { r1c1 });
+    // console.info("POST", data, "\n");
     
      // single value, easiest
     if (!Array.isArray(data)) {
