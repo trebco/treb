@@ -168,6 +168,17 @@ export interface UnitCall extends BaseUnit {
 }
 
 /**
+ * new call type: implicit. we might merge these.
+ */
+export interface UnitImplicitCall extends BaseUnit {
+  type: 'implicit-call';
+  position: number;
+  args: ExpressionUnit[];
+  call: ExpressionUnit;
+
+}
+
+/**
  * this isn't an output type (unless parsing fails), but it's useful
  * to be able to pass these around with the same semantics.
  */
@@ -259,6 +270,7 @@ export type BaseExpressionUnit =
 | UnitArray
 | UnitIdentifier
 | UnitCall
+| UnitImplicitCall
 | UnitMissing
 | UnitGroup
 | UnitOperator

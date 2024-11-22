@@ -411,6 +411,13 @@ export class Parser {
         }
         break;
 
+      case 'implicit-call':
+        if (func(unit)) {
+          unit.call = this.Walk2(unit.call, func);
+          unit.args = unit.args.map(source => this.Walk2(source, func));
+        }
+        break;
+
       case 'call':
         if (func(unit)) {
           unit.args = unit.args.map(source => this.Walk2(source, func));
@@ -473,6 +480,15 @@ export class Parser {
           // unit.elements.forEach((element) => this.Walk(element, func));
           for (const element of unit.elements) {
             this.Walk(element, func);
+          }
+        }
+        return;
+
+      case 'implicit-call':
+        if (func(unit)) {
+          this.Walk(unit.call, func);          
+          for (const arg of unit.args) {
+            this.Walk(arg, func);
           }
         }
         return;
@@ -754,6 +770,10 @@ export class Parser {
           return unit.elements
             .map((x) => this.Render(x, options)).join(separator);
         }
+
+      case 'implicit-call':
+        return this.Render(unit.call, options) + 
+          '(' + unit.args.map(element => this.Render(element, options)).join(', ') + ')';
 
       case 'call':
         return (
@@ -1647,7 +1667,7 @@ export class Parser {
    * 
    * FIXME: will need some updated to rendering these, we don't have any
    * handler for rendering infinity
-   */
+   * /
   protected BinaryToRangeX(unit: ExpressionUnit): ExpressionUnit {
     if (unit.type === 'binary') {
       if (unit.operator === ':') {
@@ -1724,58 +1744,6 @@ export class Parser {
                     
         }
 
-        /*
-        else if ( unit.left.type === 'literal' 
-                  && unit.right.type === 'literal' 
-                  && typeof unit.left.value === 'number' 
-                  && typeof unit.right.value === 'number') {
-
-          // technically we don't want to support any number that has
-          // a decimal place, but I'm not sure we have a useful way of
-          // measuring that... could look at the original text?
-
-          if (unit.left.value > 0 
-              && unit.right.value > 0
-              && !/\./.test(unit.left.text||'')
-              && !/\./.test(unit.right.text||'')
-              ) {
-
-            label = unit.left.value.toString() + ':' + unit.right.value.toString();
-
-            console.info('m2:', label);
-
-            const left: UnitAddress = {
-              type: 'address',
-              position: unit.left.position,
-              label: unit.left.value.toString(),
-              row: unit.left.value - 1,
-              id: this.id_counter++,
-              column: Infinity,
-            };
-
-            const right: UnitAddress = {
-              type: 'address',
-              position: unit.right.position,
-              label: unit.right.value.toString(),
-              row: unit.right.value - 1,
-              id: this.id_counter++,
-              column: Infinity,
-            };
-
-            range = {
-              type: 'range',
-              id: this.id_counter++,
-              position: unit.left.position,
-              start: left,
-              end: right,
-              label,
-            };
-
-          }
-          
-        }
-        */
-
         if (range) {
 
           this.dependencies.ranges[label] = range;
@@ -1809,6 +1777,7 @@ export class Parser {
 
     return unit;
   }
+  */
 
   /**
    * reorders operations for precendence
@@ -1932,7 +1901,34 @@ export class Parser {
         if (stack.length === 1) {
           const a = stack[0].type;
 
-          if (a !== 'operator') {
+          // support for lambdas
+
+          if (element.type === 'group' && element.explicit) {
+            if (a === 'address' || a === 'call' || a === 'identifier' || a === 'implicit-call') {
+
+              // our parser seems to create implicit groups from these
+              // values in parens. we should fix that, but we can unpack it.
+
+              let args = element.elements;
+              if (args.length === 1 && args[0].type === 'group' && !args[0].explicit) {
+                args = args[0].elements;
+              }
+              
+              // create an implicit call. replace on the stack.
+
+              stack[0] = {
+                type: 'implicit-call',
+                call: stack[0],
+                args,
+                id: this.id_counter++,
+                position: stack[0].position,
+              };
+
+              continue;
+
+            }
+          }
+          else if (a !== 'operator') {
 
             // console.warn("unexpected element", stack[0], element);
 
