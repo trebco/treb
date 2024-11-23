@@ -197,6 +197,7 @@ export class DataModel {
       const named: SerializedNamed = {
         name: entry.name,
         expression: '',
+        type: entry.type,
       };
 
       if (entry.scope) {

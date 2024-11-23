@@ -57,6 +57,12 @@ export interface SerializedNamed {
   /** scope is a sheet name (not ID) */
   scope?: string;
 
+  /** 
+   * adding type. this is optional, it's not used by tooling. it's 
+   * just for informational purpopses for clients.
+   */
+  type?: Named['type'];
+
 }
 
 /**

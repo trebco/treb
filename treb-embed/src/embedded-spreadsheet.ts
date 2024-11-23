@@ -49,7 +49,6 @@ import type {
     CondifionalFormatExpressionOptions,
     ConditionalFormatCellMatchOptions,
     ConditionalFormatCellMatch,
-
     LanguageModel, 
     TranslatedFunctionDescriptor,
 
@@ -4416,6 +4415,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // NOTE: AC is handled internally
     this.grid.SetName(name);
 
+  }
+
+  public ListNames() {
+    return this.model.SerializeNames();    
   }
 
   /**

@@ -18,15 +18,11 @@ export const LambdaFunctionLibrary: FunctionMap = {
     ],
 
     fn: (...args: ExpressionUnit[]) => {
-
-      // OK so args gets in a closure. these will be the original 
-      // function args, even if this is called through a reference.
-
-      // we can use that to create a binding context, but we'll
-      // do that when the function is called dynamically
-
       return {
         type: ValueType.function, 
+
+        // FIXME: lock down this type
+
         value: {
 
           // we should probably clone these

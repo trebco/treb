@@ -1632,9 +1632,21 @@ export class Sheet {
 
     }
     else if (type === ValueType.function) {
-      cell.formatted = '𝑓()'; // FIXME
-      cell.rendered_type = ValueType.string;
 
+      /*
+      // FIXME: lock down this type (function)
+
+      if ((cell.calculated as any)?.alt) {
+        cell.formatted = (cell.calculated as any).alt.toString();
+        cell.rendered_type = ValueType.string;
+      }
+      else 
+      */
+     
+      {
+        cell.formatted = '𝑓()'; // FIXME
+        cell.rendered_type = ValueType.string;
+      }
     }
     else {
 
