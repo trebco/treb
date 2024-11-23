@@ -111,17 +111,23 @@ export class DataModel {
   }
 
   /**
-   * 
+   * @param force_locale - always parse assuming a locale like en-us (comma
+   * argument separators). the current thinking is that this is required for
+   * XLSX import, although that might be incorrect.
    */
-  public UnserializeNames(names: SerializedNamed[], active_sheet?: Sheet) {
+  public UnserializeNames(names: SerializedNamed[], active_sheet?: Sheet, force_locale = false) {
 
     this.parser.Save();
-    this.parser.SetLocaleSettings(DecimalMarkType.Period, ArgumentSeparatorType.Comma);
-    
+    if (force_locale) {
+      this.parser.SetLocaleSettings(DecimalMarkType.Period, ArgumentSeparatorType.Comma);
+    }
+
     //const sorted = names.map(named => {
     for (const named of names) {
 
       if (!named.expression) { continue; }
+
+      console.info("NE", named.expression);
 
       const parse_result = this.parser.Parse(named.expression); 
       if (parse_result.expression) {
@@ -239,6 +245,11 @@ export class DataModel {
           */
           return true;
         });
+
+        // this is using the current locale settings, but unserialize
+        // assumes we are unserializing in US-style locale. I think we
+        // do that because excel always uses that? not sure, but we need
+        // to be consistent.
 
         named.expression = this.parser.Render(entry.expression, { missing: '' });
 

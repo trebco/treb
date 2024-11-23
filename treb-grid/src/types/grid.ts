@@ -1284,7 +1284,7 @@ export class Grid extends GridBase {
     this.model.named.Reset();
 
     if (import_data.named) {
-      this.model.UnserializeNames(import_data.named, this.active_sheet);
+      this.model.UnserializeNames(import_data.named, this.active_sheet, true);
     }
 
     // FIXME: do we need to rebuild autocomplete here (A: yes)

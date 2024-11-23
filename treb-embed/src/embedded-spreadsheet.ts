@@ -6448,7 +6448,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     model.named.Reset(); 
 
     if (data.named) {
+
+      // use locale setting for parsing
       this.model.UnserializeNames(data.named, this.grid.active_sheet);
+
     }
     else {
 
@@ -6484,6 +6487,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       if (data.named_expressions) {
         for (const pair of data.named_expressions) {
+
+        // use locale setting for parsing
 
           this.model.UnserializeNames([{
             name: pair.name,
