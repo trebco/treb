@@ -127,8 +127,6 @@ export class DataModel {
 
       if (!named.expression) { continue; }
 
-      console.info("NE", named.expression);
-
       const parse_result = this.parser.Parse(named.expression); 
       if (parse_result.expression) {
 
