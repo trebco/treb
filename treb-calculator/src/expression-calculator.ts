@@ -475,17 +475,30 @@ export class ExpressionCalculator {
       if (result.type === ValueType.function) {
 
         const value = result.value as {
-          bindings: (positional_arguments: ExpressionUnit[]) => BindingFrame|undefined;
+          bindings: ExpressionUnit[];
           func: ExpressionUnit|undefined;
         };
 
-        let frame = value.bindings(expr.args);
-
-        if (!frame || !value.func) {
+        if (!value.func || !value.bindings) {
           return ExpressionError();
         }
 
-        frame = this.NormalizeBindings(frame);
+        // let frame = value.bindings(expr.args);
+
+        const frame: BindingFrame = {};
+
+        for (let i = 0; i < value.bindings.length; i++) {
+          const name = value.bindings[i];
+          if (name?.type === 'identifier') {
+            frame[name.name.toUpperCase()] = expr.args[i] || { type: 'missing' };
+          }
+          else { 
+            // should not happen, error
+            return ExpressionError();
+          }
+        }
+
+        // frame = this.NormalizeBindings(frame); // inline
 
         const munged = JSON.parse(JSON.stringify(value.func));
         

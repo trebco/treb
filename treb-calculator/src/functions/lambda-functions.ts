@@ -29,19 +29,9 @@ export const LambdaFunctionLibrary: FunctionMap = {
         type: ValueType.function, 
         value: {
 
-          bindings: (positional_arguments: ExpressionUnit[]) => {
-            const context: Record<string, ExpressionUnit> = {};
-            for (let i = 0; i < args.length - 1; i++) {
-              const name = args[i];
-              if (name?.type === 'identifier') {
-                context[name.name] = positional_arguments[i] || { type: 'missing' };
-              }
-              else { 
-                return false;
-              }
-            }
-            return context;
-          },
+          // we should probably clone these
+
+          bindings: args.slice(0, args.length - 1),
           func: args[args.length - 1],
 
           alt: 'LAMBDA',    // metadata
