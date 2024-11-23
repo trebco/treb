@@ -475,29 +475,37 @@ export class ExpressionCalculator {
       if (result.type === ValueType.function) {
 
         const value = result.value as {
-          create_binding_context: (positional_arguments: ExpressionUnit[]) => BindingFrame|undefined;
-          exec: () => ExpressionUnit|undefined;
+          bindings: (positional_arguments: ExpressionUnit[]) => BindingFrame|undefined;
+          func: ExpressionUnit|undefined;
         };
 
-        const frame = value.create_binding_context(expr.args);
-        // console.info({frame});
+        let frame = value.bindings(expr.args);
 
-        if (!frame) {
+        if (!frame || !value.func) {
           return ExpressionError();
         }
 
-        // normalize bindings
+        frame = this.NormalizeBindings(frame);
 
-        this.context.bindings.unshift(this.NormalizeBindings(frame));
+        const munged = JSON.parse(JSON.stringify(value.func));
+        
+        this.parser.Walk2(munged, (unit: ExpressionUnit) => {
+          if (unit.type === 'identifier') {
+            const upper_case = unit.name.toUpperCase();
+            const binding = frame[upper_case];
+            if (binding) {
+              return JSON.parse(JSON.stringify(binding));
+            }
+          }
+          return true;
+        });
+        
+        // console.info({frame, func, munged});
+        
+        // const exec_result = this.CalculateExpression(munged as ExtendedExpressionUnit);
+        // return exec_result || ExpressionError();
 
-        const exec = value.exec();
-        const exec_result = exec ? this.CalculateExpression(exec as ExtendedExpressionUnit) : undefined;
-
-        // console.info({exec, exec_result});
-
-        this.context.bindings.shift();
-
-        return exec_result || ExpressionError();
+        return this.CalculateExpression(munged as ExtendedExpressionUnit);
 
       }
 
@@ -528,6 +536,12 @@ export class ExpressionCalculator {
     if (!func) {
 
       const upper_case = outer.name.toUpperCase();
+
+      const binding = this.LookupBinding(upper_case);
+      if (binding) {
+        return this.ImplicitCall();
+      }
+
       const named = this.data_model.GetName(upper_case, this.context.address.sheet_id || 0);
       if (named) {
         return this.ImplicitCall();
@@ -565,8 +579,7 @@ export class ExpressionCalculator {
       let binding: ContextResult|undefined;
       if (func.create_binding_context) {
 
-        // if this does not return a binding frame, there's 
-        // an error.
+        // if this does not return a binding frame, it's an error.
 
         binding = func.create_binding_context.call(0, {
           args: expr.args, 

@@ -28,7 +28,8 @@ export const LambdaFunctionLibrary: FunctionMap = {
       return {
         type: ValueType.function, 
         value: {
-          create_binding_context: (positional_arguments: ExpressionUnit[]) => {
+
+          bindings: (positional_arguments: ExpressionUnit[]) => {
             const context: Record<string, ExpressionUnit> = {};
             for (let i = 0; i < args.length - 1; i++) {
               const name = args[i];
@@ -41,9 +42,8 @@ export const LambdaFunctionLibrary: FunctionMap = {
             }
             return context;
           },
-          exec: () => {
-            return args[args.length - 1];
-          },
+          func: args[args.length - 1],
+
           alt: 'LAMBDA',    // metadata
           type: 'function', // metadata
         },
