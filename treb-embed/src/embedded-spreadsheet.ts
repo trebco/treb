@@ -51,6 +51,7 @@ import type {
     ConditionalFormatCellMatch,
     LanguageModel, 
     TranslatedFunctionDescriptor,
+    SerializedNamed,
 
    } from 'treb-data-model';
 
@@ -4417,7 +4418,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   }
 
-  public ListNames() {
+  public ListNames(): SerializedNamed[] {
     return this.model.SerializeNames();    
   }
 

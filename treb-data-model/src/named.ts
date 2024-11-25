@@ -33,6 +33,7 @@ interface NamedRange {
   area: Area;
 }
 
+/** @internal */
 export type Named = (NamedExpression | NamedRange) & {
   name: string;     // canonical name
   scope?: number;   // scope to sheet by ID
@@ -61,7 +62,7 @@ export interface SerializedNamed {
    * adding type. this is optional, it's not used by tooling. it's 
    * just for informational purpopses for clients.
    */
-  type?: Named['type'];
+  type?: 'range'|'expression';
 
 }
 
