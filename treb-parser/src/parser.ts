@@ -602,14 +602,15 @@ export class Parser {
         if (options.pass_through_addresses) { 
           return unit.label;
         }
-        return options.r1c1 ? this.R1C1Label(unit, options.r1c1_base) : this.AddressLabel(unit, offset);
+        return options.r1c1 ? this.R1C1Label(unit, options.r1c1_base, options.r1c1_force_relative) : this.AddressLabel(unit, offset);
 
       case 'range':
         if (options.pass_through_addresses) { 
           return unit.label;
         }
         return options.r1c1 ? 
-          this.R1C1Label(unit.start, options.r1c1_base) + ':' + this.R1C1Label(unit.end, options.r1c1_base) : 
+          this.R1C1Label(unit.start, options.r1c1_base, options.r1c1_force_relative) + ':' + 
+            this.R1C1Label(unit.end, options.r1c1_base, options.r1c1_force_relative) : 
           this.AddressLabel(unit.start, offset) + ':' + this.AddressLabel(unit.end, offset);
 
       case 'missing':
@@ -955,10 +956,14 @@ export class Parser {
 
   /**
    * generates absolute or relative R1C1 address
+   * 
+   * FIXME: not supporting relative (offset) addresses atm? I'd like to
+   * change this but I don't want to break anything...
    */
   protected R1C1Label(
     address: UnitAddress,
     base?: UnitAddress,
+    force_relative = false,
   ): string {
 
     let label = '';
@@ -968,8 +973,25 @@ export class Parser {
         '\'' + address.sheet + '\'' : address.sheet) + '!';
     }
 
-    const row = address.offset_row ? `[${address.row}]` : address.row + 1;
-    const column = address.offset_column ? `[${address.column}]` : address.column + 1;
+    let row = '';
+    let column = '';
+
+    if (force_relative && base) { 
+      const delta_row = address.row - base.row;
+      const delta_column = address.column - base.column;
+
+      if (delta_row) {
+        row = `[${delta_row}]`;
+      }
+      if (delta_column) {
+        column = `[${delta_column}]`;
+      }
+
+    }
+    else {
+      row = address.offset_row ? `[${address.row}]` : (address.row + 1).toString();
+      column = address.offset_column ? `[${address.column}]` : (address.column + 1).toString();
+    }
 
     /*    
     const row = (address.absolute_row || !base) ? (address.row + 1).toString() : `[${address.row - base.row}]`;

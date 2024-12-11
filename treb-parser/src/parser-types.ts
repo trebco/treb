@@ -445,6 +445,9 @@ export interface RenderOptions {
   /** base for offsetting relative R1C1 addresses */
   r1c1_base?: UnitAddress;
 
+  /** force addresses to be relative */
+  r1c1_force_relative?: boolean;
+
   /** if we're just translating, don't have to render addresses */
   pass_through_addresses?: boolean;
 
