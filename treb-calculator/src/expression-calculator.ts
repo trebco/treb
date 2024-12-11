@@ -1212,14 +1212,10 @@ export class ExpressionCalculator {
     for (const frame of this.context.bindings) {
       const value = frame[name];
       if (value) {
-
-        console.info("Lookup binding", name, value);
-
         return value;
       }
     }
 
-    console.info("Lookup binding", name, "failed");
     return undefined;
   }
 
