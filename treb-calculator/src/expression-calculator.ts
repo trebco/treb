@@ -1162,11 +1162,11 @@ export class ExpressionCalculator {
 
     switch (upper_case){
     case 'FALSE':
-    case 'F':
+    // case 'F':
       return () => {return {value: false, type: ValueType.boolean}};
 
     case 'TRUE':
-    case 'T':
+    // case 'T':
       return () => {return {value: true, type: ValueType.boolean}};
 
     case 'UNDEFINED':
@@ -1212,9 +1212,14 @@ export class ExpressionCalculator {
     for (const frame of this.context.bindings) {
       const value = frame[name];
       if (value) {
+
+        console.info("Lookup binding", name, value);
+
         return value;
       }
     }
+
+    console.info("Lookup binding", name, "failed");
     return undefined;
   }
 
