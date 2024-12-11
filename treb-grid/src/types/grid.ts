@@ -2041,6 +2041,7 @@ export class Grid extends GridBase {
         command.expression = parse_result.expression;
       }
       else {
+        console.info({expression, parse_result});
         throw new Error('invalid expression');
       }
     }

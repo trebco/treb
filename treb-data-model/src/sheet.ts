@@ -2556,7 +2556,7 @@ export class Sheet {
         cell_reference_map[c] = [];
         for (let r = 0; r < column.length; r++) {
           if (column[r]) {
-            const style_as_json = JSON.stringify(column[r]);
+            const style_as_json = Style.Serialize(column[r]); // JSON.stringify(column[r]);
             if (style_as_json !== empty_json) {
               let reference_index = cell_style_map[style_as_json];
               if (typeof reference_index !== 'number') {
@@ -2579,7 +2579,7 @@ export class Sheet {
      */
     const StyleToRef = (style: CellStyle) => {
 
-      const style_as_json = JSON.stringify(style);
+      const style_as_json = Style.Serialize(style); // JSON.stringify(style);
       if (style_as_json === empty_json) {
         return 0;
       }

@@ -318,6 +318,26 @@ export const Style = {
     };
   },
 
+  Serialize: (style: CellStyle): string => {
+    const clone: CellStyle = JSON.parse(JSON.stringify(style));
+
+    // scrub border colors without widths
+    if (clone.border_bottom_fill && !clone.border_bottom) {
+      clone.border_bottom_fill = undefined;
+    }
+    if (clone.border_top_fill && !clone.border_top) {
+      clone.border_top_fill = undefined;
+    }
+    if (clone.border_left_fill && !clone.border_left) {
+      clone.border_left_fill = undefined;
+    }
+    if (clone.border_right_fill && !clone.border_right) {
+      clone.border_right_fill = undefined;
+    }
+
+    return JSON.stringify(clone);
+  },
+
   /**
    * merge. returns a new object, does not update dest in place.
    * NOTE: if it does not update dest in place, then what would be
