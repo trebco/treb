@@ -2767,6 +2767,7 @@ const block_list = [
   'imul',
   'clz32',
   'fround',
+  'f16round',
 ];
 
 const block_map: Record<string, string> = {};

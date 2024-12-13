@@ -1036,11 +1036,25 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
     if (matcher) {
       Promise.resolve().then(() => {
         const exec_result = matcher.Exec({ text, cursor: substring_end.length });
+
+        // fix behavior around "f16round", which is a function we accidentally
+        // inherit from Math in Safari and Firefox. it breaks arrow-selection
+        // because it pops up an AC window. we don't want to break AC behavior
+        // on tooltips, though, so we still want to call AC methods. just block
+        // the completion list.
+
+        if (this.selecting && exec_result.completions?.length) {
+          // console.info("Blocking completion list", JSON.stringify(exec_result.completions));
+          exec_result.completions = undefined;
+        }
+        
         const node = 
           this.NodeAtIndex(exec_result.completions?.length ? 
                 (exec_result.position || 0) :
                 (exec_result.function_position || 0));
+
         this.Autocomplete(exec_result, node);
+        
       });
     }
 
