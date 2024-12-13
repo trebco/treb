@@ -5103,7 +5103,7 @@ export class Grid extends GridBase {
 
         if (!selection.empty && (delta.columns || delta.rows)) {
           if (this.BlockSelection(selection, !!event.shiftKey, delta.columns, delta.rows)) {
-            if (event.shiftKey) {
+            if (event.shiftKey && !selecting_argument) {
               this.UpdateAddressLabelArea(selection);
             }
             return;
@@ -5272,7 +5272,7 @@ export class Grid extends GridBase {
 
     if (delta.rows || delta.columns) {
       this.AdvanceSelection(delta, selection, within_selection, expand_selection, !editor_open);
-      if (event.shiftKey) {
+      if (event.shiftKey && !selecting_argument) {
         this.UpdateAddressLabelArea(selection);
       }
     }
