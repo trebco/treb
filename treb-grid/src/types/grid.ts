@@ -4555,20 +4555,8 @@ export class Grid extends GridBase {
         if (selecting_argument) {
           this.UpdateSelectedArgument(selection);
         }
-        else if (!selection.empty && !selection.area.entire_sheet) {
-          if (selection.area.entire_column) {
-            this.UpdateAddressLabel(undefined, selection.area.columns + 'C');
-          }
-          else if (selection.area.entire_row) {
-            this.UpdateAddressLabel(undefined, selection.area.rows + 'R');
-          }
-          else if (selection.area.count > 1) {
-            this.UpdateAddressLabel(undefined, selection.area.rows + 'R x ' +
-              selection.area.columns + 'C');
-          }
-          else {
-            this.UpdateAddressLabel(selection);
-          }
+        else {
+          this.UpdateAddressLabelArea(selection); // 3R x 2C
         }
       }
     }, () => {
@@ -5115,6 +5103,9 @@ export class Grid extends GridBase {
 
         if (!selection.empty && (delta.columns || delta.rows)) {
           if (this.BlockSelection(selection, !!event.shiftKey, delta.columns, delta.rows)) {
+            if (event.shiftKey) {
+              this.UpdateAddressLabelArea(selection);
+            }
             return;
           }
         }
@@ -5281,6 +5272,9 @@ export class Grid extends GridBase {
 
     if (delta.rows || delta.columns) {
       this.AdvanceSelection(delta, selection, within_selection, expand_selection, !editor_open);
+      if (event.shiftKey) {
+        this.UpdateAddressLabelArea(selection);
+      }
     }
 
   }
@@ -7055,6 +7049,24 @@ export class Grid extends GridBase {
       }
       
       this.tab_bar.stats_data = data;
+    }
+  }
+
+  private UpdateAddressLabelArea(selection: GridSelection) {
+    if (!selection.empty && !selection.area.entire_sheet) {
+      if (selection.area.entire_column) {
+        this.UpdateAddressLabel(undefined, selection.area.columns + 'C');
+      }
+      else if (selection.area.entire_row) {
+        this.UpdateAddressLabel(undefined, selection.area.rows + 'R');
+      }
+      else if (selection.area.count > 1) {
+        this.UpdateAddressLabel(undefined, selection.area.rows + 'R x ' +
+          selection.area.columns + 'C');
+      }
+      else {
+        this.UpdateAddressLabel(selection);
+      }
     }
   }
 
