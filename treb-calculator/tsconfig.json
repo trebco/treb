@@ -1,7 +1,0 @@
-{
-  "extends": "../tsproject.json",
-  "include": [
-    "../treb-base-types/**/*.ts"
-  ]
-}
-
