@@ -5661,7 +5661,13 @@ export class Grid extends GridBase {
               }
             }
           }
-          if (formula_parse_result.dependencies) {
+          if (formula_parse_result.expression) {
+
+            // we were previously looking at address arguments, and ignoring
+            // ranges. this leads to inconsistent behavior. we'll now look at 
+            // ranges when inferring number format.
+
+            // there was also an issue with using the correct sheet, also fixed.
 
             // this was set up to just use the first format we found. 
             // updating to change priority -- if the first one is a 
@@ -5670,14 +5676,10 @@ export class Grid extends GridBase {
 
             let found_number_format: string|undefined = undefined;
 
-            const list = formula_parse_result.dependencies;
-            for (const key of Object.keys(list.addresses)) {
-              const address = list.addresses[key];
-              if (this.active_sheet.HasCellStyle({ ...address })) {
-
-                // FIXME: this should not be active_sheet
-
-                const test = this.active_sheet.CellData({ ...address });
+            /** returns true if we've found a non-% number format */
+            const Check = (address: ICellAddress, sheet = this.active_sheet) => {
+              if (sheet.HasCellStyle({...address})) {
+                const test = sheet.CellData({ ...address });
                 if (test.style && test.style.number_format) {
                   if (!found_number_format || /%/.test(found_number_format)) {
 
@@ -5687,13 +5689,43 @@ export class Grid extends GridBase {
 
                     found_number_format = NumberFormatCache.Translate(test.style.number_format);
                     if (!/%/.test(found_number_format)) {
-                      break;
+                      return true;
                     }
 
                   }
                 }
               }
-            }
+              return false;
+            };
+
+            let finished = false;
+            let sheet: Sheet|undefined = this.active_sheet;
+
+            this.parser.Walk(formula_parse_result.expression, unit => {
+              
+              if (finished) { 
+                return false; 
+              }
+
+              switch (unit.type) {
+                case 'address':
+                  this.model.ResolveSheetID(unit);
+                  sheet = this.model.sheets.Find(unit.sheet_id || 0);
+                  finished = finished || Check(unit, sheet);
+                  break;
+
+                case 'range':
+                  this.model.ResolveSheetID(unit);
+                  sheet = this.model.sheets.Find(unit.start.sheet_id || 0);
+                  for (const address of new Area(unit.start, unit.end)) {
+                    finished = finished || Check(address, sheet);
+                    if (finished) { break; }
+                  }
+                  break;
+              }
+              return !finished;
+
+            });
 
             if (found_number_format) {
 
