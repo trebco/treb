@@ -26,6 +26,7 @@ import { type Complex, type UnionValue, ValueType, type CellValue, ComplexOrReal
 import * as ComplexMath from '../complex-math';
 
 import { BetaCDF, BetaPDF, InverseBeta, LnGamma } from './beta';
+import { gamma_p } from './gamma';
 
 /** error function (for gaussian distribution) */
 const erf = (x: number): number => {
@@ -169,6 +170,46 @@ const Gamma = (z: Complex): Complex => {
 
   const t = add(z, cpx(7.5));
   return prod(cpx(Math.sqrt(2 * pi)), pow(t, add(z, cpx(0.5))), exp(inv(t)), x);
+
+};
+
+const GammaPDF = (x: number, alpha: number, beta: number): number => {
+  const gamma_alpha = Gamma({real: alpha, imaginary: 0}).real;
+  return (Math.pow(x, alpha - 1) * Math.exp(-x / beta)) / (gamma_alpha * Math.pow(beta, alpha));
+};
+
+/** bisection */
+const InverseGamma = (p: number, alpha: number, beta: number): number|false => {
+
+  let lower = 0;
+  let upper = alpha * 10;
+
+  const tolerance = 1e-6;
+
+  let iterations = 0;
+
+  while (upper - lower > tolerance) {
+    iterations++;
+
+    const mid = (upper + lower) / 2;
+
+    const f_lower = gamma_p(alpha, lower/beta);
+    const f_mid = gamma_p(alpha, mid/beta);
+
+    if (f_lower === false || f_mid === false) {
+      return false;
+    }
+
+    if ((f_mid - p) * (f_lower - p) < 0) {
+      upper = mid;
+    }
+    else {
+      lower = mid;
+    }
+
+  }
+
+  return (lower + upper) / 2;
 
 };
 
@@ -741,6 +782,53 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       }
 
     },
+  },
+
+  'Gamma.Inv': {
+    description: 'Returns the inverse of the gamma distribution',
+    arguments: [
+      {name: 'probability', unroll: true},
+      {name: 'alpha', },
+      {name: 'beta', },
+    ],
+    fn: (p: number, alpha: number, beta: number) => {
+
+      if (p < 0 || p > 1) {
+        return ArgumentError();
+      }
+      
+      const value = InverseGamma(p, alpha, beta);
+
+      if (value === false) {
+        return ValueError();
+      }
+
+      return {
+        type: ValueType.number,
+        value,
+      }
+    },
+  },
+
+  'Gamma.Dist': {
+    fn: (x: number, alpha: number, beta: number, cumulative?: boolean) => {
+
+      if (x < 0 || alpha <= 0 || beta <= 0) {
+        return ArgumentError();
+      }
+  
+      const value = cumulative ? gamma_p(alpha, x/beta) : GammaPDF(x, alpha, beta);
+        
+      if (value === false) {
+        return ValueError();
+      }
+
+      return {
+        type: ValueType.number,
+        value,
+      };
+
+    }    
   },
 
   GammaLn: {
