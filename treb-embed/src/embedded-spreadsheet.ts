@@ -2242,8 +2242,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     // console.info({events});
 
+    // FIXME: composite? (...)
+
     for (const event of events) {
       switch (event.type) {
+        case 'composite':
         case 'data':
           recalc = true;
           break;
@@ -4000,8 +4003,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // API v1 OK
 
     let area: Area | undefined;
-    if (event && event.type === 'data' && event.area) {
-      area = event.area;
+    switch (event?.type) {
+      case 'data':
+        area = event.area;
+        break;
+      case 'composite':
+        area = event.data_area;
+        break;
     }
 
     this.calculator.Calculate(area);
