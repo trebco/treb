@@ -19,7 +19,7 @@
  * 
  */
 
-import type { RenderFunction, ClickFunction, UnionValue, ICellAddress, IArea } from 'treb-base-types';
+import type { RenderFunction, ClickFunction, UnionValue, ICellAddress, IArea, FunctionUnion } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 
 /**
@@ -28,6 +28,9 @@ import type { ExpressionUnit } from 'treb-parser';
 export interface FunctionContext {
   address: ICellAddress;
   area?: IArea;
+
+  /** application function for fp functions */
+  apply?: (fn: FunctionUnion, args: UnionValue[]) => UnionValue;
 }
 
 // FIXME: at least some of this could move to base types
@@ -234,6 +237,9 @@ export interface CompositeFunctionDescriptor {
     args: ExpressionUnit[];
     descriptors: ArgumentDescriptor[];
   }) => ContextResult | undefined;
+
+  /** flag indicating this function needs fp support */
+  fp?: boolean;
 
 }
 

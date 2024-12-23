@@ -27,11 +27,13 @@ import type { Cell, ICellAddress,
          UndefinedUnion,
          ComplexUnion, 
          DimensionedQuantityUnion,
-         IArea} from 'treb-base-types';
+         IArea,
+         FunctionUnion} from 'treb-base-types';
 import { ValueType, GetValueType, Area } from 'treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference, 
-         UnitImplicitCall} from 'treb-parser';
+         UnitImplicitCall,
+         UnitArray} from 'treb-parser';
 import type { DataModel, MacroFunction, Sheet } from 'treb-data-model';
 import { NameError, ReferenceError, ExpressionError, UnknownError, SpillError, ValueError, ArgumentError } from './function-error';
 
@@ -448,6 +450,123 @@ export class ExpressionCalculator {
       
   }
 
+  /**
+   * split out from ImplicitCall so we can reuse
+   */
+  public ImplicitCallTail(result: FunctionUnion, args: ExpressionUnit[]) {
+
+    const value = result.value as {
+      bindings: ExpressionUnit[];
+      func: ExpressionUnit|undefined;
+    };
+
+    if (!value.func || !value.bindings) {
+      return ExpressionError();
+    }
+
+    // let frame = value.bindings(expr.args);
+
+    const frame: BindingFrame = {};
+
+    for (let i = 0; i < value.bindings.length; i++) {
+      const name = value.bindings[i];
+      if (name?.type === 'identifier') {
+        frame[name.name.toUpperCase()] = args[i] || { type: 'missing' };
+      }
+      else { 
+        // should not happen, error
+        return ExpressionError();
+      }
+    }
+
+    // frame = this.NormalizeBindings(frame); // inline
+
+    const munged = JSON.parse(JSON.stringify(value.func));
+    
+    this.parser.Walk2(munged, (unit: ExpressionUnit) => {
+      if (unit.type === 'identifier') {
+        const upper_case = unit.name.toUpperCase();
+        const binding = frame[upper_case];
+        if (binding) {
+          return JSON.parse(JSON.stringify(binding));
+        }
+      }
+      return true;
+    });
+    
+    // console.info({frame, func, munged});
+   
+    // const exec_result = this.CalculateExpression(munged as ExtendedExpressionUnit);
+    // return exec_result || ExpressionError();
+
+    return this.CalculateExpression(munged as ExtendedExpressionUnit);
+
+  }
+
+  /**
+   * an FP call will need to set bindings and call an expression, 
+   * possibly multiple times. this is a support function for that.
+   */
+  protected Apply(fn: FunctionUnion, args: UnionValue[]) {
+
+    // kind of going backwards here, converting values to expressions...
+    // the reason is that we rewrite lambdas to support recursion
+
+    const mapped: ExpressionUnit[] = args.map(arg => {
+      switch (arg.type) {
+        case ValueType.number:
+        case ValueType.boolean:
+        case ValueType.string:
+          return {
+            type: 'literal', value: arg.value, id: 0, position: 0,
+          }
+  
+        case ValueType.error:
+          return {
+            type: 'literal', value: '#' + arg.value, id: 0, position: 0,
+          }
+  
+        case ValueType.array:
+          {
+            const values: UnitArray['values'] = [];
+            for (let c = 0; c < arg.value.length; c++) {
+              const col = arg.value[c];
+              const mapped_col: UnitArray['values'][0] = [];
+              for (let r = 0; r < col.length; r++ ) {
+                const val = col[r];
+                switch (val.type) {
+                  case ValueType.boolean:
+                  case ValueType.number:
+                  case ValueType.string:
+                    mapped_col.push(val.value || undefined);
+                    break;
+                  default:
+                    console.warn('unhandled array value', val);
+                    mapped_col.push(undefined);
+                }
+              }
+              values.push(mapped_col);
+            }
+
+            return {
+              type: 'array', 
+              values,
+              id: 0, position: 0,
+            };
+          }
+  
+        default:
+          console.warn('unhandled parameter value', arg);
+  
+      }
+      return { type: 'missing', id: 0 };
+ 
+    });
+
+    return this.ImplicitCallTail(fn, mapped);
+
+  }
+
   /** 
    * this method can take a `call` type if it looked like a call at 
    * the parsing stage, it's a simple translation between the two
@@ -473,53 +592,7 @@ export class ExpressionCalculator {
       const result = this.CalculateExpression(expr.call as ExtendedExpressionUnit);
 
       if (result.type === ValueType.function) {
-
-        const value = result.value as {
-          bindings: ExpressionUnit[];
-          func: ExpressionUnit|undefined;
-        };
-
-        if (!value.func || !value.bindings) {
-          return ExpressionError();
-        }
-
-        // let frame = value.bindings(expr.args);
-
-        const frame: BindingFrame = {};
-
-        for (let i = 0; i < value.bindings.length; i++) {
-          const name = value.bindings[i];
-          if (name?.type === 'identifier') {
-            frame[name.name.toUpperCase()] = expr.args[i] || { type: 'missing' };
-          }
-          else { 
-            // should not happen, error
-            return ExpressionError();
-          }
-        }
-
-        // frame = this.NormalizeBindings(frame); // inline
-
-        const munged = JSON.parse(JSON.stringify(value.func));
-        
-        this.parser.Walk2(munged, (unit: ExpressionUnit) => {
-          if (unit.type === 'identifier') {
-            const upper_case = unit.name.toUpperCase();
-            const binding = frame[upper_case];
-            if (binding) {
-              return JSON.parse(JSON.stringify(binding));
-            }
-          }
-          return true;
-        });
-        
-        // console.info({frame, func, munged});
-        
-        // const exec_result = this.CalculateExpression(munged as ExtendedExpressionUnit);
-        // return exec_result || ExpressionError();
-
-        return this.CalculateExpression(munged as ExtendedExpressionUnit);
-
+        return this.ImplicitCallTail(result, expr.args)
       }
 
       return ExpressionError();
@@ -721,11 +794,12 @@ export class ExpressionCalculator {
           start: { ...this.context.area.start, },
           end: { ...this.context.area.end, },
         } : undefined,
+        apply: func.fp ? this.Apply.bind(this) : undefined,
       };
 
-      if (func.return_type === 'reference') {
+      const result = func.fn.apply(ctx, mapped_args);
 
-        const result = func.fn.apply(ctx, mapped_args);
+      if (func.return_type === 'reference') {
         
         if (return_reference) { 
           return result; 
@@ -744,7 +818,7 @@ export class ExpressionCalculator {
 
       }
 
-      return func.fn.apply(ctx, mapped_args);
+      return result; // func.fn.apply(ctx, mapped_args);
 
     };
 

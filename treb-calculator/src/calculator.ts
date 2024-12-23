@@ -48,6 +48,7 @@ import { ComplexFunctionLibrary } from './functions/complex-functions';
 import { MatrixFunctionLibrary } from './functions/matrix-functions';
 import { RegexFunctionLibrary } from './functions/regex-functions';
 import { LambdaFunctionLibrary } from './functions/lambda-functions';
+import { FPFunctionLibrary } from './functions/fp';
 
 import { Variance } from './functions/statistics-functions';
 
@@ -242,6 +243,7 @@ export class Calculator extends Graph {
       MatrixFunctionLibrary,
       RegexFunctionLibrary,
       LambdaFunctionLibrary,
+      FPFunctionLibrary,
       );
    
     // aliases
