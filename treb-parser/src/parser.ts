@@ -1085,14 +1085,18 @@ export class Parser {
 
           // skip nulls
 
-          if (group) {
+          // ...don't skip nulls? don't know what the rationale was
+          // but for implicit calls we will need to support empty arguments 
+
+          // if (group) {
             stream.push({
               type: 'group',
               id: this.id_counter++,
-              elements: [group],
+              elements: group? [group] : [],
               explicit: true,
             });
-          }
+          //}
+
         }
         else {
           // this can probably move to PNext? except for the test
