@@ -86,10 +86,12 @@ export const FPFunctionLibrary: FunctionMap = {
         }
       }
 
-      for (let r = 0; r < data.value.length; r++) {
-        const row = data.value[r];
-        for (let c = 0; c < row.length; c++) {
-          const apply_args: UnionValue[] = [initial, row[c]];
+      const cols = data.value.length;
+      const rows = data.value[0].length;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const apply_args: UnionValue[] = [initial, data.value[c][r]];
           const result = this.apply(lambda, apply_args)
           initial = result;
         }
@@ -137,16 +139,18 @@ export const FPFunctionLibrary: FunctionMap = {
       }
 
       const results: UnionValue[][] = [];
-      for (let r = 0; r < data.value.length; r++) {
-        const row = data.value[r];
-        const results_row: UnionValue[] = [];
-        for (let c = 0; c < row.length; c++) {
-          const apply_args: UnionValue[] = [initial, row[c]];
+      const cols = data.value.length;
+      const rows = data.value[0].length;
+
+      for (let i = 0; i < cols; i++) { results.push([])}
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const apply_args: UnionValue[] = [initial, data.value[c][r]];
           const result = this.apply(lambda, apply_args)
-          results_row.push(result);
+          results[c][r] = result;
           initial = result;
         }
-        results.push(results_row);
       }
 
       return {
