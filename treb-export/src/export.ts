@@ -40,7 +40,6 @@ import type { IArea, ICellAddress, CellStyle,
          AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle, Color } from 'treb-base-types';
 import { Area, Cells, ValueType, Style, IsHTMLColor, IsThemeColor, ThemeColorIndex } from 'treb-base-types';
 
-// import * as xmlparser from 'fast-xml-parser';
 import type { XmlBuilderOptions} from 'fast-xml-parser';
 import { XMLParser } from 'fast-xml-parser';
 
@@ -51,7 +50,7 @@ import { Theme } from './workbook-theme2';
 
 import type { RelationshipMap} from './relationship';
 import { AddRel } from './relationship';
-import { type DOMContent, XMLOptions2, PatchXMLBuilder } from './xml-utils';
+import { type DOMContent, default_parser, PatchXMLBuilder } from './xml-utils';
 
 import type { UnitAddress, UnitRange, ExpressionUnit} from 'treb-parser';
 import { Parser } from 'treb-parser';
@@ -151,9 +150,8 @@ export class Exporter {
 
   };
 
-  // public xmlparser = new xmlparser.j2xParser(this.xmloptions);
   public xmlbuilder1 = PatchXMLBuilder(this.xmloptions);
-  public xmlparser2 = new XMLParser(XMLOptions2);
+  public xmlparser2 = default_parser; // 
 
   // FIXME: need a way to share/pass parser flags
   public parser = new Parser();

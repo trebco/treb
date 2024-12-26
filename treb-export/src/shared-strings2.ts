@@ -19,7 +19,7 @@
  * 
  */
 
-import {XMLUtils} from './xml-utils'; 
+import { XMLUtils, type XMLNode, text, IsXMLNode } from './xml-utils'; 
 
 export class SharedStrings {
 
@@ -27,7 +27,7 @@ export class SharedStrings {
   public reverse: Record<string, number> = {};
 
   /** read strings table from (pre-parsed) xml; removes any existing strings */
-  public FromXML(xml: any) {
+  public FromXML(xml: XMLNode) {
 
     // clear
 
@@ -36,7 +36,7 @@ export class SharedStrings {
 
     let index = 0;
 
-    for (const si of XMLUtils.FindAll(xml, 'sst/si')) {
+    for (const si of XMLUtils.FindAll2(xml, 'sst/si')) {
 
       // simple string looks like
       //
@@ -44,7 +44,7 @@ export class SharedStrings {
       //   <t>text here!</t>
       // </si>
 
-      if (si.t !== undefined) {
+      if (IsXMLNode(si.t)) {
 
         // seen recently in the wild, text with leading (or trailing) spaces
         // has an attribute xml:space=preserve (which makes sense, but was not
@@ -55,11 +55,15 @@ export class SharedStrings {
         // </si>
         //
 
+        /*
         let base = '';
         if (typeof si.t === 'string') { base = si.t; }
         else if (si.t.t$) {
           base = si.t.t$;
         }
+        */
+
+        const base = si.t[text] as string || '';
 
         this.strings[index] = base;
         this.reverse[base] = index;
@@ -79,11 +83,14 @@ export class SharedStrings {
       // since we don't support that atm, let's drop style and just
       // collect text.
 
-      else if (si.r) {
-        const parts = XMLUtils.FindAll(si.r, 't');
+      else if (IsXMLNode(si.r)) {
+        const parts = XMLUtils.FindAll2(si.r, 't');
         
         const composite = parts.map(part => {
-          return (typeof part === 'string') ? part : (part.t$ || '');
+
+          return part[text] as string || '';
+
+          // return (typeof part === 'string') ? part : (part.t$ || '');
         }).join('');
         
         this.strings[index] = composite;

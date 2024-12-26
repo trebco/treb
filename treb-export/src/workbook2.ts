@@ -19,12 +19,10 @@
  * 
  */
 
-import { XMLParser } from 'fast-xml-parser';
-import { XMLUtils, XMLOptions2 } from './xml-utils';
+// import { XMLParser } from 'fast-xml-parser';
+import { IsXMLNode, XMLUtils, attrs, text, default_parser as xmlparser2, type XMLNode } from './xml-utils';
 
-// const xmlparser = new XMLParser();
-// const xmlparser1 = new XMLParser(XMLOptions);
-const xmlparser2 = new XMLParser(XMLOptions2);
+// const xmlparser2 = new XMLParser(XMLOptions2);
 
 // import * as he from 'he';
 
@@ -36,7 +34,7 @@ import { Theme } from './workbook-theme2';
 import { Sheet, VisibleState } from './workbook-sheet2';
 import type { RelationshipMap } from './relationship';
 import { ZipWrapper } from './zip-wrapper';
-import type { CellStyle, ICellAddress, ThemeColor } from 'treb-base-types';
+import type { CellStyle, ThemeColor } from 'treb-base-types';
 import type { SerializedNamed } from 'treb-data-model';
 
 /**
@@ -132,7 +130,7 @@ export interface TableDescription {
 
 export class Workbook {
 
-  public xml: any = {};
+  public xml: XMLNode = {};
 
   /** start with an empty strings table, if we load a file we will update it */
   public shared_strings = new SharedStrings();    
@@ -177,13 +175,17 @@ export class Workbook {
     //
     const xml = xmlparser2.parse(data || '');
 
-    for (const relationship of xml.Relationships?.Relationship || []) {
-      const id = relationship.a$.Id;
-      rels[id] = {
-        id, 
-        type: relationship.a$.Type,
-        target: relationship.a$.Target,
-      };
+    const relationships = XMLUtils.FindAll2(xml, 'Relationships/Relationship');
+    for (const relationship of relationships) {
+      if (relationship[attrs]) {
+        const id = relationship[attrs].Id as string;
+        rels[id] = {
+          id, 
+          type: relationship[attrs].Type as string,
+          target: relationship[attrs].Target as string,
+        };
+ 
+      }
     }
 
     return rels;
@@ -218,11 +220,11 @@ export class Workbook {
 
     // defined names
     this.named = [];
-    const defined_names = XMLUtils.FindAll(xml, 'workbook/definedNames/definedName');
+    const defined_names = XMLUtils.FindAll2(xml, 'workbook/definedNames/definedName');
     for (const defined_name of defined_names) {
-      const name = defined_name.a$?.name;
-      const expression = defined_name.t$ || '';
-      const sheet_index = (defined_name.a$?.localSheetId) ? Number(defined_name.a$.localSheetId) : undefined;
+      const name = defined_name[attrs]?.name as string || '';
+      const expression = defined_name[text] || '';
+      const sheet_index = (defined_name[attrs]?.localSheetId) ? Number(defined_name[attrs].localSheetId) : undefined;
 
       // console.info({defined_name, name, expression, sheet_index});
 
@@ -247,26 +249,25 @@ export class Workbook {
     }
     */
 
-    const workbook_views = XMLUtils.FindAll(xml, 'workbook/bookViews/workbookView');
+    const workbook_views = XMLUtils.FindAll2(xml, 'workbook/bookViews/workbookView');
 
-    if (workbook_views[0]?.a$?.activeTab) {
-      this.active_tab = Number(workbook_views[0].a$.activeTab) || 0;
+    if (workbook_views[0]?.[attrs]?.activeTab) {
+      this.active_tab = Number(workbook_views[0][attrs].activeTab) || 0;
     }
 
     // read sheets. in this version we preparse everything.
-    const composite = XMLUtils.FindAll(xml, 'workbook/sheets/sheet');
-
+    const composite = XMLUtils.FindAll2(xml, 'workbook/sheets/sheet');
 
     for (const element of composite) {
-      const name = element.a$?.name;
+      const name = element[attrs]?.name as string;
 
       if (name) {
 
-        const state = element.a$.state;
-        const rid = element.a$['r:id'];
+        const state = element[attrs]?.state;
+        const rid = element[attrs]?.['r:id'] as string;
   
         const worksheet = new Sheet({
-          name, rid, id: Number(element.a$.sheetId) 
+          name, rid, id: Number(element[attrs]?.sheetId) 
         });
         
         if (state === 'hidden') {
@@ -306,14 +307,19 @@ export class Workbook {
     }
 
     const xml = xmlparser2.parse(data);
-    const name = xml.table?.a$?.name || '';
+
+    if (!IsXMLNode(xml.table)) {
+      throw new Error('invalid table description');
+    }
+
+    const name = xml.table[attrs]?.name as string || '';
 
     const table: TableDescription = {
       name,
-      display_name: xml.table?.a$?.displayName || name,
-      ref: xml.table?.a$.ref || '',
-      totals_row_shown: Number(xml.table?.a$.totalsRowShown || '0') || 0,
-      totals_row_count: Number(xml.table?.a$.totalsRowCount || '0') || 0,
+      display_name: xml.table[attrs]?.displayName as string || name,
+      ref: xml.table[attrs]?.ref as string || '',
+      totals_row_shown: Number(xml.table[attrs]?.totalsRowShown || '0') || 0,
+      totals_row_count: Number(xml.table[attrs]?.totalsRowCount || '0') || 0,
     };
 
     return table;
@@ -332,15 +338,23 @@ export class Workbook {
     const drawing_rels = this.ReadRels(reference.replace(/^..\/drawings/, 'xl/drawings/_rels') + '.rels');
 
     const results: AnchoredDrawingPart[] = [];
-    const anchor_nodes = XMLUtils.FindAll(xml, 'xdr:wsDr/xdr:twoCellAnchor');
+
+    interface TwoCelLAnchorNode {
+      'xdr:col'?: { [text]: number },
+      'xdr:colOff'?: { [text]: number },
+      'xdr:row'?: { [text]: number },
+      'xdr:rowOff'?: { [text]: number },
+    };
+
+    const anchor_nodes = XMLUtils.FindAll2(xml, 'xdr:wsDr/xdr:twoCellAnchor');
 
     /* FIXME: move to drawing? */
-    const ParseAnchor = (node: any = {}): CellAnchor => {
+    const ParseAnchor = (node: TwoCelLAnchorNode = {}): CellAnchor => {
       const anchor: CellAnchor = {
-        column: node['xdr:col'] || 0, 
-        column_offset: node['xdr:colOff'] || 0,
-        row: node['xdr:row'] || 0, 
-        row_offset: node['xdr:rowOff'] || 0,
+        column: node['xdr:col']?.[text] || 0, 
+        column_offset: node['xdr:colOff']?.[text] || 0,
+        row: node['xdr:row']?.[text] || 0, 
+        row_offset: node['xdr:rowOff']?.[text] || 0,
       };
       return anchor;
     };
@@ -348,22 +362,22 @@ export class Workbook {
     for (const anchor_node of anchor_nodes) {
 
       const anchor: TwoCellAnchor = {
-        from: ParseAnchor(anchor_node['xdr:from']), 
-        to: ParseAnchor(anchor_node['xdr:to']),
+        from: ParseAnchor(anchor_node['xdr:from'] as TwoCelLAnchorNode), 
+        to: ParseAnchor(anchor_node['xdr:to'] as TwoCelLAnchorNode),
       };
 
-      let chart_reference = XMLUtils.FindAll(anchor_node, `xdr:graphicFrame/a:graphic/a:graphicData/c:chart`)[0];
+      let chart_reference = XMLUtils.FindAll2(anchor_node, `xdr:graphicFrame/a:graphic/a:graphicData/c:chart`)[0];
 
       // check for an "alternate content" chart/chartex (wtf ms). we're 
       // supporting this for box charts only (atm) 
 
       if (!chart_reference) {
-        chart_reference = XMLUtils.FindAll(anchor_node, `mc:AlternateContent/mc:Choice/xdr:graphicFrame/a:graphic/a:graphicData/cx:chart`)[0];
+        chart_reference = XMLUtils.FindAll2(anchor_node, `mc:AlternateContent/mc:Choice/xdr:graphicFrame/a:graphic/a:graphicData/cx:chart`)[0];
       }
 
-      if (chart_reference && chart_reference.a$ && chart_reference.a$['r:id']) {
+      if (chart_reference && chart_reference[attrs] && chart_reference[attrs]['r:id']) {
         const result: AnchoredChartDescription = { type: 'chart', anchor };
-        const chart_rel = drawing_rels[chart_reference.a$['r:id']];
+        const chart_rel = drawing_rels[chart_reference[attrs]['r:id'] as string];
         if (chart_rel && chart_rel.target) {
           result.chart = this.ReadChart(chart_rel.target);
         }
@@ -371,9 +385,9 @@ export class Workbook {
       }
       else {
 
-        const media_reference = XMLUtils.FindAll(anchor_node, `xdr:pic/xdr:blipFill/a:blip`)[0];
-        if (media_reference && media_reference.a$['r:embed']) {
-          const media_rel = drawing_rels[media_reference.a$['r:embed']];
+        const media_reference = XMLUtils.FindAll2(anchor_node, `xdr:pic/xdr:blipFill/a:blip`)[0];
+        if (media_reference?.[attrs] && media_reference[attrs]['r:embed']) {
+          const media_rel = drawing_rels[media_reference[attrs]['r:embed'] as string];
 
           // const chart_rel = drawing_rels[chart_reference.a$['r:id']];
           // console.info("Maybe an image?", media_reference, media_rel)
@@ -399,22 +413,38 @@ export class Workbook {
 
           let style: CellStyle|undefined;
 
-          const sp = XMLUtils.FindAll(anchor_node, 'xdr:sp')[0];
+          interface SpPr extends XMLNode {
+            'a:solidFill': {
+              'a:schemeClr'?: {
+                [attrs]?: {
+                  val: string;
+                }
+                'a:lumOff'?: {
+                  [attrs]?: {
+                    val: string|number;
+                  }
+                }
+              }
+            };
+          }
+
+          const sp = XMLUtils.FindAll2(anchor_node, 'xdr:sp')[0];
           if (sp) {
 
-            const reference = sp.a$?.textlink || undefined;
+            const reference = sp[attrs]?.textlink as string || undefined;
 
-            const sppr = XMLUtils.FindAll(sp, 'xdr:spPr')[0];
+            const sppr = XMLUtils.FindAll2(sp, 'xdr:spPr')[0] as SpPr;
+
             if (sppr) {
               style = {};
               const fill = sppr['a:solidFill'];
               if (fill) {
-                if (fill['a:schemeClr']?.a$?.val) {
-                  const m = (fill['a:schemeClr'].a$.val).match(/accent(\d+)/);
+                if (fill['a:schemeClr']?.[attrs]?.val) {
+                  const m = (fill['a:schemeClr'][attrs].val).match(/accent(\d+)/);
                   if (m) {
                     style.fill = { theme: Number(m[1]) + 3 }
-                    if (fill['a:schemeClr']['a:lumOff']?.a$?.val) {
-                      const num = Number(fill['a:schemeClr']['a:lumOff'].a$.val);
+                    if (fill['a:schemeClr']['a:lumOff']?.[attrs]?.val) {
+                      const num = Number(fill['a:schemeClr']['a:lumOff'][attrs].val);
                       if (!isNaN(num)) {
                         (style.fill as ThemeColor).tint = num / 1e5;
                       }
@@ -425,7 +455,7 @@ export class Workbook {
               }
             }
 
-            const tx = XMLUtils.FindAll(sp, 'xdr:txBody')[0];
+            const tx = XMLUtils.FindAll2(sp, 'xdr:txBody')[0];
             if (tx) {
 
               const paragraphs: { 
@@ -437,24 +467,24 @@ export class Workbook {
                 }[],
               }[] = [];
 
-              const p_list = XMLUtils.FindAll(tx, 'a:p');
+              const p_list = XMLUtils.FindAll2(tx, 'a:p');
               for (const paragraph of p_list) {
                 const para: { text: string, style?: CellStyle, reference?: boolean }[] = [];
                 let style: CellStyle|undefined;
 
                 const fld = paragraph['a:fld'];
-                if (fld) {
-                  if (fld.a$?.type === 'TxLink') {
+                if (IsXMLNode(fld)) {
+                  if (fld[attrs]?.type === 'TxLink') {
                     const entry: {text: string, reference?: boolean, style?: CellStyle } = { text: `{${reference}}`, reference: true };
 
                     // format
                     const fmt = fld['a:rPr'];
-                    if (fmt) {
+                    if (IsXMLNode(fmt)) {
                       entry.style = {};
-                      if (fmt.a$?.b === '1') {
+                      if (fmt[attrs]?.b === '1') {
                         entry.style.bold = true;
                       }
-                      if (fmt.a$?.i === '1') {
+                      if (fmt[attrs]?.i === '1') {
                         entry.style.italic = true;
                       }
                     }
@@ -464,12 +494,12 @@ export class Workbook {
                 }
   
                 const appr = paragraph['a:pPr'];
-                if (appr) {
+                if (IsXMLNode(appr)) {
                   style = {};
-                  if (appr.a$?.algn === 'r') {
+                  if (appr[attrs]?.algn === 'r') {
                     style.horizontal_align = 'right';
                   }
-                  else if (appr.a$?.algn === 'ctr') {
+                  else if (appr[attrs]?.algn === 'ctr') {
                     style.horizontal_align = 'center';
                   }
                 }
@@ -482,17 +512,17 @@ export class Workbook {
                   for (const line of ar) {
 
                     const entry: { text: string, style?: CellStyle } = { 
-                      text: line['a:t'] || '',
+                      text: IsXMLNode(line['a:t']) ? line['a:t'][text] as string || '' : '',
                     };
 
                     // format
                     const fmt = line['a:rPr'];
-                    if (fmt) {
+                    if (IsXMLNode(fmt)) {
                       entry.style = {};
-                      if (fmt.a$?.b === '1') {
+                      if (fmt[attrs]?.b === '1') {
                         entry.style.bold = true;
                       }
-                      if (fmt.a$?.i === '1') {
+                      if (fmt[attrs]?.i === '1') {
                         entry.style.italic = true;
                       }
                     }
@@ -547,28 +577,25 @@ export class Workbook {
 
     // console.info("RC", xml);
 
-    const title_node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:title');
+    const title_node = XMLUtils.FindAll2(xml, 'c:chartSpace/c:chart/c:title')[0];
 
     if (title_node) {
 
       // FIXME: other types of title? (...)
-      const node = XMLUtils.FindChild(title_node, 'c:tx/c:strRef/c:f');
+      const node = XMLUtils.FindAll2(title_node, 'c:tx/c:strRef/c:f')[0];
       if (node) {
-        if (typeof node === 'string') {
-          result.title = node;
-        }
-        else if (node.t$) {
-          result.title = node.t$; // why is this not quoted, if the later one is quoted? is this a reference?
+        if (node[text]) {
+          result.title = node[text] as string; // why is this not quoted, if the later one is quoted? is this a reference?
         }
       }
       else {
-        const nodes = XMLUtils.FindAll(title_node, 'c:tx/c:rich/a:p/a:r/a:t');
-        result.title = '"' + nodes.join('') + '"';
+        const nodes = XMLUtils.FindAll2(title_node, 'c:tx/c:rich/a:p/a:r/a:t');
+        result.title = '"' + nodes.map(node => node[text] || '').join('') + '"';
       }
 
     }
 
-    const ParseSeries = (node: any, type?: ChartType): ChartSeries[] => {
+    const ParseSeries = (node: XMLNode, type?: ChartType): ChartSeries[] => {
 
       const series: ChartSeries[] = [];
 
@@ -578,62 +605,60 @@ export class Workbook {
         series_nodes = [series_nodes];
       }
 
-      // console.info({SN: series_nodes});
-
       for (const series_node of series_nodes) {
 
         let index = series.length;
         const order_node = series_node['c:order'];
-        if (order_node) {
-          index = Number(order_node.a$?.val||0) || 0;
+        if (IsXMLNode(order_node)) {
+          index = Number(order_node[attrs]?.val||0) || 0;
         }
 
         const series_data: ChartSeries = {};
 
-        let title_node = XMLUtils.FindChild(series_node, 'c:tx/c:v');
+        let title_node = XMLUtils.FindAll2(series_node, 'c:tx/c:v')[0];
         if (title_node) {
-          const title = title_node;
+          const title = title_node[text];
           if (title) {
             series_data.title = `"${title}"`;
           }
         }
         else {
-          title_node = XMLUtils.FindChild(series_node, 'c:tx/c:strRef/c:f');
+          title_node = XMLUtils.FindAll2(series_node, 'c:tx/c:strRef/c:f')[0];
           if (title_node) {
-            series_data.title = title_node;
+            series_data.title = title_node[text] as string || '';
           }
         }
 
         if (type === ChartType.Scatter || type === ChartType.Bubble) {
-          const x = XMLUtils.FindChild(series_node, 'c:xVal/c:numRef/c:f');
+          const x = XMLUtils.FindAll2(series_node, 'c:xVal/c:numRef/c:f')[0];
           if (x) {
-            series_data.categories = x; // .text?.toString();
+            series_data.categories = x[text] as string || ''; // .text?.toString();
           }
-          const y = XMLUtils.FindChild(series_node, 'c:yVal/c:numRef/c:f');
+          const y = XMLUtils.FindAll2(series_node, 'c:yVal/c:numRef/c:f')[0];
           if (y) {
-            series_data.values = y; // .text?.toString();
+            series_data.values = y[text] as string || ''; // .text?.toString();
           }
 
           if (type === ChartType.Bubble) {
-            const z = XMLUtils.FindChild(series_node, 'c:bubbleSize/c:numRef/c:f');
+            const z = XMLUtils.FindAll2(series_node, 'c:bubbleSize/c:numRef/c:f')[0];
             if (z) {
-              series_data.bubble_size = z; // .text?.toString();
+              series_data.bubble_size = z[text] as string || ''; // .text?.toString();
             }
           }
 
         }
         else {
-          const value_node = XMLUtils.FindChild(series_node, 'c:val/c:numRef/c:f');
+          const value_node = XMLUtils.FindAll2(series_node, 'c:val/c:numRef/c:f')[0];
           if (value_node) {
-            series_data.values = value_node; // .text?.toString();
+            series_data.values = value_node[text] as string; // .text?.toString();
           }
 
-          let cat_node = XMLUtils.FindChild(series_node, 'c:cat/c:strRef/c:f');
+          let cat_node = XMLUtils.FindAll2(series_node, 'c:cat/c:strRef/c:f')[0];
           if (!cat_node) {
-            cat_node = XMLUtils.FindChild(series_node, 'c:cat/c:numRef/c:f');
+            cat_node = XMLUtils.FindAll2(series_node, 'c:cat/c:numRef/c:f')[0];
           }
           if (cat_node) {
-            series_data.categories = cat_node; // .text?.toString();
+            series_data.categories = cat_node[text] as string; // .text?.toString();
           }
         }
 
@@ -645,13 +670,13 @@ export class Workbook {
 
     };
 
-    let node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:barChart');
+    let node = XMLUtils.FindAll2(xml, 'c:chartSpace/c:chart/c:plotArea/c:barChart')[0];
     if (node) {
 
       result.type = ChartType.Bar;
       // console.info("BD", node);
-      if (node['c:barDir']) {
-        if (node['c:barDir'].a$?.val === 'col') {
+      if (IsXMLNode(node['c:barDir'])) {
+        if (node['c:barDir'][attrs]?.val === 'col') {
           result.type = ChartType.Column;
         }
       }
@@ -660,7 +685,7 @@ export class Workbook {
     }
 
     if (!node) {
-      node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:lineChart');
+      node = XMLUtils.FindAll2(xml, 'c:chartSpace/c:chart/c:plotArea/c:lineChart')[0];
       if (node) {
         result.type = ChartType.Line;
         result.series = ParseSeries(node);
@@ -668,7 +693,7 @@ export class Workbook {
     }
 
     if (!node) {
-      node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:doughnutChart');
+      node = XMLUtils.FindAll2(xml, 'c:chartSpace/c:chart/c:plotArea/c:doughnutChart')[0];
       if (node) {
         result.type = ChartType.Donut;
         result.series = ParseSeries(node);
@@ -676,7 +701,7 @@ export class Workbook {
     }
 
     if (!node) {
-      node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:pieChart');
+      node = XMLUtils.FindAll2(xml, 'c:chartSpace/c:chart/c:plotArea/c:pieChart')[0];
       if (node) {
         result.type = ChartType.Pie;
         result.series = ParseSeries(node);
@@ -684,7 +709,7 @@ export class Workbook {
     }
 
     if (!node) {
-      node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:scatterChart');
+      node = XMLUtils.FindAll2(xml, 'c:chartSpace/c:chart/c:plotArea/c:scatterChart')[0];
       if (node) {
         result.type = ChartType.Scatter;
         result.series = ParseSeries(node, ChartType.Scatter);
@@ -692,7 +717,7 @@ export class Workbook {
     }
 
     if (!node) {
-      node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:bubbleChart');
+      node = XMLUtils.FindAll2(xml, 'c:chartSpace/c:chart/c:plotArea/c:bubbleChart')[0];
       if (node) {
         result.type = ChartType.Bubble;
         result.series = ParseSeries(node, ChartType.Bubble);

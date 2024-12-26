@@ -25,7 +25,7 @@
 import { type CompositeBorderEdge, Style, type CellStyle, type PropertyKeys, type Color, IsHTMLColor, IsThemeColor, type ThemeColor, type HTMLColor, ThemeColorIndex } from 'treb-base-types';
 import { Theme } from './workbook-theme2';
 import { NumberFormatCache } from 'treb-format';
-import { XMLUtils } from './xml-utils';
+import { XMLUtils, type XMLNode, attrs, text, IsXMLNode } from './xml-utils';
 
 import { Unescape } from './unescape_xml';
 
@@ -1115,9 +1115,9 @@ export class StyleCache {
 
   }
 
-  public FromXML(xml: any, theme: Theme): void {
+  public FromXML(xml: XMLNode, theme: Theme): void {
 
-    const FindAll = XMLUtils.FindAll.bind(XMLUtils, xml);
+    const FindAll = XMLUtils.FindAll2.bind(XMLUtils, xml);
 
     this.theme = theme;
 
@@ -1126,27 +1126,27 @@ export class StyleCache {
     let composite = FindAll('styleSheet/numFmts/numFmt');
 
     this.number_formats = composite.map(element => ({
-        id: Number(element.a$?.numFmtId || 0),
-        format: Unescape(element.a$?.formatCode || ''),
+        id: Number(element[attrs]?.numFmtId || 0),
+        format: Unescape(element[attrs]?.formatCode.toString() || ''),
       }));
 
     // ---
 
     composite = FindAll('styleSheet/borders/border');
 
-    const ElementToBorderEdge = (element: any, edge: BorderEdge) => {
-
-      if (element?.a$) {
-        edge.style = element.a$.style;
-        if (typeof element.color === 'object') {
-          if (typeof element.color.a$?.indexed !== 'undefined') {
-            edge.color = Number(element.color.a$.indexed);
+    const ElementToBorderEdge = (element: XMLNode|XMLNode[]|undefined, edge: BorderEdge) => {
+      
+      if (IsXMLNode(element) && element[attrs]) {
+        edge.style = element[attrs].style as string;
+        if (IsXMLNode(element.color)) {
+          if (typeof element.color[attrs]?.indexed !== 'undefined') {
+            edge.color = Number(element.color[attrs].indexed);
           }
-          if (typeof element.color.a$?.theme !== 'undefined') {
-            edge.theme = Number(element.color.a$.theme);
+          if (typeof element.color[attrs]?.theme !== 'undefined') {
+            edge.theme = Number(element.color[attrs].theme);
           }
-          if (typeof element.color.a$?.tint !== 'undefined') {
-            edge.tint = Number(element.color.a$.tint);
+          if (typeof element.color[attrs]?.tint !== 'undefined') {
+            edge.tint = Number(element.color[attrs].tint);
           }
         }
       }
@@ -1171,18 +1171,18 @@ export class StyleCache {
     this.cell_xfs = composite.map(element => {
 
       const xf: CellXf = {
-        number_format: Number(element.a$.numFmtId),
-        font: Number(element.a$.fontId),
-        fill: Number(element.a$.fillId),
-        border: Number(element.a$.borderId),
-        xfid: Number(element.a$.xfId),
+        number_format: Number(element[attrs]?.numFmtId),
+        font: Number(element[attrs]?.fontId),
+        fill: Number(element[attrs]?.fillId),
+        border: Number(element[attrs]?.borderId),
+        xfid: Number(element[attrs]?.xfId),
       };
 
-      if (element.alignment) {
-        xf.horizontal_alignment = element.alignment.a$.horizontal;
-        xf.vertical_alignment = element.alignment.a$.vertical;
-        xf.wrap_text = !!element.alignment.a$.wrapText;
-        xf.indent = element.alignment.a$.indent || undefined;
+      if (IsXMLNode(element.alignment) && element.alignment[attrs]) {
+        xf.horizontal_alignment = element.alignment[attrs].horizontal as string;
+        xf.vertical_alignment = element.alignment[attrs].vertical as string;
+        xf.wrap_text = !!element.alignment[attrs].wrapText;
+        xf.indent = (element.alignment[attrs].indent as number) || undefined;
       }
 
       return xf;
@@ -1191,11 +1191,11 @@ export class StyleCache {
 
     // ---
 
-    const ParseFill = (element: any) => {
+    const ParseFill = (element: XMLNode) => {
 
       const fill: Fill = { pattern_type: 'none' };
-      if (element.patternFill) {
-        const type = element.patternFill.a$?.patternType;
+      if (IsXMLNode(element.patternFill)) {
+        const type = element.patternFill[attrs]?.patternType;
         switch (type) {
           case 'none':
           case undefined:
@@ -1203,18 +1203,18 @@ export class StyleCache {
 
           case 'solid':
             fill.pattern_type = 'solid';
-            if (element.patternFill.fgColor) {
+            if (IsXMLNode(element.patternFill.fgColor)) {
               fill.fg_color = {
-                theme: element.patternFill.fgColor.a$?.theme ? Number(element.patternFill.fgColor.a$.theme) : undefined,
-                indexed: element.patternFill.fgColor.a$?.indexed ? Number(element.patternFill.fgColor.a$.indexed) : undefined,
-                tint: element.patternFill.fgColor.a$?.tint ? Number(element.patternFill.fgColor.a$.tint) : undefined,
-                argb: element.patternFill.fgColor.a$?.rgb,
+                theme: element.patternFill.fgColor[attrs]?.theme ? Number(element.patternFill.fgColor[attrs].theme) : undefined,
+                indexed: element.patternFill.fgColor[attrs]?.indexed ? Number(element.patternFill.fgColor[attrs].indexed) : undefined,
+                tint: element.patternFill.fgColor[attrs]?.tint ? Number(element.patternFill.fgColor[attrs].tint) : undefined,
+                argb: element.patternFill.fgColor[attrs]?.rgb as string,
               };
             }
             break;
 
           default:
-            {
+            if (typeof type === 'string') {
               const match = type?.match(/^gray(\d+)$/);
               if (match) {
                 fill.pattern_type = 'gray';
@@ -1236,7 +1236,7 @@ export class StyleCache {
 
     // ---
 
-    const ParseFont = (element: any) => {
+    const ParseFont = (element: XMLNode) => {
 
       const font: Font = {};
 
@@ -1245,28 +1245,28 @@ export class StyleCache {
       font.underline = !!(typeof element.u !== 'undefined');
       font.strike = !!(typeof element.strike !== 'undefined');
 
-      if (element.sz) {
-        font.size = Number(element.sz.a$.val);
+      if (IsXMLNode(element.sz)) {
+        font.size = Number(element.sz[attrs]?.val);
       }
-      if (element.scheme) {
-        font.scheme = element.scheme.a$.val;
+      if (IsXMLNode(element.scheme)) {
+        font.scheme = element.scheme[attrs]?.val as string;
       }
-      if (element.name) {
-        font.name = element.name.a$.val;
+      if (IsXMLNode(element.name)) {
+        font.name = element.name[attrs]?.val as string;
       }
-      if (element.family) {
-        font.family = Number(element.family.a$.val);
+      if (IsXMLNode(element.family)) {
+        font.family = Number(element.family[attrs]?.val);
       }
       
-      if (element.color) {
-        if (element.color.a$?.theme) {
-          font.color_theme = Number(element.color.a$.theme);
+      if (IsXMLNode(element.color)) {
+        if (element.color[attrs]?.theme) {
+          font.color_theme = Number(element.color[attrs].theme);
         }
-        if (element.color.a$?.tint) {
-          font.color_tint = Number(element.color.a$.tint);
+        if (element.color[attrs]?.tint) {
+          font.color_tint = Number(element.color[attrs].tint);
         }
-        if (element.color.a$?.rgb) {
-          font.color_argb = element.color.a$.rgb;
+        if (element.color[attrs]?.rgb) {
+          font.color_argb = element.color[attrs].rgb as string;
         }
 
       }
@@ -1282,15 +1282,17 @@ export class StyleCache {
     // what's allowed in there, atm we're just looking at font color and 
     // background color.
 
-    const ParseDXFColor = (element: any) => {
+    const ParseDXFColor = (element: XMLNode) => {
       const color: Color = {};
-      if (element.a$.rgb) {
-        (color as HTMLColor).text = '#' + element.a$.rgb.substring(2);
-      }
-      else if (element.a$.theme) {
-        (color as ThemeColor).theme = Number(element.a$.theme) || 0;
-        if (element.a$.tint) {
-          (color as ThemeColor).tint = Math.round(element.a$.tint * 1000) / 1000;
+      if (IsXMLNode(element)) {
+        if (element[attrs]?.rgb) {
+          (color as HTMLColor).text = '#' + element[attrs].rgb.toString().substring(2);
+        }
+        else if (element[attrs]?.theme) {
+          (color as ThemeColor).theme = Number(element[attrs].theme) || 0;
+          if (element[attrs].tint) {
+            (color as ThemeColor).tint = Math.round(Number(element[attrs].tint) * 1000) / 1000;
+          }
         }
       }
       return color;
@@ -1303,19 +1305,29 @@ export class StyleCache {
 
       // dxf fonts are different too? this is irritating
 
-      if (dxf.font) {
+      if (IsXMLNode(dxf.font)) {
         style.bold = !!dxf.font.b;
-        style.italic = !!dxf.font.i && dxf.font.i.a$.val !== '0';
+        style.italic = IsXMLNode(dxf.font.i) && dxf.font.i[attrs]?.val !== '0';
       }
 
       // dxfs fills are different? anyway we can't reuse the above code for fill, just grab the color
      
+      const color = XMLUtils.FindAll2(dxf, 'font/color')[0];
+      if (color) {
+        style.text = ParseDXFColor(color);
+      }
+      const fill = XMLUtils.FindAll2(dxf, 'fill/patternFill/bgColor')[0];
+      if (fill) {
+        style.fill = ParseDXFColor(fill);
+      }
+      /*
       if (dxf.font?.color?.a$) {
         style.text = ParseDXFColor(dxf.font.color);
       }
       if (dxf.fill?.patternFill?.bgColor?.a$) {
         style.fill = ParseDXFColor(dxf.fill.patternFill.bgColor);
       }
+        */
 
       return style;
     });

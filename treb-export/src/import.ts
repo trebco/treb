@@ -35,7 +35,7 @@ import type { SerializedValueType } from 'treb-base-types';
 import type { Sheet} from './workbook-sheet2';
 import { VisibleState } from './workbook-sheet2';
 import type { CellAnchor } from './drawing2/drawing2';
-import { type GenericDOMElement, XMLUtils } from './xml-utils';
+import { attrs, IsXMLNode, text, XMLUtils } from './xml-utils';
 
 // import { one_hundred_pixels } from './constants';
 import { ColumnWidthToPixels } from './column-width';
@@ -53,42 +53,50 @@ interface SharedFormula {
 interface SharedFormulaMap { [index: string]: SharedFormula }
 
 interface CellElementType {
-  a$: {
+  [attrs]: {
     r?: string;
     t?: string;
     s?: string;
   };
-  v?: string|number|{
-    t$: string;
-    a$?: Record<string, string>; // DOMContent;
+  v?: {
+      [text]: string|number;
+      [attrs]: undefined;
+    }|{
+      [text]: string;
+      [attrs]?: Record<string, string>; // DOMContent;
   }; 
-  f?: string|{ 
-    t$: string;
-    a$?: {
-      si?: string;
-      t?: string;
-      ref?: string;
-    },
+  f?: {
+      [text]: string;
+      [attrs]: undefined;
+    }|{ 
+      [text]: string;
+      [attrs]?: {
+        si?: string;
+        t?: string;
+        ref?: string;
+      },
   };
 };
 
 interface ConditionalFormatRule {
-  a$: {
+  [attrs]: {
     type?: string;
     dxfId?: string;
     priority?: string;
     operator?: string;
   };
-  formula?: string|[number,number]|{t$: string};
+  formula?: 
+    [{[text]: number},{[text]: number}] |
+    {[text]: string};
   colorScale?: {
     cfvo?: {
-      a$: {
+      [attrs]: {
         type?: string;
         val?: string;
       }
     }[];
     color?: {
-      a$: {
+      [attrs]: {
         rgb?: string;
         theme?: string;
         tint?: string;
@@ -97,9 +105,11 @@ interface ConditionalFormatRule {
   };
 }
 
+/*
 const ElementHasTextNode = (test: unknown): test is {t$: string} => {
   return typeof test === 'object' && typeof (test as {$t: string}).$t !== 'undefined';
 }
+*/
 
 export class Importer {
 
@@ -134,7 +144,7 @@ export class Importer {
     ): CellParseResult | undefined {
 
     // must have, at minimum, an address (must be a single cell? FIXME)
-    const address_attr = element.a$?.r;
+    const address_attr = element[attrs]?.r;
     if (!address_attr) {
       console.warn('cell missing address');
       return undefined;
@@ -176,10 +186,13 @@ export class Importer {
 
     // console.info(address, 'e', element, 'm', mapped);
 
-    if (element.a$?.t && element.a$.t === 's') {
+    if (element[attrs]?.t && element[attrs].t === 's') {
       type = 'string'; // ValueType.string;
+      // console.info({element});
+
       if (typeof element.v !== 'undefined') {
-        const index = Number(element.v);
+        const index = Number(element.v[text]);
+
         if (!isNaN(index) && sheet.shared_strings) {
           value = sheet.shared_strings.Get(index) || '';
           if (value[0] === '=') { value = '\'' + value; }
@@ -190,7 +203,16 @@ export class Importer {
       if (typeof element.f !== 'undefined') {
         type = 'formula'; // ValueType.formula;
 
-        const formula = (typeof element.f === 'string' ? element.f : element.f.t$) || '';
+        // some people will type in things like "=1". this turns into
+        // both a formula and a value for some reason; the formula will
+        // be a number here. we might have to worry about booleans as well?
+        // not sure. for numbers, parsing as a formula works.
+
+        const formula = element.f[text]?.toString() || '';
+
+        if (element.f[text] !== undefined && typeof element.f[text] !== 'string' && typeof element.f[text] !== 'number') {
+          console.info("NF", element, sheet);
+        }
 
         if (formula) {
 
@@ -224,9 +246,9 @@ export class Importer {
             }
           }
 
-          if (typeof element.f !== 'string') {
-            if (element.f.a$?.t === 'shared' && element.f.a$.si) {
-              shared_formulae[element.f.a$.si] = {
+          if (element.f[attrs]) { // (typeof element.f !== 'string') {
+            if (element.f[attrs]?.t === 'shared' && element.f[attrs].si) {
+              shared_formulae[element.f[attrs].si] = {
                 row: address.row - 1,
                 column: address.col - 1,
                 formula: value,
@@ -236,8 +258,8 @@ export class Importer {
           }
 
         }
-        else if ((typeof element.f !== 'string') && element.f.a$?.t === 'shared' && element.f.a$.si) {
-          const f = shared_formulae[element.f.a$.si];
+        else if ((typeof element.f !== 'string') && element.f[attrs]?.t === 'shared' && element.f[attrs].si) {
+          const f = shared_formulae[element.f[attrs].si];
           if (f) {
             if (f.parse_result.expression) {
               value = '=' + this.parser.Render(f.parse_result.expression, {
@@ -255,8 +277,8 @@ export class Importer {
           }
         }
 
-        if (typeof element.f !== 'string' &&  element.f.a$?.t === 'array') {
-          const translated = sheet.TranslateAddress(element.f.a$.ref || '');
+        if (typeof element.f !== 'string' &&  element.f[attrs]?.t === 'array') {
+          const translated = sheet.TranslateAddress(element.f[attrs].ref || '');
           if (is_range(translated)) {
             arrays.push(ShiftRange(translated, -1, -1));
           }
@@ -264,7 +286,7 @@ export class Importer {
 
         if (typeof element.v !== 'undefined') {
 
-          const V = (typeof element.v === 'object') ? element.v?.t$ : element.v;
+          const V = (typeof element.v === 'object') ? element.v?.[text] : element.v;
 
           const num = Number(V.toString());
           if (!isNaN(num)) {
@@ -279,15 +301,17 @@ export class Importer {
 
       }
       else if (typeof element.v !== 'undefined') {
-        const num = Number(element.v.toString());
+
+        const num = Number(element.v[text] || '');
         if (!isNaN(num)) {
           type = 'number'; // ValueType.number;
           value = num;
         }
         else {
           type = 'string'; // ValueType.string;
-          value = element.v.toString();
+          value = element.v[text].toString();
         }
+         
       }
     }
 
@@ -316,8 +340,8 @@ export class Importer {
       result.calculated = calculated_value;
     }
 
-    if (element.a$?.s) {
-      result.style_ref = Number(element.a$.s);
+    if (element[attrs]?.s) {
+      result.style_ref = Number(element[attrs].s);
     }
 
     for (const link of links) {
@@ -390,15 +414,15 @@ export class Importer {
 
     // console.info({rule});
 
-    switch (rule.a$.type) {
+    switch (rule[attrs].type) {
       case 'duplicateValues':
       case 'uniqueValues':
 
         {
           let style = {};
 
-          if (rule.a$.dxfId) {
-            const index = Number(rule.a$.dxfId);
+          if (rule[attrs].dxfId) {
+            const index = Number(rule[attrs].dxfId);
             if (!isNaN(index)) {
               style = this.workbook?.style_cache.dxf_styles[index] || {};
             }
@@ -408,51 +432,54 @@ export class Importer {
             type: 'duplicate-values',
             area,
             style,
-            unique: (rule.a$.type === 'uniqueValues'),
-            priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+            unique: (rule[attrs].type === 'uniqueValues'),
+            priority: rule[attrs].priority ? Number(rule[attrs].priority) : undefined,
 
           };
         }
 
       case 'cellIs':
-        if (rule.a$.operator && (rule.formula || typeof rule.formula === 'number')) {
+        if (rule[attrs].operator && (rule.formula || typeof rule.formula === 'number')) {
+
           let style = {};
 
-          if (rule.a$.dxfId) {
-            const index = Number(rule.a$.dxfId);
+          if (rule[attrs].dxfId) {
+            const index = Number(rule[attrs].dxfId);
             if (!isNaN(index)) {
               style = this.workbook?.style_cache.dxf_styles[index] || {};
             }
           }
 
-          if (rule.a$.operator === 'between') {
+          if (rule[attrs].operator === 'between') {
             if (Array.isArray(rule.formula) && rule.formula.length === 2
-                && typeof rule.formula[0] === 'number' && typeof rule.formula[1] === 'number') {
+                && typeof rule.formula[0][text] === 'number' && typeof rule.formula[1][text] === 'number') {
 
               return {
                 type: 'cell-match',
                 expression: '',
-                between: rule.formula, // special case? ugh
+                between: [rule.formula[0][text], rule.formula[1][text]], // special case? ugh
                 area,
                 style,
-                priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+                priority: rule[attrs].priority ? Number(rule[attrs].priority) : undefined,
               };
 
             }
           }
 
-          const operator = operators[rule.a$.operator || ''];
+          const operator = operators[rule[attrs].operator || ''];
+
+          const rule_formula = Array.isArray(rule.formula) ? '' : rule.formula[text];
 
           if (!operator) {
-            console.info('unhandled cellIs operator:', rule.a$.operator, {rule});
+            console.info('unhandled cellIs operator:', rule[attrs].operator, {rule});
           }
           else {
             return {
               type: 'cell-match',
-              expression: operator + ' ' + rule.formula,
+              expression: operator + ' ' + rule_formula, // rule.formula,
               area,
               style,
-              priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+              priority: rule[attrs].priority ? Number(rule[attrs].priority) : undefined,
             };
           }
 
@@ -468,6 +495,13 @@ export class Importer {
 
         if (rule.formula) {
 
+          let rule_formula = '';
+
+          if (!Array.isArray(rule.formula)) {
+            rule_formula = rule.formula[text];
+          }
+
+          /*
           if (typeof rule.formula !== 'string') {
             if (ElementHasTextNode(rule.formula)) {
 
@@ -483,17 +517,18 @@ export class Importer {
               rule.formula = '';
             }
           }
+          */
 
           let style = {};
           
-          if (rule.a$.dxfId) {
-            const index = Number(rule.a$.dxfId);
+          if (rule[attrs].dxfId) {
+            const index = Number(rule[attrs].dxfId);
             if (!isNaN(index)) {
               style = this.workbook?.style_cache.dxf_styles[index] || {};
             }
           }
 
-          if (rule.a$.type === 'expression' && (area.start.row !== area.end.row || area.start.column !== area.end.column)) {
+          if (rule[attrs].type === 'expression' && (area.start.row !== area.end.row || area.start.column !== area.end.column)) {
 
             // (1) this is only required if there are relative references
             //     in the formula. so we could check and short-circuit.
@@ -507,7 +542,7 @@ export class Importer {
             const list: ConditionalFormat[] = [];
             const a2 = new Area(area.start, area.end);
 
-            const parse_result = this.parser.Parse(rule.formula);
+            const parse_result = this.parser.Parse(rule_formula);
             if (parse_result.expression) {
               for (const cell of a2) {
                 const f = this.parser.Render(parse_result.expression, {
@@ -520,7 +555,7 @@ export class Importer {
                   expression: f,
                   style,
                   area: { start: cell, end: cell },
-                  priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+                  priority: rule[attrs].priority ? Number(rule[attrs].priority) : undefined,
                 })
 
                 // console.info(f);
@@ -534,10 +569,10 @@ export class Importer {
 
           return {
             type: 'expression',
-            expression: rule.formula,
+            expression: rule_formula,
             area,
             style,
-            priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+            priority: rule[attrs].priority ? Number(rule[attrs].priority) : undefined,
           };
 
         }
@@ -552,17 +587,17 @@ export class Importer {
             const color: Color = {};
 
             const color_element = rule.colorScale.color[index];
-            if (color_element.a$.rgb) {
-              (color as HTMLColor).text = '#' + color_element.a$.rgb.substring(2);
+            if (color_element[attrs].rgb) {
+              (color as HTMLColor).text = '#' + color_element[attrs].rgb.substring(2);
             } 
-            else if (color_element.a$.theme) {
-              (color as ThemeColor).theme = Number(color_element.a$.theme) || 0;
-              if (color_element.a$.tint) {
-                (color as ThemeColor).tint = Math.round(Number(color_element.a$.tint) * 1000) / 1000;
+            else if (color_element[attrs].theme) {
+              (color as ThemeColor).theme = Number(color_element[attrs].theme) || 0;
+              if (color_element[attrs].tint) {
+                (color as ThemeColor).tint = Math.round(Number(color_element[attrs].tint) * 1000) / 1000;
               }
             }           
 
-            switch (entry.a$.type) {
+            switch (entry[attrs].type) {
               case 'min':
                 value = 0;
                 break;
@@ -572,7 +607,7 @@ export class Importer {
                 break;
 
               case 'percentile':
-                value = (Number(entry.a$.val) || 0) / 100;
+                value = (Number(entry[attrs].val) || 0) / 100;
                 break;
             }
 
@@ -585,7 +620,7 @@ export class Importer {
             stops,
             color_space: 'RGB',
             area,
-            priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+            priority: rule[attrs].priority ? Number(rule[attrs].priority) : undefined,
 
           };
 
@@ -633,7 +668,8 @@ export class Importer {
 
     const annotations: AnchoredAnnotation[] = [];
 
-    const FindAll: <T = GenericDOMElement>(path: string) => T[] = XMLUtils.FindAll.bind(XMLUtils, sheet.sheet_data);
+    // const FindAll: <T = GenericDOMElement>(path: string) => T[] = XMLUtils.FindAll.bind(XMLUtils, sheet.sheet_data);
+    const FindAll = XMLUtils.FindAll2.bind(XMLUtils, sheet.sheet_data);
 
     // tab color
 
@@ -644,14 +680,14 @@ export class Importer {
     if (tab_color_element?.[0]) {
 
       const element = tab_color_element[0];
-      if (element.a$?.theme) {
-        tab_color = { theme: Number(element.a$.theme) };
-        if (element.a$?.tint) {
-          tab_color.tint = Number(element.a$.tint);
+      if (element[attrs]?.theme) {
+        tab_color = { theme: Number(element[attrs].theme) };
+        if (element[attrs].tint) {
+          tab_color.tint = Number(element[attrs].tint);
         }
       }
-      if (element.a$?.rgb) {
-        const argb = element.a$.rgb;
+      if (element[attrs]?.rgb) {
+        const argb = element[attrs].rgb as string;
         tab_color = {
           text: '#' + (
             argb.length > 6 ?
@@ -666,13 +702,13 @@ export class Importer {
 
     const conditional_formatting = FindAll('worksheet/conditionalFormatting');
     for (const element of conditional_formatting) {
-      if (element.a$?.sqref ){
+      if (element[attrs]?.sqref ){
 
         // FIXME: this attribute might include multiple ranges? e.g.:
         //
         // <conditionalFormatting sqref="B31:I31 B10:E30 G10:I30 F14:F15">
 
-        const parts = element.a$.sqref.split(/\s+/);
+        const parts = (element[attrs].sqref as string).split(/\s+/);
         for (const part of parts) {
           const area = sheet.TranslateAddress(part);
           if (element.cfRule) {
@@ -699,8 +735,8 @@ export class Importer {
     const merge_cells = FindAll('worksheet/mergeCells/mergeCell');
 
     for (const element of merge_cells) {
-      if (element.a$?.ref) {
-        const merge = sheet.TranslateAddress(element.a$.ref);
+      if (element[attrs]?.ref) {
+        const merge = sheet.TranslateAddress(element[attrs].ref as string);
         if (is_range(merge)) {
           merges.push(ShiftRange(merge, -1, -1));
         }
@@ -711,11 +747,11 @@ export class Importer {
 
     const validation_entries = FindAll('worksheet/dataValidations/dataValidation');
     for (const entry of validation_entries) {
-      const type = entry.a$?.type;
-      const ref = entry.a$?.sqref;
-      const formula = entry.formula1;
+      const type = entry[attrs]?.type;
+      const ref = entry[attrs]?.sqref;
+      const formula = IsXMLNode(entry.formula1) ? entry.formula1[text] : undefined;
 
-      if (ref && formula && typeof formula === 'string' && type === 'list') {
+      if (ref && typeof ref === 'string' && formula && typeof formula === 'string' && type === 'list') {
         // let address: ICellAddress|undefined;
         let validation: DataValidation|undefined;
         let parse_result = this.parser.Parse(ref);
@@ -816,7 +852,7 @@ export class Importer {
 
     for (const child of hyperlinks) {
 
-      let address = sheet.TranslateAddress(child.a$?.ref || '');
+      let address = sheet.TranslateAddress(child[attrs]?.ref as string || '');
       if (is_range(address)) {
         address = address.from;
       }
@@ -824,10 +860,10 @@ export class Importer {
       let text = '';
       let reference = '';
 
-      if (child.a$ && child.a$['r:id']) {
+      if (child[attrs]?.['r:id']) {
 
         text = 'remote link';
-        const relationship = sheet.rels[child.a$['r:id']];
+        const relationship = sheet.rels[child[attrs]['r:id'] as string];
         if (relationship) {
           reference = relationship.target || '';
         }
@@ -846,17 +882,18 @@ export class Importer {
     let default_row_height = 21;
     let default_column_width = 100; // ?
 
-    const sheet_format = sheet.sheet_data.worksheet?.sheetFormatPr;
+    // const sheet_format = sheet.sheet_data.worksheet?.sheetFormatPr;
+    const sheet_format = XMLUtils.FindAll2(sheet.sheet_data, 'worksheet/sheetFormatPr')[0];
     if (sheet_format) {
-      if (sheet_format.a$?.defaultColWidth) {
-        const width = Number(sheet_format.a$.defaultColWidth);
+      if (sheet_format[attrs]?.defaultColWidth) {
+        const width = Number(sheet_format[attrs]?.defaultColWidth);
         if (!isNaN(width)) {
           // default_column_width = Math.round(width / one_hundred_pixels * 100);
           default_column_width = ColumnWidthToPixels(width);
         }
       }
-      if (sheet_format.a$?.defaultRowHeight) {
-        const height = Number(sheet_format.a$.defaultRowHeight);
+      if (sheet_format[attrs]?.defaultRowHeight) {
+        const height = Number(sheet_format[attrs].defaultRowHeight);
         if (!isNaN(height)) {
           default_row_height = Math.round(height * 4 / 3); // ??
         }
@@ -871,24 +908,24 @@ export class Importer {
     const rows = FindAll('worksheet/sheetData/row');
 
     for (const row of rows) {
-      const row_index = row.a$?.r ? Number(row.a$.r) : 1;
+      const row_index = row[attrs]?.r ? Number(row[attrs].r) : 1;
 
       let height = default_row_height;
-      if (row.a$?.ht) {
-        const num = Number(row.a$.ht);
+      if (row[attrs]?.ht) {
+        const num = Number(row[attrs].ht);
         if (!isNaN(num)) {
           height = Math.round(num * 4 / 3); // seems to be the excel unit -> pixel ratio
         }
       }
-      if (row.a$?.outlineLevel) {
-        const num = Number(row.a$.outlineLevel);
+      if (row[attrs]?.outlineLevel) {
+        const num = Number(row[attrs].outlineLevel);
         if (!isNaN(num)) {
           outline[row_index - 1] = num;
         }
       }
 
-      if (row.a$?.s) {
-        const style_reference = Number(row.a$?.s);
+      if (row[attrs]?.s) {
+        const style_reference = Number(row[attrs]?.s);
         if (!isNaN(style_reference)) {
           row_styles[row_index - 1] = style_reference;
         }
@@ -905,7 +942,7 @@ export class Importer {
       const cells = row.c ? Array.isArray(row.c) ? row.c : [row.c] : [];
 
       for (const element of cells) {
-        const cell = this.ParseCell(sheet, element as unknown as CellElementType, shared_formulae, arrays, merges, links); // , validations);
+        const cell = this.ParseCell(sheet, element as CellElementType, shared_formulae, arrays, merges, links); // , validations);
         if (cell) {
           data.push(cell);
         }
@@ -920,12 +957,12 @@ export class Importer {
 
     for (const child of columns) {
 
-      const min = Number(child.a$?.min);
-      const max = Number(child.a$?.max);
+      const min = Number(child[attrs]?.min);
+      const max = Number(child[attrs]?.max);
 
-      if (child.a$?.style) {
+      if (child[attrs]?.style) {
 
-        const style = Number(child.a$.style);
+        const style = Number(child[attrs].style);
 
         if (!isNaN(min) && !isNaN(max) && !isNaN(style)) {
 
@@ -945,9 +982,9 @@ export class Importer {
         }
 
       }
-      if (child.a$?.customWidth) {
+      if (child[attrs]?.customWidth) {
 
-        let width = Number(child.a$.width);
+        let width = Number(child[attrs].width);
 
         if (!isNaN(min) && !isNaN(max) && !isNaN(width)) {
 
@@ -976,7 +1013,7 @@ export class Importer {
 
     const table_references = FindAll('worksheet/tableParts/tablePart')
     for (const child of table_references) {
-      const rel = child.a$ ? child.a$['r:id'] : undefined;
+      const rel = IsXMLNode(child) ? child[attrs]?.['r:id'] as string: undefined;
       if (rel) {
         let reference = '';
 
@@ -1030,7 +1067,7 @@ export class Importer {
 
     for (const child of drawings) {
       
-      const rel = child.a$ ? child.a$['r:id'] : undefined;
+      const rel = child[attrs] ? child[attrs]['r:id'] as string : undefined;
       if (rel) {
 
         let reference = '';
@@ -1279,7 +1316,7 @@ export class Importer {
     
       // find the prefix
       let prefix = '';
-      for (const key of Object.keys(entry?.a$ || {})) {
+      for (const key of Object.keys(entry[attrs] || {})) {
         const match = key.match(/^xmlns:(.*)$/);
         if (match) {
           prefix = match[1];
@@ -1287,27 +1324,33 @@ export class Importer {
         }
       }
 
-      const groups = XMLUtils.FindAll(entry, `${prefix}:sparklineGroups/${prefix}:sparklineGroup`);
+      const groups = XMLUtils.FindAll2(entry, `${prefix}:sparklineGroups/${prefix}:sparklineGroup`);
       for (const group of groups) {
         let func = 'Sparkline.line';
         let reference = '';
         let source = '';
 
-        if (group.a$?.type === 'column') {
+        if (group[attrs]?.type === 'column') {
           func = 'Sparkline.column';
         }
 
         // TODO: gap optional
         // TODO: colors
 
-        const sparklines = XMLUtils.FindAll(group, `${prefix}:sparklines/${prefix}:sparkline`);
+        const sparklines = XMLUtils.FindAll2(group, `${prefix}:sparklines/${prefix}:sparkline`);
         for (const sparkline of sparklines) {
           for (const key of Object.keys(sparkline)) {
             if (/:f$/.test(key)) {
-              source = sparkline[key];
+              // source = sparkline[key];
+              if (IsXMLNode(sparkline[key])) {
+                source = sparkline[key][text] as string || '';
+              }
             }
             else if (/:sqref$/.test(key)) {
-              reference = sparkline[key];
+              // reference = sparkline[key];
+              if (IsXMLNode(sparkline[key])) {
+                reference = sparkline[key][text] as string || '';
+              }
             }
           }
         }

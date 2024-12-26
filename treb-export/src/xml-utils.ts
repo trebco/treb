@@ -20,9 +20,22 @@
  */
 
 import { Unescape } from './unescape_xml';
-import { type X2jOptions, XMLBuilder, type XmlBuilderOptions } from 'fast-xml-parser';
+import { type X2jOptions, XMLBuilder, type XmlBuilderOptions, XMLParser } from 'fast-xml-parser';
 
 export const XMLTagProcessor = (name: string, value: string): string => Unescape(value);
+
+export const attrs = Symbol('attrs');
+export const text = Symbol('text');
+
+export interface XMLNode {
+  [attrs]?: Record<string, string|number|boolean>;
+  [text]?: string|number|boolean;
+  [index: string]: XMLNode|XMLNode[];
+}
+
+export const IsXMLNode = (test: unknown): test is XMLNode => {
+  return !!test && (typeof test === 'object') && !Array.isArray(test);
+};
 
 export interface DOMContent {
   [index: string]: string|DOMContent|string[]|DOMContent[]|number|number[]|undefined;
@@ -111,13 +124,14 @@ export const XMLOptions: Partial<X2jOptions> = {
  * group attributes under `a$`, and don't add attribute prefixes (should be 
  * implicit on that option, but hey).
  */
-export const XMLOptions2: Partial<X2jOptions> = {
+const XMLOptions2: Partial<X2jOptions> = {
   ignoreAttributes: false,
   attributesGroupName: 'a$',
   attributeNamePrefix: '',
   textNodeName: 't$',
   trimValues: false,
   ignoreDeclaration: true,
+  alwaysCreateTextNode: true,
 
   // arrayMode: false, // this was removed in FXP, but false is default anyway
 
@@ -127,6 +141,52 @@ export const XMLOptions2: Partial<X2jOptions> = {
 
   tagValueProcessor: XMLTagProcessor,
 };
+
+/**
+ * convert string names to symbols and retype
+ */
+const Translate = (parsed: XMLNode): XMLNode => {
+
+  const translated: XMLNode = {};
+  for (const [key, value] of Object.entries(parsed)) {
+    switch (key) {
+      case 'a$':
+        translated[attrs] = value as unknown as Record<string, string|number|boolean>;
+        break;
+      case 't$':
+        translated[text] = value as unknown as string|number|boolean;
+        break;
+      default:
+        if (Array.isArray(value)) {
+          translated[key] = value.map(entry => Translate(entry));
+        }
+        else {
+          translated[key] = Translate(value);
+        }
+    }
+  }
+
+  return translated;
+
+};
+
+const internal_parser = new XMLParser(XMLOptions2);
+export const default_parser = {
+  parse: (text: string) => {
+
+    const parsed = internal_parser.parse(text) as XMLNode;
+
+    // console.info("translating", text, parsed);
+
+    const translated = Translate(parsed);
+    // console.info({translated});
+    return translated;
+  }
+}
+
+// export const default_parser = new XMLParser(XMLOptions2);
+
+
 
 /**
  * some utility functions for working with the xml/json
@@ -178,6 +238,8 @@ export class XMLUtils {
    * </a>
    * 
    * in either case we want both "c" elements.
+   * 
+   * @deprecated
    */
   public static FindAll(root: DOMContent = {}, path: string): any[] {
 
@@ -204,6 +266,90 @@ export class XMLUtils {
     }
 
     return this.FindAllTail(root, components);
+  }
+
+  public static FindAll2(root: XMLNode = {}, path: string): XMLNode[] {
+
+    const components = path.split('/');
+
+    // allow proper paths starting with ./
+    if (components[0] === '.') {
+      components.shift();
+    }
+
+    // don't allow going up the stack (we don't have it)
+    if (components[0] === '..') {
+      throw new Error(`invalid path (no access to parent)`);
+    }
+
+    // root path would be written like /x/a (I think)
+    if (components[0] === '') {
+      throw new Error(`invalid path (no access to root)`);
+    }
+
+    // TODO
+    if (components[0] === '**') {
+      throw new Error('ENOTIMPL');
+    }
+
+    return this.FindAllTail2(root, components);
+    
+  }
+
+  public static FindAllTail2(root: XMLNode|XMLNode[], elements: string[]): XMLNode[] {
+
+    if (Array.isArray(root)) {
+      return root.reduce((composite, element) => {
+        return composite.concat(this.FindAllTail2(element, elements));
+      }, [] as XMLNode[]);
+    }
+
+    for (let i = 0; i < elements.length; i++) {
+      const element = elements[i];
+
+      if (element === '*') {
+
+        const pairs = Object.entries(root) as Array<[string, XMLNode]>;
+        root = pairs.reduce((result, [key, value]) => {
+          if (key !== 'a$' && key !== 't$')  {
+            result.push(value);
+          }
+          return result;
+        }, [] as XMLNode[]);
+
+      }
+      else {
+        root = root[element];
+      }
+
+      if (!root) { 
+        return [];
+      }
+
+      if (Array.isArray(root)) {
+
+        // if this is the target node, then return the array;
+        // otherwise, we need to recurse. also we can check for
+        // zero-length array.
+
+        if (i === elements.length - 1 || root.length === 0) {
+          return root;
+        }
+
+        const step = elements.slice(1);
+        return root.reduce((composite, element) => {
+          return composite.concat(this.FindAllTail2(element, step));
+        }, [] as XMLNode[]);
+        
+      }
+
+
+    }
+
+    // if we get here, root must be a single element so wrap it up
+
+    return [root];
+
   }
 
   /**

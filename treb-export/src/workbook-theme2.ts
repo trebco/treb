@@ -19,7 +19,7 @@
  * 
  */
 
-import { XMLUtils } from './xml-utils';
+import { XMLUtils, attrs, text, type XMLNode } from './xml-utils';
 
 export interface ColorSchemeElement {
   name?: string;
@@ -49,7 +49,7 @@ export class Theme {
 
   // private dom?: ElementTree.ElementTree;
 
-  public FromXML(xml: any): void {
+  public FromXML(xml: XMLNode): void {
 
     const tag = Object.keys(xml)[0];
 
@@ -60,29 +60,30 @@ export class Theme {
       namespace = match[1] + ':';
     }
 
-    if (xml[tag] && xml[tag][`${namespace}themeElements`]) {
-      const color_scheme = xml[tag][`${namespace}themeElements`][`${namespace}clrScheme`];
-
+    const scheme = XMLUtils.FindAll2(xml, `${tag}/${namespace}themeElements/${namespace}clrScheme`)[0];
+    if (scheme) {
       for (const name of Theme.color_map) {
-        const element = color_scheme[`${namespace}${name}`];
+        const srgbClr = XMLUtils.FindAll2(scheme, '${namespace}srgbClr')[0];
+        const sysClr = XMLUtils.FindAll2(scheme, '${namespace}sysClr')[0];
 
         let value: string | undefined;
         let type: 'rgb'|'system' = 'rgb';
 
-        if (element[`${namespace}srgbClr`]) {
+        if (srgbClr) {
           type = 'rgb';
-          value = element[`${namespace}srgbClr`].a$.val || '';
+          value = (srgbClr[attrs]?.val || '') as string;
         }
-        else if (element[`${namespace}sysClr`]) {
+        else if (sysClr) {
           type = 'system';
-          value = element[`${namespace}sysClr`].a$.lastClr || '';
+          value = (sysClr[attrs]?.lastClr || '') as string;
         }
 
         this.colors[name] = {name, value, type};
 
+
       }
     }
-
+    
   }
 
 }

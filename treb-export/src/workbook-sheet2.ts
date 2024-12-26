@@ -46,11 +46,12 @@ import { is_range } from './address-type';
 import type { SharedStrings } from './shared-strings2';
 import type { Drawing } from './drawing2/drawing2';
 import type { RelationshipMap } from './relationship';
+import { attrs, XMLUtils, type XMLNode } from './xml-utils';
 
 export interface SheetOptions {
   name?: string;
   id?: number;
-  rid?: any;
+  rid?: string; // any;
 }
 
 export interface RangeOptions {
@@ -74,7 +75,7 @@ export class Sheet {
   public rels_path?: string;
   public rels: RelationshipMap = {};
 
-  public sheet_data: any = {};
+  public sheet_data: XMLNode = {};
 
   public shared_strings?: SharedStrings;
   public extent?: RangeType;
@@ -165,9 +166,12 @@ export class Sheet {
     // we can read column/row sizes in here, or anything else we need to do
     // atm just extent
 
-    const dim = this.sheet_data.worksheet?.dimension?.a$?.ref;
+    const dim = XMLUtils.FindAll2(this.sheet_data, 'worksheet/dimension')[0];
 
-    const extent = this.TranslateAddress(dim || '');
+    // const dim = this.sheet_data.worksheet?.dimension?.a$?.ref;
+
+    const extent = this.TranslateAddress(dim?.[attrs]?.ref as string || '');
+
     if (is_range(extent)) {
       this.extent = JSON.parse(JSON.stringify(extent));
     }
