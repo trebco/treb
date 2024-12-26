@@ -41,23 +41,6 @@ export interface DOMContent {
   [index: string]: string|DOMContent|string[]|DOMContent[]|number|number[]|undefined;
 }
 
-// --- take 2 ------------------------------------------------------------------
-
-export interface XMLKeys {
-  a$?: Record<string, string>;
-  t$?: string;
-}
-
-export type DOMElementType = number|number[]|string|string[]|(BaseDOM & XMLKeys)|(BaseDOM & XMLKeys)[];
-
-export interface BaseDOM {
-  [key: string]: DOMElementType;
-}
-
-export type GenericDOMElement = BaseDOM & XMLKeys;
-
-export const GenericDOMArray = (element: GenericDOMElement|GenericDOMElement[]): GenericDOMElement[] => element ? Array.isArray(element) ? element : [element] : [];
-
 // -----------------------------------------------------------------------------
 
 
