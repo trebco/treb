@@ -555,7 +555,17 @@ export class ExpressionCalculator {
             };
           }
   
+        case ValueType.undefined:
+          return {
+            type: 'missing', id: 0,
+          };
+        
         default:
+
+          // this (logging) is a problem in a simulation because
+          // it can bog down. we probably should only log once.
+          // or perhaps not at all?
+
           console.warn('unhandled parameter value', arg);
   
       }
