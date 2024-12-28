@@ -393,6 +393,12 @@ export interface OptionalParserFlags {
    */
   r1c1: boolean,
 
+  /**
+   * handle r1c1 properly, which is to say use absolute addressing
+   * for absolute references and relative addressing otherwise. this should 
+   * be the default, but I don't want to break anything.
+   */
+  r1c1_proper_semantics: boolean;
 
   /* *
    * what if we do want =1/2 to be a fraction? more importantly, if we are
@@ -447,6 +453,14 @@ export interface RenderOptions {
 
   /** force addresses to be relative */
   r1c1_force_relative?: boolean;
+
+  /**
+   * handle r1c1 properly, which is to say use absolute addressing
+   * for absolute references and relative addressing otherwise (assuming
+   * there's a base set). this should be the default, but I don't want
+   * to break anything.
+   */
+  r1c1_proper_semantics?: boolean;
 
   /** if we're just translating, don't have to render addresses */
   pass_through_addresses?: boolean;

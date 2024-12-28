@@ -602,15 +602,15 @@ export class Parser {
         if (options.pass_through_addresses) { 
           return unit.label;
         }
-        return options.r1c1 ? this.R1C1Label(unit, options.r1c1_base, options.r1c1_force_relative) : this.AddressLabel(unit, offset);
+        return options.r1c1 ? this.R1C1Label(unit, options) : this.AddressLabel(unit, offset);
 
       case 'range':
         if (options.pass_through_addresses) { 
           return unit.label;
         }
         return options.r1c1 ? 
-          this.R1C1Label(unit.start, options.r1c1_base, options.r1c1_force_relative) + ':' + 
-            this.R1C1Label(unit.end, options.r1c1_base, options.r1c1_force_relative) : 
+          this.R1C1Label(unit.start, options) + ':' + 
+            this.R1C1Label(unit.end, options) : 
           this.AddressLabel(unit.start, offset) + ':' + this.AddressLabel(unit.end, offset);
 
       case 'missing':
@@ -962,9 +962,13 @@ export class Parser {
    */
   protected R1C1Label(
     address: UnitAddress,
-    base?: UnitAddress,
-    force_relative = false,
+    options: Partial<RenderOptions>,
+    // base?: UnitAddress,
+    // force_relative = false,
   ): string {
+
+    const force_relative = !!options.r1c1_force_relative;
+    const base = options.r1c1_base;
 
     let label = '';
 
@@ -976,7 +980,30 @@ export class Parser {
     let row = '';
     let column = '';
 
-    if (force_relative && base) { 
+    if (force_relative && options.r1c1_proper_semantics && base) {
+
+      if (address.absolute_row) {
+        row = (address.row + 1).toString();
+      }
+      else {
+        const delta_row = address.row - base.row;
+        if (delta_row) {
+          row = `[${delta_row}]`;
+        }
+      }
+
+      if (address.absolute_column) {
+        column = (address.column + 1).toString();
+      }
+      else {
+        const delta_column = address.column - base.column;
+        if (delta_column) {
+          column = `[${delta_column}]`;
+        }
+      }
+
+    }
+    else if (force_relative && base) { 
       const delta_row = address.row - base.row;
       const delta_column = address.column - base.column;
 
@@ -2527,6 +2554,9 @@ export class Parser {
         }
         else if (match[1]){ // absolute
           r1c1.row = Number(match[1]) - 1; // R1C1 is 1-based
+          if (this.flags.r1c1_proper_semantics) {
+            r1c1.absolute_row = true;
+          }
         }
         else {
           r1c1.offset_row = true;
@@ -2539,6 +2569,9 @@ export class Parser {
         }
         else if (match[2]) { // absolute
           r1c1.column = Number(match[2]) - 1; // R1C1 is 1-based
+          if (this.flags.r1c1_proper_semantics) {
+            r1c1.absolute_column = true;
+          }
         }
         else {
           r1c1.offset_column = true;
