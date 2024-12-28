@@ -337,6 +337,11 @@ $swatch-size: 18px;
         align-items: center;
         width: $button-width;
         justify-content: center;
+
+        & > svg {
+          pointer-events: none;
+        }
+
       }
 
       & > div {
