@@ -841,6 +841,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // if we don't have a container. that's distinct (at the moment)
     // from headless, which is a state that can change.
 
+    // what's the point of having the GridBase type if we're not using
+    // it when we don't have a container? or was it built for something
+    // else? (A: it was)
+
     this.grid = new Grid(
         grid_options, 
         this.model, 
