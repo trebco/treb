@@ -28,12 +28,6 @@ Download from npm using npm, yarn, pnpm or your favorite module tool
 npm install @trebco/treb
 ```
 
-## Light version
-
-In addition to the standard version there's a light version which does not
-support converting to/from XLSX files. Other than that it's identical. Use
-the script `treb-spreadsheet-light.mjs`.
-
 ## License
 
 TREB is provided under the GNU Lesser General Public License (LGPL). 

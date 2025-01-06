@@ -21,8 +21,8 @@
 
 import type { ImageOptions } from './embedded-image';
 import { EmbeddedImage } from './embedded-image';
-import type { ChartOptions} from './chart2';
-import { Chart} from './chart2';
+import type { ChartOptions} from './chart';
+import { Chart} from './chart';
 import type { RelationshipMap} from '../relationship';
 import { AddRel } from '../relationship';
 import type { DOMContent } from '../xml-utils';

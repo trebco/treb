@@ -19,8 +19,6 @@
  * 
  */
 
-import { XMLUtils } from './xml-utils';
-
 export interface ColorSchemeElement {
   name?: string;
   value?: string;

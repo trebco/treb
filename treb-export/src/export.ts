@@ -44,10 +44,10 @@ import { Area, Cells, ValueType, Style, IsHTMLColor, IsThemeColor, ThemeColorInd
 import type { XmlBuilderOptions} from 'fast-xml-parser';
 import { XMLParser } from 'fast-xml-parser';
 
-import { SharedStrings } from './shared-strings2';
-import type { XlColor, BorderEdge } from './workbook-style2';
-import { StyleCache } from './workbook-style2';
-import { Theme } from './workbook-theme2';
+import { SharedStrings } from './shared-strings';
+import type { XlColor, BorderEdge } from './workbook-style';
+import { StyleCache } from './workbook-style';
+import { Theme } from './workbook-theme';
 
 import type { RelationshipMap} from './relationship';
 import { AddRel } from './relationship';
@@ -57,12 +57,12 @@ import type { UnitAddress, UnitRange, ExpressionUnit} from 'treb-parser';
 import { Parser } from 'treb-parser';
 
 // FIXME: move
-import type { ChartOptions } from './drawing2/chart2';
-import { Chart } from './drawing2/chart2';
-import type { ImageOptions } from './drawing2/embedded-image';
-import type { TwoCellAnchor } from './drawing2/drawing2';
-import { Drawing } from './drawing2/drawing2';
-import { ConditionalFormatOperators, type TableDescription, type TableFooterType } from './workbook2';
+import type { ChartOptions } from './drawing/chart';
+import { Chart } from './drawing/chart';
+import type { ImageOptions } from './drawing/embedded-image';
+import type { TwoCellAnchor } from './drawing/drawing';
+import { Drawing } from './drawing/drawing';
+import { ConditionalFormatOperators, type TableDescription, type TableFooterType } from './workbook';
 import type { AnnotationData } from 'treb-data-model/src/annotation';
 import { ZipWrapper } from './zip-wrapper';
 

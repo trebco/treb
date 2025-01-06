@@ -23,7 +23,7 @@
 // import { Element, ElementTree as Tree } from 'elementtree';
 
 import { type CompositeBorderEdge, Style, type CellStyle, type PropertyKeys, type Color, IsHTMLColor, IsThemeColor, type ThemeColor, type HTMLColor, ThemeColorIndex } from 'treb-base-types';
-import { Theme } from './workbook-theme2';
+import { Theme } from './workbook-theme';
 import { NumberFormatCache } from 'treb-format';
 import { XMLUtils } from './xml-utils';
 

@@ -24,17 +24,17 @@
 // import UZip from 'uzip';
 import Base64JS from 'base64-js';
 
-import type { AnchoredChartDescription, AnchoredImageDescription, AnchoredTextBoxDescription} from './workbook2';
-import { ChartType, ConditionalFormatOperators, Workbook } from './workbook2';
+import type { AnchoredChartDescription, AnchoredImageDescription, AnchoredTextBoxDescription} from './workbook';
+import { ChartType, ConditionalFormatOperators, Workbook } from './workbook';
 import type { ParseResult } from 'treb-parser';
 import { DecimalMarkType, Parser } from 'treb-parser';
 import type { RangeType, AddressType, HyperlinkType } from './address-type';
 import { is_range, ShiftRange, InRange, is_address } from './address-type';
 import { type ImportedSheetData, type AnchoredAnnotation, type CellParseResult, type AnnotationLayout, type Corner as LayoutCorner, type IArea, type GradientStop, type Color, type HTMLColor, type ThemeColor, Area } from 'treb-base-types';
 import type { SerializedValueType } from 'treb-base-types';
-import type { Sheet} from './workbook-sheet2';
-import { VisibleState } from './workbook-sheet2';
-import type { CellAnchor } from './drawing2/drawing2';
+import type { Sheet} from './workbook-sheet';
+import { VisibleState } from './workbook-sheet';
+import type { CellAnchor } from './drawing/drawing';
 import { type GenericDOMElement, XMLUtils } from './xml-utils';
 
 // import { one_hundred_pixels } from './constants';
@@ -79,7 +79,26 @@ interface ConditionalFormatRule {
     priority?: string;
     operator?: string;
   };
+
   formula?: string|[number,number]|{t$: string};
+
+  dataBar?: {
+    a$?: {
+      showValue?: string;
+    },
+    color?: {
+      a$: {
+        rgb?: string;
+      }
+    }
+  }
+  
+  extLst?: {
+    ext?: {
+      'x14:id'?: string;
+    }
+  }
+
   colorScale?: {
     cfvo?: {
       a$: {
@@ -383,7 +402,7 @@ export class Importer {
 
   }
 
-  public ParseConditionalFormat(address: RangeType|AddressType, rule: ConditionalFormatRule): ConditionalFormat|ConditionalFormat[]|undefined {
+  public ParseConditionalFormat(address: RangeType|AddressType, rule: ConditionalFormatRule, extensions?: any[]): ConditionalFormat|ConditionalFormat[]|undefined {
 
     const area = this.AddressToArea(address);
     const operators = ConditionalFormatOperators;
@@ -543,6 +562,48 @@ export class Importer {
         }
         break;
 
+      case 'dataBar':
+        {
+          const hide_values = (rule.dataBar?.a$?.showValue === '0');
+          let extension: any = undefined;
+
+          if (rule.extLst?.ext?.['x14:id']) {
+            console.info("Have extension ID", rule.extLst.ext['x14:id'])
+            for (const test of (extensions || [])) {
+              if (test['x14:cfRule']?.a$?.id === rule.extLst.ext['x14:id']) {
+                extension = test;
+                break;
+              }
+            }
+            if (!extension) {
+              console.info("conditional format extension not found");
+            }
+          }
+
+          if (rule.dataBar?.color?.a$?.rgb) {
+
+            let negative: Color|undefined = undefined;
+
+            if (extension?.['x14:cfRule']?.['x14:dataBar']?.['x14:negativeFillColor']?.a$?.rgb) {
+              const rgb = extension['x14:cfRule']['x14:dataBar']['x14:negativeFillColor'].a$.rgb;
+              negative = { text: '#' + rgb.toString().substring(2) };
+            }
+            else {
+              console.info("NO NEG", extension);
+            }
+
+            const fill: Color = { text: '#' + rule.dataBar.color.a$.rgb.substring(2) };
+            return {
+              type: 'data-bar',
+              area,
+              fill,
+              hide_values,
+              negative,
+            };
+          }
+        }
+        break;
+
       case 'colorScale':
         if (rule.colorScale && Array.isArray(rule.colorScale.cfvo) && Array.isArray(rule.colorScale.color)) {
 
@@ -665,6 +726,11 @@ export class Importer {
     // conditionals 
 
     const conditional_formatting = FindAll('worksheet/conditionalFormatting');
+
+    // we might need extensions as well? TODO
+
+    const conditional_formattings = FindAll('worksheet/extLst/ext/x14:conditionalFormattings/x14:conditionalFormatting');
+
     for (const element of conditional_formatting) {
       if (element.a$?.sqref ){
 
@@ -678,7 +744,7 @@ export class Importer {
           if (element.cfRule) {
             const rules = Array.isArray(element.cfRule) ? element.cfRule : [element.cfRule];
             for (const rule of rules) {
-              const format = this.ParseConditionalFormat(area, rule as unknown as ConditionalFormatRule);
+              const format = this.ParseConditionalFormat(area, rule as unknown as ConditionalFormatRule, conditional_formattings);
               if (format) {
                 if (Array.isArray(format)) {
                   conditional_formats.push(...format);

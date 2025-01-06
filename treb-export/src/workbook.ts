@@ -28,15 +28,15 @@ const xmlparser2 = new XMLParser(XMLOptions2);
 
 // import * as he from 'he';
 
-import type { TwoCellAnchor, CellAnchor } from './drawing2/drawing2';
+import type { TwoCellAnchor, CellAnchor } from './drawing/drawing';
 
-import { SharedStrings } from './shared-strings2';
-import { StyleCache } from './workbook-style2';
-import { Theme } from './workbook-theme2';
-import { Sheet, VisibleState } from './workbook-sheet2';
+import { SharedStrings } from './shared-strings';
+import { StyleCache } from './workbook-style';
+import { Theme } from './workbook-theme';
+import { Sheet, VisibleState } from './workbook-sheet';
 import type { RelationshipMap } from './relationship';
 import { ZipWrapper } from './zip-wrapper';
-import type { CellStyle, ICellAddress, ThemeColor } from 'treb-base-types';
+import type { CellStyle, ThemeColor } from 'treb-base-types';
 import type { SerializedNamed } from 'treb-data-model';
 
 /**
