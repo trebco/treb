@@ -1265,7 +1265,7 @@ export class ExpressionCalculator {
       }
       
       const named = this.data_model.GetName(upper_case, this.context.address.sheet_id || 0);
- 
+      
       switch (named?.type) {
         case 'range':
           if (named.area.count === 1) {

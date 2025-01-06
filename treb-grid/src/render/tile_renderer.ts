@@ -24,7 +24,8 @@ import type { ICellAddress,
          Cell, Size, 
          CellStyle,
          Theme,
-         HorizontalAlign} from 'treb-base-types';
+         HorizontalAlign,
+         ExtendedCelLStyle} from 'treb-base-types';
 import { TextPartFlag, Style, ValueType, Area, Rectangle, ResolveThemeColor, IsDefinedColor } from 'treb-base-types';
 
 import type { Tile } from '../types/tile';
@@ -2017,6 +2018,44 @@ export class TileRenderer {
       }
 
     }
+  
+    if ((style as ExtendedCelLStyle).databar && height > 7 && width > 9) { // FIXME: buffers
+
+      const db = (style as ExtendedCelLStyle).databar;
+      if (db) {
+
+        const margin = { x: 4, y: 3}; // FIXME: parameterize, move out of this function/block
+        context.fillStyle = ResolveThemeColor(this.theme, db.fill);
+
+        const bar_top = margin.y;
+        const bar_height = height - (margin.y * 2 + 1);
+        let bar_left = margin.x;
+        let bar_width = 0;
+
+        if (db.zero > 0) {
+          bar_left = bar_left + db.zero * (width - (margin.x * 2 + 1));
+          if (db.value > db.zero) {
+            bar_width = (width - (margin.x * 2 + 1)) * (db.value - db.zero);
+          }
+          else {
+
+            if (db.negative) {
+              context.fillStyle = ResolveThemeColor(this.theme, db.negative);
+            }
+
+            bar_width = (width - (margin.x * 2 + 1)) * (db.zero - db.value);
+            bar_left -= bar_width;
+          }
+        } 
+        else {
+          bar_width = (width - (margin.x * 2 + 1)) * db.value;
+        }
+
+        context.fillRect(bar_left, bar_top, bar_width, bar_height);
+
+      }
+
+    }
 
     // NOTE: we are getting fontmetrics based on the base font (so ignoring italic 
     // and bold variants). this should be OK because we use it for height, mostly.
@@ -2095,7 +2134,10 @@ export class TileRenderer {
         break;
     }
 
-    if ((cell.type === ValueType.number || 
+    if ((style as ExtendedCelLStyle).databar?.hide_values) {
+      // ...
+    }
+    else if ((cell.type === ValueType.number || 
          cell.calculated_type === ValueType.number || 
          cell.type === ValueType.complex || 
          cell.calculated_type === ValueType.complex) && overflow) {

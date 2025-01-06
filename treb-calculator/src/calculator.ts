@@ -2503,14 +2503,15 @@ export class Calculator extends Graph {
           }
           break;
 
+        case 'data-bar':
         case 'gradient':
           expression = `=Gradient(${
             [
               this.Unresolve(entry.area, context, true, false),
               entry.min ?? '',
               entry.max ?? '',
-
-            ].join(',')
+              ...( entry.type === 'data-bar' ? ['TRUE'] : []),
+            ].join(',') // is this correct? are we standardizing i18n? FIXME: check
           })`;
           break;
 
@@ -2538,7 +2539,7 @@ export class Calculator extends Graph {
           argument_separator: ',', 
         };
 
-        if (entry.type !== 'gradient' && entry.type !== 'duplicate-values') {
+        if (entry.type !== 'gradient' && entry.type !== 'duplicate-values' && entry.type !== 'data-bar') {
           options = {...entry.options, ...options};
         }
 

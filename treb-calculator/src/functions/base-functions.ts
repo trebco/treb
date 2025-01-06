@@ -2550,9 +2550,15 @@ export const BaseFunctionLibrary: FunctionMap = {
         { name: 'range', boxed: true },
         { name: 'min', },
         { name: 'max', },
+
+        /* 
+         * data bars use gradients but have to report zero. also we explicitly 
+         * set 0 as min/max for data bars, although you can override
+         */
+        { name: 'parameters' },
       ],
       visibility: 'internal',
-      fn: (area: UnionValue, static_min?: number, static_max?: number): UnionValue => {
+      fn: (area: UnionValue, static_min?: number, static_max?: number, parameters?: boolean): UnionValue => {
 
         const tmp = Utils.FlattenBoxed([area]);
 
@@ -2566,7 +2572,7 @@ export const BaseFunctionLibrary: FunctionMap = {
             return ref;
           }
           if (ref.type === ValueType.number) {
-            if (count === 0) {
+            if (count === 0 && !parameters) { // leave 0 min, max for data bars
               min = ref.value;
               max = ref.value;
             }
@@ -2577,6 +2583,13 @@ export const BaseFunctionLibrary: FunctionMap = {
             count++;
           }
         }
+
+        /*
+        if (parameters) {
+          if (min > 0) { min = 0; }
+          if (max < 0) { max = 0; }
+        }
+        */
 
         if (typeof static_max === 'number') {
           max = static_max;
@@ -2623,7 +2636,16 @@ export const BaseFunctionLibrary: FunctionMap = {
                 else if (range > 0) {
                   calc = (src.value - min) / range;
                 }
-                row.push({ type: ValueType.number, value: calc });
+
+                if (parameters) {
+                  row.push({ type: ValueType.array, value: [[
+                    { type: ValueType.number, value: calc },
+                    { type: ValueType.number, value: (0 - min) / range }, // zero
+                  ]]});
+                }
+                else {
+                  row.push({ type: ValueType.number, value: calc });
+                }
               }
               else {
                 row.push({ type: ValueType.undefined });

@@ -52,6 +52,8 @@ import type {
     LanguageModel, 
     TranslatedFunctionDescriptor,
     SerializedNamed,
+    ConditionalFormatDataBarOptions,
+    ConditionalFormatDataBar,
 
    } from 'treb-data-model';
 
@@ -1523,6 +1525,22 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       {
         type: 'gradient', area, ...StandardGradientsList[options]
       };
+
+    this.AddConditionalFormat(format);
+    return format;
+
+  }
+
+  /**
+   * @internal
+   */
+  public ConditionalFormatDataBar(range: RangeReference|undefined, options?: ConditionalFormatDataBarOptions): ConditionalFormat {
+
+    const area = this.RangeOrSelection(range, 'invalid range (no selection)');
+
+    const format: ConditionalFormatDataBar = {
+      type: 'data-bar', area, fill: { theme: 4, tint: .5 }, ...options,
+    };
 
     this.AddConditionalFormat(format);
     return format;
@@ -4943,6 +4961,25 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         // so don't move it, even though it is tempting. or rewrite to 
         // update on theme changes.
 
+        switch (entry.type) {
+          case 'gradient':
+            if (!entry.internal) {
+              entry.internal = {};
+            }
+            if (!entry.internal.gradient) {
+              entry.internal.gradient = new Gradient(entry.stops, this.grid.theme, entry.color_space);
+            }
+            break;
+
+          case 'data-bar':
+            if (!entry.internal) {
+              entry.internal = {};
+            }
+            break;
+
+        }
+
+        /*
         if (entry.type === 'gradient') {
           if (!entry.internal) {
             entry.internal = {};
@@ -4951,6 +4988,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             entry.internal.gradient = new Gradient(entry.stops, this.grid.theme, entry.color_space);
           }
         }
+        */
+
       }
 
       sheet.ApplyConditionalFormats();

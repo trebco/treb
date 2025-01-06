@@ -1909,7 +1909,7 @@ export class Exporter {
 
           let dxf_index = 0;
 
-          if (format.type !== 'gradient') {
+          if (format.type !== 'gradient' && format.type !== 'data-bar') {
 
             // these are zero-based? I thought everything in there 
             // was 1-based. [A: yes, these are indexed from 0].

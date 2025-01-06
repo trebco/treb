@@ -34,7 +34,8 @@ import { Measurement, ValidateURI } from 'treb-utils';
 import type { TextPart ,
   Cell, ICellAddress, CellSerializationOptions, CellValue, ImportedSheetData, Complex, 
   DimensionedQuantity, IArea, Table, TableTheme, HorizontalAlign, VerticalAlign,
-  Theme} from 'treb-base-types';
+  Theme,
+  ExtendedCelLStyle} from 'treb-base-types';
 
 import { Get as GetFonrMetrics } from 'treb-grid/src/util/fontmetrics';
 
@@ -257,7 +258,7 @@ export class Sheet {
    * they will be stacked on top of cell style when rendering.
    * conditional formats have top priority. [FIXME: what about tables?]
    */
-  private conditional_format_cache: CellStyle[][][] = [];
+  private conditional_format_cache: ExtendedCelLStyle[][][] = [];
 
   /**
    * this is a list of cells we formatted on the last pass, so we can 
@@ -1107,8 +1108,6 @@ export class Sheet {
 
     if (!this.cell_style[column]) this.cell_style[column] = [];
 
-    // testing
-    // const underlying = this.CompositeStyleForCell(address, false);
     const underlying = this.CompositeStyleForCell(address, false, false, undefined, false);
 
     const merged = Style.Composite([
@@ -3333,30 +3332,6 @@ export class Sheet {
 
   }
 
-  /* *
-   * flush the cache and the checklist. flush cell styles at the same
-   * time. this should be called when adding/removing a conditional format.
-   * optionally apply active formats again.
-   * 
-   * is this actually necessary? what's the use case? (...)
-   * 
-   * /
-  public FlushConditionalFormats(reapply = false) {
-
-    for (const [row, column] of this.conditional_format_checklist) {
-      this.CellData({row, column}).FlushStyle();
-    }
-
-    this.conditional_format_checklist = [];
-    this.conditional_format_cache = [];
-
-    if (reapply) {
-      this.ApplyConditionalFormats();
-    }
-
-  }
-  */
-
   public BleedFlush(area: IArea) {
 
     const rows = [Math.max(0, area.start.row - 1), area.end.row + 1];
@@ -3428,7 +3403,7 @@ export class Sheet {
 
     this.flush_conditional_formats = false; // unset
 
-    const temp: CellStyle[][][] = [];
+    const temp: ExtendedCelLStyle[][][] = [];
     const checklist: IArea[] = [...this.conditional_format_checklist];
 
     this.conditional_format_checklist = []; // flush
@@ -3499,6 +3474,44 @@ export class Sheet {
           this.conditional_format_checklist.push(area);
 
         }
+      }
+      else if (format.type === 'data-bar') {
+
+        if (result) {
+
+          if (result.type === ValueType.array) {
+            for (let row = area.start.row; row <= area.end.row; row++) {
+              for (let column = area.start.column; column <= area.end.column; column++) {
+                const value = result.value[column - area.start.column][row - area.start.row];
+                if (value.type === ValueType.array) {
+                  const [pct, zero] = value.value[0];
+                  if (pct.type === ValueType.number && zero.type === ValueType.number) {
+
+                    if (!temp[row]) { temp[row] = []; }
+                    if (!temp[row][column] ) { temp[row][column] = []; }
+                    // const color = format.internal.gradient.Interpolate(value.value);
+                    // temp[row][column].push({ [property]: color});
+                    temp[row][column].push({ 
+                      databar: {
+                        value: pct.value,
+                        zero: zero.value,
+                        fill: format.fill,
+                        negative: format.negative,
+                        hide_values: format.hide_values,
+                      }
+                    });
+
+                  }
+                }
+              }
+            }
+          }
+
+          checklist.push(area);
+          this.conditional_format_checklist.push(area);
+
+        }
+
       }
       else {
 

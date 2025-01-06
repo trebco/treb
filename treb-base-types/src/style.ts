@@ -242,6 +242,25 @@ export interface CellStyle {
 
 }
 
+/** 
+ * @internal 
+ * 
+ * starting on data bars, but there might be other conditional 
+ * stuff we want to tack on to standard styles.
+ * 
+ */
+export type ExtendedCelLStyle = CellStyle & {
+  databar?: { 
+    fill: Color;
+    negative?: Color;
+    hide_values?: boolean;
+    value: number;   // as %
+    // min: number;  // always going to be 0
+    // max: number;  // always going to be 1
+    zero: number;    // as %
+  }
+}
+
 /** @internal */
 export type PropertyKeys = keyof CellStyle;
 

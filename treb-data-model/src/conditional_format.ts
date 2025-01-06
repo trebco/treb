@@ -124,6 +124,37 @@ export interface ConditionalFormatGradient extends ConditionalFormatGradientOpti
   };
 }
 
+export interface ConditionalFormatDataBarOptions {
+  
+  /** min and max are optional. if not provided, we use the min/max of the range of data. */
+  min?: number;
+  
+  /** min and max are optional. if not provided, we use the min/max of the range of data. */
+  max?: number;
+
+  /** */
+  fill: Color;
+
+  /** */
+  negative?: Color;
+
+  /** */
+  hide_values?: boolean;
+
+}
+
+export interface ConditionalFormatDataBar extends ConditionalFormatDataBarOptions {
+
+  type: 'data-bar';
+  area: IArea;
+  
+  /** @internal */
+  internal?: {
+    vertex?: VertexPlaceholder;
+  }
+
+}
+
 export interface ConditionalFormatCellMatchOptions {
   style: CellStyle;
   expression: string;
@@ -190,7 +221,8 @@ export type ConditionalFormat = { internal?: unknown, priority?: number } & (
     ConditionalFormatDuplicateValues |
     ConditionalFormatExpression |
     ConditionalFormatCellMatch |
-    ConditionalFormatGradient
+    ConditionalFormatGradient | 
+    ConditionalFormatDataBar
   );
 
 /**
