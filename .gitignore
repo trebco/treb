@@ -15,6 +15,11 @@ etc
 doc 
 
 #
+# local tool
+#
+update-banners.ts
+
+#
 # we now generate metafile by default. don't commit it.
 #
 esbuild-metafile.json
