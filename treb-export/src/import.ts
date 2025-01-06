@@ -587,9 +587,6 @@ export class Importer {
               const rgb = extension['x14:cfRule']['x14:dataBar']['x14:negativeFillColor'].a$.rgb;
               negative = { text: '#' + rgb.toString().substring(2) };
             }
-            else {
-              console.info("NO NEG", extension);
-            }
 
             const fill: Color = { text: '#' + rule.dataBar.color.a$.rgb.substring(2) };
             return {
