@@ -568,7 +568,6 @@ export class Importer {
           let extension: any = undefined;
 
           if (rule.extLst?.ext?.['x14:id']) {
-            console.info("Have extension ID", rule.extLst.ext['x14:id'])
             for (const test of (extensions || [])) {
               if (test['x14:cfRule']?.a$?.id === rule.extLst.ext['x14:id']) {
                 extension = test;
