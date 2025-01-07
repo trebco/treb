@@ -1532,7 +1532,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /**
-   * @internal
+   * 
    */
   public ConditionalFormatDataBar(range: RangeReference|undefined, options?: ConditionalFormatDataBarOptions): ConditionalFormat {
 
