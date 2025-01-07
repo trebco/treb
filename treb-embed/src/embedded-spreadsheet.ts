@@ -1534,7 +1534,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   /**
    * 
    */
-  public ConditionalFormatDataBar(range: RangeReference|undefined, options?: ConditionalFormatDataBarOptions): ConditionalFormat {
+  public ConditionalFormatDataBars(range: RangeReference|undefined, options?: ConditionalFormatDataBarOptions): ConditionalFormat {
 
     const area = this.RangeOrSelection(range, 'invalid range (no selection)');
 
