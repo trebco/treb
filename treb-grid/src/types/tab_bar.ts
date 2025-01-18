@@ -235,7 +235,8 @@ export class TabBar extends EventSource<TabEvent> {
 
   }
 
-  public SetActive(tab: HTMLElement, active: boolean): void {
+  public SetActive(tab: HTMLElement, active: boolean, user = false): void {
+
     if (active) {
       // tab.classList.add('treb-selected');
       tab.setAttribute('selected', '');
@@ -245,8 +246,33 @@ export class TabBar extends EventSource<TabEvent> {
         tab.style.color = '';
       }
 
+      // this is forcing the page to scroll if the sheet is below
+      // the fold. this is not useful behavior. at the same time, 
+      // we do need this to work... we probably have to do it manually
+      // instead of using scrollIntoView. would be nice if we could
+      // toggle this on manual/auto, so user clicks would still be 
+      // smooth. call that a TODO
+
       requestAnimationFrame(() => {
-        tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest'});
+        if (user) {
+          tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest'});
+        }
+        else {
+          if (tab.parentElement) {
+            const left = tab.offsetLeft;
+            const width = tab.offsetWidth;
+            const container_width = tab.parentElement.clientWidth || 0;
+            const scroll_left = tab.parentElement.scrollLeft || 0;
+
+            if (left > container_width) {
+              tab.parentElement.scrollLeft = left - width;
+            }
+            else if (scroll_left > left) {
+              tab.parentElement.scrollLeft = left;
+            }
+
+          }
+        }
       });
 
     }
@@ -298,7 +324,7 @@ export class TabBar extends EventSource<TabEvent> {
         case 'Escape':
           tab.innerText = sheet.name;
           this.Publish({ type: 'cancel' });
-          this.Update();
+          this.Update(true);
           break;
 
         default:
@@ -314,7 +340,7 @@ export class TabBar extends EventSource<TabEvent> {
         this.Publish({ type: 'rename-sheet', name, sheet });
       }
       else {
-        this.Update();
+        this.Update(true);
       }
     });
 
@@ -350,7 +376,7 @@ export class TabBar extends EventSource<TabEvent> {
     // then the classes won't change.
 
     for (const candidate of tabs) {
-      this.SetActive(candidate, candidate === tab);
+      this.SetActive(candidate, candidate === tab, true);
     }
 
     this.dragging = true;
@@ -445,8 +471,11 @@ export class TabBar extends EventSource<TabEvent> {
 
   /**
    * update tabs from model.
+   * 
+   * @param user - this is a user action, so use smooth scrolling
+   * when activating the tab. otherwise it's automatic so jump.
    */
-  public Update(): void {
+  public Update(user = false): void {
 
     this.tab_color_cache.clear(); // we're setting tab color but it's not getting updated otherwise
 
@@ -512,7 +541,7 @@ export class TabBar extends EventSource<TabEvent> {
       tab.style.order = (index * 2).toString();
       tab.role = 'tab';
 
-      this.SetActive(tab, sheet === this.view.active_sheet);
+      this.SetActive(tab, sheet === this.view.active_sheet, user);
 
       const mousedown = (event: MouseEvent) => this.MouseDownTab(event, tab, sheet, index, tabs);
 

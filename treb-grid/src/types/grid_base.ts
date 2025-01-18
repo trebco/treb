@@ -254,7 +254,7 @@ export class GridBase {
    * activate sheet, by name or index number
    * @param sheet number (index into the array) or string (name)
    */
-  public ActivateSheet(sheet: number | string): void {
+  public ActivateSheet(sheet: number | string, user?: boolean): void {
 
     const index = (typeof sheet === 'number') ? sheet : undefined;
     const name = (typeof sheet === 'string') ? sheet : undefined;
@@ -263,6 +263,7 @@ export class GridBase {
       key: CommandKey.ActivateSheet,
       index,
       name,
+      user,
     });
 
   }

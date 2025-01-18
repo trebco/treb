@@ -1311,7 +1311,7 @@ export class Grid extends GridBase {
     }
 
     if (this.tab_bar) {
-      this.tab_bar.Update();
+      this.tab_bar.Update(false); // !user
     }
 
   }
@@ -1320,7 +1320,7 @@ export class Grid extends GridBase {
    * This function is called via Shift+PageUp/PageDown. We need
    * to update to account for hidden sheets, which can't be activated.
    */
-  public NextSheet(step = 1): void {
+  public NextSheet(step = 1, user = false): void {
 
     if (this.model.sheets.length === 1) {
       return;
@@ -1344,7 +1344,7 @@ export class Grid extends GridBase {
       if (visible[i].sheet === this.active_sheet) {
         let index = (i + step) % visible.length;
         while (index < 0) { index += visible.length; }
-        this.ActivateSheet(visible[index].index);
+        this.ActivateSheet(visible[index].index, user);
         return;
       }
     }
@@ -1430,7 +1430,7 @@ export class Grid extends GridBase {
     }
 
     if (this.tab_bar) {
-      this.tab_bar.Update();
+      this.tab_bar.Update(false); // !user
     }
 
   }
@@ -1453,7 +1453,7 @@ export class Grid extends GridBase {
    */
   public UpdateTabBar(): void {
     if (this.tab_bar) {
-      this.tab_bar.Update();
+      this.tab_bar.Update(true); // user? ...
     }
   }
 
@@ -1730,7 +1730,7 @@ export class Grid extends GridBase {
       //  this.tab_bar.Update(); 
       //}
 
-      this.tab_bar?.Update();
+      this.tab_bar?.Update(false);
 
       this.Repaint(true);
     }
@@ -2673,7 +2673,7 @@ export class Grid extends GridBase {
 
   protected RenameSheetInternal(target: Sheet, name: string) {
     super.RenameSheetInternal(target, name);
-    this.tab_bar?.Update();
+    this.tab_bar?.Update(false);
 
   }
 
@@ -2898,7 +2898,7 @@ export class Grid extends GridBase {
       activate: this.active_sheet,
     });
 
-    if (this.tab_bar) { this.tab_bar.Update(); }
+    if (this.tab_bar) { this.tab_bar.Update(!!command.user); }
 
     this.layout.scroll_offset = this.active_sheet.scroll_offset;
 
@@ -5237,7 +5237,7 @@ export class Grid extends GridBase {
         case 'PageUp':
         case 'PageDown':
           if (event.shiftKey) {
-            this.NextSheet(event.key === 'PageUp' ? -1 : 1);
+            this.NextSheet(event.key === 'PageUp' ? -1 : 1, true);
             break;
           }
 

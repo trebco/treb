@@ -431,6 +431,9 @@ export interface ActivateSheetCommand extends SheetSelection {
   tab_bar_event?: boolean;
 
   force?: boolean;
+
+  /** user action; use smooth scrolling */
+  user?: boolean;
 }
 
 /**
