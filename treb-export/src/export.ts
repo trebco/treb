@@ -179,7 +179,7 @@ export class Exporter {
     }
 
     const parsed = Base64JS.toByteArray(template);
-    this.zip = new ZipWrapper(parsed);
+    this.zip = new ZipWrapper(parsed.buffer as ArrayBuffer);
 
   }
 
