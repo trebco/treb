@@ -27,18 +27,22 @@ import type { Table } from './table';
 import type { DataValidation, AnnotationType, ConditionalFormat } from 'treb-data-model';
 
 export interface CellParseResult {
-  row: number,
-  column: number,
+  row: number;
+  column: number;
   type: SerializedValueType; // ValueType,
-  value: number|string|undefined|boolean,
-  calculated?: number|string|undefined|boolean,
+  value: number|string|undefined|boolean;
+  calculated?: number|string|undefined|boolean;
   calculated_type?: SerializedValueType; // ValueType,
-  style_ref?: number,
-  hyperlink?: string,
-  validation?: DataValidation,
-  merge_area?: IArea,
-  area?: IArea,
-  table?: Table,
+  style_ref?: number;
+  hyperlink?: string;
+  validation?: DataValidation;
+  merge_area?: IArea;
+  area?: IArea;
+
+  /** dynamic arrays */
+  spill?: IArea;
+  
+  table?: Table;
 }
 
 export interface AnchoredAnnotation {

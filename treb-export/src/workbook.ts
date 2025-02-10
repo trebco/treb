@@ -38,6 +38,7 @@ import type { RelationshipMap } from './relationship';
 import { ZipWrapper } from './zip-wrapper';
 import type { CellStyle, ThemeColor } from 'treb-base-types';
 import type { SerializedNamed } from 'treb-data-model';
+import { type Metadata, ParseMetadataXML } from './metadata';
 
 /**
  * @privateRemarks -- FIXME: not sure about the equal/equals thing. need to check.
@@ -151,6 +152,9 @@ export class Workbook {
   /** the workbook "rels" */
   public rels: RelationshipMap = {};
 
+  /** metadata reference; new and WIP */
+  public metadata?: Metadata;
+  
   public sheets: Sheet[] = [];
 
   public active_tab = 0;
@@ -199,6 +203,13 @@ export class Workbook {
     let data = this.zip.Has('xl/sharedStrings.xml') ? this.zip.Get('xl/sharedStrings.xml') : '';
     let xml = xmlparser2.parse(data || '');
     this.shared_strings.FromXML(xml);
+
+    // new(ish) metadata
+    if (this.zip.Has('xl/metadata.xml')) {
+      data = this.zip.Get('xl/metadata.xml');
+      xml = xmlparser2.parse(data);
+      this.metadata = ParseMetadataXML(xml);
+    }
 
     // theme
     data = this.zip.Get('xl/theme/theme1.xml');

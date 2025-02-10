@@ -26,7 +26,7 @@ import Base64JS from 'base64-js';
 
 import type { AnchoredChartDescription, AnchoredImageDescription, AnchoredTextBoxDescription} from './workbook';
 import { ChartType, ConditionalFormatOperators, Workbook } from './workbook';
-import type { ParseResult } from 'treb-parser';
+import type { ExpressionUnit, ParseResult, UnitCall } from 'treb-parser';
 import { DecimalMarkType, Parser } from 'treb-parser';
 import type { RangeType, AddressType, HyperlinkType } from './address-type';
 import { is_range, ShiftRange, InRange, is_address } from './address-type';
@@ -42,6 +42,7 @@ import { ColumnWidthToPixels } from './column-width';
 import type { DataValidation, AnnotationType } from 'treb-data-model';
 import { ZipWrapper } from './zip-wrapper';
 import type { ConditionalFormat } from 'treb-data-model';
+import { LookupMetadata, type MetadataFlags } from './metadata';
 
 interface SharedFormula {
   row: number;
@@ -57,6 +58,7 @@ interface CellElementType {
     r?: string;
     t?: string;
     s?: string;
+    cm?: string;
   };
   v?: string|number|{
     t$: string;
@@ -147,6 +149,7 @@ export class Importer {
     element: CellElementType,
     shared_formulae: SharedFormulaMap,
     arrays: RangeType[],
+    dynamic_arrays: RangeType[],
     merges: RangeType[],
     links: HyperlinkType[],
     // validations: Array<{ address: ICellAddress, validation: DataValidation }>,
@@ -163,6 +166,15 @@ export class Importer {
     if (is_range(address)) {
       console.warn('cell has range address');
       return undefined;
+    }
+
+    // new (to us) metadata
+    let metadata_flags: MetadataFlags = {};
+    if (element.a$?.cm) {
+      const cm_index = Number(element.a$?.cm);
+      if (this.workbook?.metadata) {
+        metadata_flags = LookupMetadata(this.workbook.metadata, 'cell', cm_index).flags;
+      }
     }
 
     // console.info(element);
@@ -213,6 +225,8 @@ export class Importer {
 
         if (formula) {
 
+          // console.info("F", formula);
+
           // doing it like this is sloppy (also does not work properly).
           value = '=' + formula.replace(/^_xll\./g, '');
 
@@ -221,10 +235,86 @@ export class Importer {
             value = formula;
           }
           else {
+
             const parse_result = this.parser.Parse(formula); // l10n?
             if (parse_result.expression) {
-              this.parser.Walk(parse_result.expression, (unit) => {
+
+              const TreeWalker = (unit: ExpressionUnit) => {
+                
                 if (unit.type === 'call') {
+
+                  // if we see _xlfn.SINGLE, translate that into 
+                  // @ + the name of the first parameter...
+                  //
+                  // this is solving the case where single appears, but it 
+                  // doesn't solve the case where it does not appear -- they 
+                  // may be using the array flag of the cell as an indicator?
+                  // but how then do they know it _should_ be an array? not 
+                  // sure, and I don't see any other indication.
+
+                  if (/^_xlfn\.single/i.test(unit.name)) {
+
+                    const first = unit.args[0];
+                    if (first.type === 'call') {
+
+                      // we could do this in place, we don't need to copy...
+                      // although it seems like a good idea. also watch out,
+                      // these SINGLEs could be nested.
+
+                      const replacement: UnitCall = JSON.parse(JSON.stringify(first));
+                      replacement.name = '@' + replacement.name;
+
+                      for (let i = 0; i < replacement.args.length; i++) {
+                        replacement.args[i] = this.parser.Walk2(replacement.args[i], TreeWalker);
+                      }
+
+                      return replacement;
+                    }
+                    else {
+                      console.info("_xlfn.SINGLE unexpected argument", unit.args[0]);
+                    }
+                  }
+
+                  if (/^_xll\./.test(unit.name)) {
+                    unit.name = unit.name.substring(5);
+                  }
+                  if (/^_xlfn\./.test(unit.name)) {
+                    console.info("xlfn:", unit.name);
+                    unit.name = unit.name.substring(6);
+                  }
+                  if (/^_xlws\./.test(unit.name)) {
+                    console.info("xlws:", unit.name);
+                    unit.name = unit.name.substring(6);
+                  }
+                }
+                return true;
+
+              };
+
+              parse_result.expression = this.parser.Walk2(parse_result.expression, TreeWalker);
+
+              /*
+              this.parser.Walk2(parse_result.expression, (unit) => {
+                if (unit.type === 'call') {
+
+                  // if we see _xlfn.SINGLE, translate that into 
+                  // @ + the name of the first parameter...
+                  if (/^_xlfn\.single/i.test(unit.name)) {
+                    console.info("SINGLE");
+                    const first = unit.args[0];
+                    if (first.type === 'call') {
+
+                      // we could do this in place, we don't need to copy...
+                      // although it seems like a good idea. also watch out,
+                      // these SINGLEs could be nested.
+
+                      const replacement: UnitCall = JSON.parse(JSON.stringify(first));
+                      replacement.name = '@' + replacement.name;
+
+                      return replacement;
+                    }
+                  }
+
                   if (/^_xll\./.test(unit.name)) {
                     unit.name = unit.name.substring(5);
                   }
@@ -239,6 +329,8 @@ export class Importer {
                 }
                 return true;
               });
+              */
+
               value = '=' + this.parser.Render(parse_result.expression, { missing: '' });
             }
           }
@@ -274,10 +366,20 @@ export class Importer {
           }
         }
 
+        // not an array if cellmetadata says "dynamic array". although
+        // it is a dynamic array, so we need to clean up rendered values.
+        // also, we'll need to mark it as dynamic in order to get the 
+        // dynamic references in the sheet (without recalculating).
+
         if (typeof element.f !== 'string' &&  element.f.a$?.t === 'array') {
           const translated = sheet.TranslateAddress(element.f.a$.ref || '');
           if (is_range(translated)) {
-            arrays.push(ShiftRange(translated, -1, -1));
+            if (metadata_flags['dynamic-array']) {
+              dynamic_arrays.push(ShiftRange(translated, -1, -1));
+            }
+            else {
+              arrays.push(ShiftRange(translated, -1, -1));
+            }
           }
         }
 
@@ -317,12 +419,14 @@ export class Importer {
     // but perhaps we should check that... although at this point we have 
     // already added the array so we need to check for root
 
-    for (const array of arrays) {
-      if (InRange(array, shifted) && (shifted.row !== array.from.row || shifted.col !== array.from.col)) {
-        calculated_type = type;
-        calculated_value = value;
-        value = undefined;
-        type = 'undefined'; // ValueType.undefined;
+    for (const set of [arrays, dynamic_arrays]) {
+      for (const array of set) {
+        if (InRange(array, shifted) && (shifted.row !== array.from.row || shifted.col !== array.from.col)) {
+          calculated_type = type;
+          calculated_value = value;
+          value = undefined;
+          type = 'undefined'; // ValueType.undefined;
+        }
       }
     }
 
@@ -366,6 +470,20 @@ export class Importer {
             column: range.to.col,
           },
         };
+      }
+    }
+
+    for (const range of dynamic_arrays) {
+      if (InRange(range, shifted)) {
+        result.spill = {
+          start: {
+            row: range.from.row,
+            column: range.from.col,
+          }, end: {
+            row: range.to.row,
+            column: range.to.col,
+          },
+        }
       }
     }
 
@@ -675,6 +793,7 @@ export class Importer {
     const data: CellParseResult[] = [];
     const shared_formulae: {[index: string]: SharedFormula} = {};
     const arrays: RangeType[] = [];
+    const dynamic_arrays: RangeType[] = [];
     const merges: RangeType[] = [];
     const conditional_formats: ConditionalFormat[] = [];
     const links: HyperlinkType[] = [];
@@ -967,7 +1086,7 @@ export class Importer {
       const cells = row.c ? Array.isArray(row.c) ? row.c : [row.c] : [];
 
       for (const element of cells) {
-        const cell = this.ParseCell(sheet, element as unknown as CellElementType, shared_formulae, arrays, merges, links); // , validations);
+        const cell = this.ParseCell(sheet, element as unknown as CellElementType, shared_formulae, arrays, dynamic_arrays, merges, links); // , validations);
         if (cell) {
           data.push(cell);
         }
