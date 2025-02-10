@@ -366,19 +366,37 @@ export class Importer {
           }
         }
 
-        // not an array if cellmetadata says "dynamic array". although
-        // it is a dynamic array, so we need to clean up rendered values.
-        // also, we'll need to mark it as dynamic in order to get the 
-        // dynamic references in the sheet (without recalculating).
+        //
+        // arrays and spill/dynamic arrays
+        //
 
         if (typeof element.f !== 'string' &&  element.f.a$?.t === 'array') {
           const translated = sheet.TranslateAddress(element.f.a$.ref || '');
-          if (is_range(translated)) {
+
+          // why are we checking "is_range" here? this should be valid 
+          // even if the ref attribute is one cell, if it explicitly
+          // says t="array"
+
+          // we will need to adjust it, though? yes, because the lists 
+          // only accept ranges. note that range type has a superfluous 
+          // sheet parameter? ...
+
+          let range = translated;
+          if (!is_range(range)) {
+            range = {
+              to: { ...range },
+              from: { ...range },
+              sheet: range.sheet,
+            };
+          }
+
+          // if (is_range(translated)) 
+          {
             if (metadata_flags['dynamic-array']) {
-              dynamic_arrays.push(ShiftRange(translated, -1, -1));
+              dynamic_arrays.push(ShiftRange(range, -1, -1));
             }
             else {
-              arrays.push(ShiftRange(translated, -1, -1));
+              arrays.push(ShiftRange(range, -1, -1));
             }
           }
         }
