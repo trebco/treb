@@ -599,7 +599,7 @@ export class Workbook {
         // there's a bug in FindAll -- seems to have to do with the nodes
         // here being strings
 
-        const nodes: string[] = [];
+        const nodes: (string | { t$: string })[] = [];
         const parents = XMLUtils.FindAll(title_node, 'c:tx/c:rich/a:p/a:r');
         for (const entry of parents) {
           if (entry['a:t']) {
