@@ -88,8 +88,6 @@ export class DefaultChartRenderer implements ChartRendererType {
     area.bottom -= chart_margin.bottom;
     area.right -= chart_margin.right;
 
-    console.info("CDL", chart_data.legend);
-
     if (chart_data.legend && chart_data.legend.length) {
 
       let default_position = LegendPosition.top;

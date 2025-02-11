@@ -1065,7 +1065,7 @@ export const CreateColumnChart = (
     const x_data = Array.from(map.keys()).sort((a, b) => a - b);
     const y_data = x_data.map(key => map.get(key) || 0);
 
-    console.info({stacked_series, map, x_data, y_data});
+    // console.info({stacked_series, map, x_data, y_data});
 
     series = [{
       x: { data: x_data, format: stacked_series[0]?.x?.format },
