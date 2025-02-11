@@ -239,6 +239,23 @@ export class Importer {
             const parse_result = this.parser.Parse(formula); // l10n?
             if (parse_result.expression) {
 
+              const TrimPrefixes = (name: string) => {
+
+                if (/^_xll\./.test(name)) {
+                  name = name.substring(5);
+                }
+                if (/^_xlfn\./.test(name)) {
+                  console.info("xlfn:", name);
+                  name = name.substring(6);
+                }
+                if (/^_xlws\./.test(name)) {
+                  console.info("xlws:", name);
+                  name = name.substring(6);
+                }
+
+                return name;
+              };
+
               const TreeWalker = (unit: ExpressionUnit) => {
                 
                 if (unit.type === 'call') {
@@ -262,7 +279,7 @@ export class Importer {
                       // these SINGLEs could be nested.
 
                       const replacement: UnitCall = JSON.parse(JSON.stringify(first));
-                      replacement.name = '@' + replacement.name;
+                      replacement.name = '@' + TrimPrefixes(replacement.name);
 
                       for (let i = 0; i < replacement.args.length; i++) {
                         replacement.args[i] = this.parser.Walk2(replacement.args[i], TreeWalker);
@@ -275,6 +292,9 @@ export class Importer {
                     }
                   }
 
+                  unit.name = TrimPrefixes(unit.name);
+
+                  /*
                   if (/^_xll\./.test(unit.name)) {
                     unit.name = unit.name.substring(5);
                   }
@@ -286,50 +306,14 @@ export class Importer {
                     console.info("xlws:", unit.name);
                     unit.name = unit.name.substring(6);
                   }
+                  */
+
                 }
                 return true;
 
               };
 
               parse_result.expression = this.parser.Walk2(parse_result.expression, TreeWalker);
-
-              /*
-              this.parser.Walk2(parse_result.expression, (unit) => {
-                if (unit.type === 'call') {
-
-                  // if we see _xlfn.SINGLE, translate that into 
-                  // @ + the name of the first parameter...
-                  if (/^_xlfn\.single/i.test(unit.name)) {
-                    console.info("SINGLE");
-                    const first = unit.args[0];
-                    if (first.type === 'call') {
-
-                      // we could do this in place, we don't need to copy...
-                      // although it seems like a good idea. also watch out,
-                      // these SINGLEs could be nested.
-
-                      const replacement: UnitCall = JSON.parse(JSON.stringify(first));
-                      replacement.name = '@' + replacement.name;
-
-                      return replacement;
-                    }
-                  }
-
-                  if (/^_xll\./.test(unit.name)) {
-                    unit.name = unit.name.substring(5);
-                  }
-                  if (/^_xlfn\./.test(unit.name)) {
-                    console.info("xlfn:", unit.name);
-                    unit.name = unit.name.substring(6);
-                  }
-                  if (/^_xlws\./.test(unit.name)) {
-                    console.info("xlws:", unit.name);
-                    unit.name = unit.name.substring(6);
-                  }
-                }
-                return true;
-              });
-              */
 
               value = '=' + this.parser.Render(parse_result.expression, { missing: '' });
             }
