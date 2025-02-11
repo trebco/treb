@@ -595,8 +595,29 @@ export class Workbook {
         }
       }
       else {
+
+        // there's a bug in FindAll -- seems to have to do with the nodes
+        // here being strings
+
+        const nodes: string[] = [];
+        const parents = XMLUtils.FindAll(title_node, 'c:tx/c:rich/a:p/a:r');
+        for (const entry of parents) {
+          if (entry['a:t']) {
+            nodes.push(entry['a:t'])
+          }
+        }
+
+        /*
+        const xx = XMLUtils.FindAll(title_node, 'c:tx/c:rich/a:p/a:r');
+        const yy = XMLUtils.FindAll(title_node, 'c:tx/c:rich/a:p/a:r/a:t');
+        console.info({xx, yy});
+
         const nodes = XMLUtils.FindAll(title_node, 'c:tx/c:rich/a:p/a:r/a:t');
-        result.title = '"' + nodes.join('') + '"';
+        */
+
+        result.title = '"' + nodes.map(node => {
+          return typeof node === 'string' ? node : (node.t$ || '');
+        }).join('') + '"';
       }
 
     }
