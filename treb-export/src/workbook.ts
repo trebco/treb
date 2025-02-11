@@ -54,20 +54,42 @@ export const ConditionalFormatOperators: Record<string, string> = {
   notEqual: '<>',
 };
 
+//
+// enums? really? in 2025? FIXME
+//
 export enum ChartType {
-  Unknown = 0, Column, Bar, Line, Scatter, Donut, Pie, Bubble, Box
+  Null = 0, 
+  Column, 
+  Bar, 
+  Line, 
+  Scatter, 
+  Donut, 
+  Pie, 
+  Bubble, 
+  Box, 
+  Histogram, 
+  Unknown
 }
 
 export interface ChartSeries {
   values?: string;
   categories?: string;
   bubble_size?: string;
+
+  /** special for histogram */
+  bin_count?: number;
+
   title?: string;
 }
+
+type ChartFlags =
+  'stacked'
+  ;
 
 export interface ChartDescription {
   title?: string;
   type: ChartType; 
+  flags?: ChartFlags[];
   series?: ChartSeries[];
 }
 
@@ -553,7 +575,7 @@ export class Workbook {
     const xml = xmlparser2.parse(data);
 
     const result: ChartDescription = {
-      type: ChartType.Unknown
+      type: ChartType.Null
     };
 
     // console.info("RC", xml);
@@ -664,6 +686,14 @@ export class Workbook {
       if (node['c:barDir']) {
         if (node['c:barDir'].a$?.val === 'col') {
           result.type = ChartType.Column;
+
+          if (node['c:grouping']?.a$?.val === 'stacked') {
+            if (!result.flags) {
+              result.flags = [];
+            }
+            result.flags.push('stacked');
+          }
+
         }
       }
       
@@ -716,9 +746,92 @@ export class Workbook {
       // box plot uses "extended chart" which is totally different... but we 
       // might need it again later? for the time being it's just inlined
 
+      // hmmm also used for histogram... histograms aren't named, they are 
+      // clustered column type with a binning element, which has some attributes
+
       const ex_series = XMLUtils.FindAll(xml, 'cx:chartSpace/cx:chart/cx:plotArea/cx:plotAreaRegion/cx:series');
       if (ex_series?.length) {
-        if (ex_series.every(test => test.a$?.layoutId === 'boxWhisker')) {
+
+        // testing seems to require looping, so let's try to merge loops
+
+        let clustered_column = true;
+        let histogram = true;
+        let box_whisker = true;
+
+        for (const series of ex_series) {
+
+          const layout = series.a$?.layoutId;
+
+          if (clustered_column && layout !== 'clusteredColumn') {
+            clustered_column = false;
+          }
+          if (box_whisker && layout !== 'boxWhisker') {
+            box_whisker = false;
+          }
+          if (clustered_column && histogram) {
+            const binning = XMLUtils.FindAll(series, `cx:layoutPr/cx:binning`);
+            if (!binning.length) {
+              histogram = false;
+            }
+          }
+
+        }
+
+        // ok that's what we know so far...
+
+        if (histogram) {
+          result.type = ChartType.Histogram;
+          result.series = [];
+
+          for (const series_entry of ex_series) {
+
+            if (series_entry.a$?.hidden === '1') {
+              continue;
+            }
+            
+            const series: ChartSeries = {};
+
+            const data = XMLUtils.FindAll(xml, 'cx:chartSpace/cx:chartData/cx:data');
+
+            // so there are multiple series, and multiple datasets,
+            // but they are all merged together? no idea how this design
+            // works
+
+            const values_list: string[] = [];
+            for (const data_series of data) {
+              values_list.push(data_series['cx:numDim']?.['cx:f'] || '');
+            }
+            series.values = values_list.join(',');
+
+            const bin_count = XMLUtils.FindAll(series_entry, `cx:layoutPr/cx:binning/cx:binCount`);
+            if (bin_count[0]) {
+              const count = Number(bin_count[0].a$?.val || 0);
+              if (count) {
+                series.bin_count = count;
+              }
+            }
+
+            result.series.push(series);
+
+          }
+
+          const title = XMLUtils.FindAll(xml, 'cx:chartSpace/cx:chart/cx:title/cx:tx/cx:txData');
+          if (title) {
+            if (title[0]?.['cx:f']) {
+              result.title = title[0]['cx:f'];
+            }
+            else if (title[0]?.['cx:v']) {
+              result.title = '"' + title[0]['cx:v'] + '"';
+            }
+          }
+
+          console.info("histogram", result);
+          return result;
+          
+        }
+
+        if (box_whisker) {
+
           result.type = ChartType.Box;
           result.series = [];
           const data = XMLUtils.FindAll(xml, 'cx:chartSpace/cx:chartData/cx:data'); // /cx:data/cx:numDim/cx:f');
@@ -769,7 +882,8 @@ export class Workbook {
     }
 
     if (!node) {
-      console.info("Chart type not handled");
+      console.info("Chart type not handled", {xml});
+      result.type = ChartType.Unknown;
     }
 
     // console.info("RX?", result);

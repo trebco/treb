@@ -88,6 +88,8 @@ export class DefaultChartRenderer implements ChartRendererType {
     area.bottom -= chart_margin.bottom;
     area.right -= chart_margin.right;
 
+    console.info("CDL", chart_data.legend);
+
     if (chart_data.legend && chart_data.legend.length) {
 
       let default_position = LegendPosition.top;
@@ -599,23 +601,33 @@ export class DefaultChartRenderer implements ChartRendererType {
             corners = [half_width, half_width, 0, 0];
           }
 
-          for (let s = 0; s < series_count; s++) {
-            const series = chart_data.series2[s];
-            const color_index = typeof series.index === 'number' ? series.index : s + 1;
+          if (chart_data.stacked_series) {
 
-            for (let i = 0; i < series.y.data.length; i++ ){
-              const value = series.y.data[i];
-              // const format = NumberFormatCache.Get(series.y.format || '0.00');
+            // step by group (stacked series)
+            for (let s = 0; s < chart_data.stacked_series[0].y.data.length; s++ ){
 
-              if (typeof value === 'number') {
+              const x = (area.left + s * column_width + space) ; // + s * width;
+              let y = 0;
 
-                // const x = Math.round(area.left + i * column_width + space) + s * width;
-                const x = (area.left + i * column_width + space) + s * width;
-                
+              // now check each series, grab s-th value
+              for (let t = 0; t < chart_data.stacked_series.length; t++) {
+
+                const series = chart_data.stacked_series[t];
+                const color_index = typeof series.index === 'number' ? series.index : t + 1;
+
                 let height = 0;
-                let y = 0;
                 // let negative = false;
 
+                const value = (series.y.data[s] || 0);
+
+                if (t === 0) {
+                  y = Math.min(chart_data.scale.min || 0, value);
+                }
+
+                height = Util.ApplyScale(value, area.height, chart_data.scale);
+                const base = area.bottom - height - Util.ApplyScale(y, area.height, chart_data.scale);
+
+                /*
                 if (zero) {
                   if (value > 0) {
                     height = Util.ApplyScale(value + chart_data.scale.min, area.height, chart_data.scale);
@@ -631,27 +643,77 @@ export class DefaultChartRenderer implements ChartRendererType {
                   height = Util.ApplyScale(value, area.height, chart_data.scale);
                   y = area.bottom - height;
                 }
+                */
 
-                // const bar_title = chart_data.titles ? chart_data.titles[i] : undefined;
-                const bar_title = undefined;
+                let bar_title = undefined;
+                let label = undefined;
+                let label_point = undefined;
 
-                if (height) {
+                this.renderer.RenderRectangle(new Area(
+                  x, base, x + width, base + height,
+                ), corners, ['chart-column', `series-${color_index}`], bar_title || undefined, label, label_point);
 
-                  const label = (chart_data.data_labels && !!series.y.labels) ? series.y.labels[i] : '';
-                  const label_point = {
-                    x: Math.round(x + width / 2),
-                    y: Math.round(y - 10),
-                  };
+                y += value;
 
-                  this.renderer.RenderRectangle(new Area(
-                    x, y, x + width, y + height,
-                  ), corners, ['chart-column', `series-${color_index}`], bar_title || undefined, label, label_point);
+              }
+
+
+            }
+          }
+          else {
+            for (let s = 0; s < series_count; s++) {
+              const series = chart_data.series2[s];
+              const color_index = typeof series.index === 'number' ? series.index : s + 1;
+
+              for (let i = 0; i < series.y.data.length; i++ ){
+                const value = series.y.data[i];
+
+                if (typeof value === 'number') {
+
+                  // const x = Math.round(area.left + i * column_width + space) + s * width;
+                  const x = (area.left + i * column_width + space) + s * width;
+                  
+                  let height = 0;
+                  let y = 0;
+                  // let negative = false;
+
+                  if (zero) {
+                    if (value > 0) {
+                      height = Util.ApplyScale(value + chart_data.scale.min, area.height, chart_data.scale);
+                      y = area.bottom - height - zero;
+                    }
+                    else {
+                      height = Util.ApplyScale(chart_data.scale.min - value, area.height, chart_data.scale);
+                      y = area.bottom - zero; // // area.bottom - height - zero;
+                      // negative = true;
+                    }
+                  }
+                  else {
+                    height = Util.ApplyScale(value, area.height, chart_data.scale);
+                    y = area.bottom - height;
+                  }
+
+                  // const bar_title = chart_data.titles ? chart_data.titles[i] : undefined;
+                  const bar_title = undefined;
+
+                  if (height) {
+
+                    const label = (chart_data.data_labels && !!series.y.labels) ? series.y.labels[i] : '';
+                    const label_point = {
+                      x: Math.round(x + width / 2),
+                      y: Math.round(y - 10),
+                    };
+
+                    this.renderer.RenderRectangle(new Area(
+                      x, y, x + width, y + height,
+                    ), corners, ['chart-column', `series-${color_index}`], bar_title || undefined, label, label_point);
+                  }
                 }
               }
-            }
 
+            }
           }
-  
+
         }
 
       }

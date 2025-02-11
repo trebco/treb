@@ -1221,11 +1221,16 @@ export class Calculator extends Graph {
   public AttachSpillData(area: Area, cells?: Cells) {
 
     if (!cells) {
+
+      // can we assume active sheet here? actually I guess not, we'll 
+      // need to set that... 
+
       const sheet = area.start.sheet_id ? this.model.sheets.Find(area.start.sheet_id) : undefined;
       cells = sheet?.cells;
     }
 
     if (!cells) {
+      console.info({area, cells});
       throw new Error('invalid sheet ID in attach spill data');
     }
 

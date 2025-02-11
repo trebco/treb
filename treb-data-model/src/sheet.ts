@@ -3011,6 +3011,15 @@ export class Sheet {
       this.name = data.name || ''; // wtf is this?
     }
 
+    // patching from import
+    for (const cell of this.cells.Iterate()) {
+      if (cell.spill) {
+        if (!cell.spill.start.sheet_id) {
+          cell.spill.SetSheetID(this.id);
+        }
+      }
+    }
+
     if (data.tab_color) {
       this.tab_color = data.tab_color;
     }

@@ -1001,8 +1001,11 @@ export const CreateColumnChart = (
 
   const [data, labels, args_title, args_options] = args;
       
-  const series: SeriesType[] = TransformSeriesData(data);
-  const common = CommonData(series);
+  const options = args_options?.toString() || undefined;
+  const stacked = /stacked/i.test(options || '');
+
+  let series: SeriesType[] = TransformSeriesData(data);
+  let common = CommonData(series);
 
   let category_labels: string[] | undefined;
 
@@ -1041,15 +1044,50 @@ export const CreateColumnChart = (
 
   }
 
+  let stacked_series: SeriesType[]|undefined = undefined;
+  const legend = common.legend; // in case we munge it
+
+  if (stacked) {
+    stacked_series = series;
+
+    const map: Map<number, number> = new Map();
+    // const label_map: Map<number, string> = new Map();
+
+    for (const entry of series) {
+      for (const [index, key] of entry.x.data.entries()) {
+        if (key !== undefined) {
+          const value = entry.y.data[index] || 0;
+          map.set(key, value + (map.get(key) || 0));
+        }
+      }
+    }
+
+    const x_data = Array.from(map.keys()).sort((a, b) => a - b);
+    const y_data = x_data.map(key => map.get(key) || 0);
+
+    console.info({stacked_series, map, x_data, y_data});
+
+    series = [{
+      x: { data: x_data, format: stacked_series[0]?.x?.format },
+      y: { data: y_data, format: stacked_series[0]?.y?.format },
+    }];
+
+    series[0].x.range = ArrayMinMax(x_data);
+    series[0].y.range = ArrayMinMax(y_data);
+
+    common = CommonData(series, Math.min(0, ...y_data));
+
+  }
+
   const title = args_title?.toString() || undefined;
-  const options = args_options?.toString() || undefined;
 
   const chart_data = {
     type,
-    legend: common.legend,
+    legend, // legend: common.legend,
     // legend_position: LegendPosition.right,
     legend_style: LegendStyle.marker,
     series2: series,
+    stacked_series,
     scale: common.y.scale,
     title,
     y_labels: type === 'bar' ? category_labels : common.y.labels, // swapped
@@ -1057,6 +1095,9 @@ export const CreateColumnChart = (
   };
 
   if (options) {
+    
+    (chart_data as BarData).stacked = stacked;
+
     (chart_data as BarData).round = /round/i.test(options);
     (chart_data as ChartDataBaseType).data_labels = /labels/i.test(options);
 

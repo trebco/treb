@@ -1391,12 +1391,21 @@ export class Importer {
 
             break;
 
+          case ChartType.Histogram:
+            type = 'treb-chart';
+            func = 'Histogram.Plot';
+            if (series?.length) {
+              // ...
+            }
+            args[1] = descriptor.chart.title;
+            break;
+
           case ChartType.Box:
             type = 'treb-chart';
             func = 'Box.Plot';
             if (series?.length) {
               args[0] = `Group(${series.map(s => `Series(${s.title || ''},,${s.values||''})`).join(', ')})`;
-              console.info("S?", {series}, args[0])
+              // console.info("S?", {series}, args[0])
             }
             args[1] = descriptor.chart.title;
             break;
@@ -1452,6 +1461,10 @@ export class Importer {
                 }
               }
               args[1] = series[0]?.categories || '';
+            }
+
+            if (descriptor.chart.type === ChartType.Column && descriptor.chart.flags?.includes('stacked')) {
+              args[3] = '"stacked"';
             }
 
             break;

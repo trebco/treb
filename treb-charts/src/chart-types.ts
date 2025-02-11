@@ -207,6 +207,7 @@ export interface HistogramData extends ColumnDataBaseType {
 export interface LineBaseData extends ChartDataBaseType {
   series?: NumberOrUndefinedArray[];
   series2?: SeriesType[];
+  stacked_series?: SeriesType[];
   scale: RangeScale;
   x_scale?: RangeScale;
   titles?: string[];
@@ -262,6 +263,7 @@ export interface BarData extends LineBaseData {
   type: 'bar';
   round?: boolean;
   space?: number;
+  stacked?: boolean;
 }
 
 export interface DonutDataBaseType extends ChartDataBaseType {
