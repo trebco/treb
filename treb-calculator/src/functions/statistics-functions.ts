@@ -486,7 +486,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
   'Norm.S.Inv': {
     description: 'Inverse of the standard normal cumulative distribution', 
     arguments: [
-      {name: 'probability'},
+      {name: 'probability', unroll: true },
     ],
     xlfn: true,
     fn: (q: number): UnionValue => {

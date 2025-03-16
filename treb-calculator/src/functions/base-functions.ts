@@ -366,9 +366,9 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       if (integer) {
         const range = max - min + 1;
-        for (let i = 0; i < rows; i++) {
+        for (let i = 0; i < columns; i++) {
           const row: UnionValue[] = [];
-          for (let j = 0; j < columns; j++) {
+          for (let j = 0; j < rows; j++) {
             row.push({
               type: ValueType.number,
               value: Math.floor(Math.random() * range + min),
@@ -380,9 +380,9 @@ export const BaseFunctionLibrary: FunctionMap = {
       else {
         const range = max - min;
 
-        for (let i = 0; i < rows; i++) {
+        for (let i = 0; i < columns; i++) {
           const row: UnionValue[] = [];
-          for (let j = 0; j < columns; j++) {
+          for (let j = 0; j < rows; j++) {
             row.push({
               type: ValueType.number,
               value: Math.random() * range + min,
@@ -391,7 +391,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           value.push(row);
         }
       }
-
+      
       return {
         type: ValueType.array,
         value,

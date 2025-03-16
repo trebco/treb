@@ -166,23 +166,22 @@ export enum ValueType {
   // OK we use it all the time now
   object = 5,
 
+  function = 6, // why was this inserted in the middle?
+
   // error is a STRING VALUE... object errors are layered on top? is that 
   // correct? (...) it sort of makes sense... since we have separate typing
-  error = 6,
+  error = 7,
 
   // complex is pretty stable by now
-  complex = 7,
+  complex = 8,
 
   // this is new though. this is not a cell value, it's 
   // only for union types. perhaps we should move or rename 
   // this array, and then cells could have a subset?
-  array = 8,
+  array = 9,
 
   // adding DQ to union
-  dimensioned_quantity = 9,
-
-  // new for lambdas
-  function = 10,
+  dimensioned_quantity = 10,
 
 }
 
