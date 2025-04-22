@@ -105,7 +105,14 @@ export class DataModel {
     }
     
     const sheet = this.sheets.ID(sheet_name);
-    return this.named.Get_(parts[1], sheet || 0, true); // require scope in this case
+
+    // Q: why require scope in this case? if there _is_ a global name,
+    // and no scoped name, why not return that? that seems to be the 
+    // behavior in excel, although I can't be sure
+
+    // test: default false
+
+    return this.named.Get_(parts[1], sheet || 0, false); // true); // require scope in this case
 
 
   }
