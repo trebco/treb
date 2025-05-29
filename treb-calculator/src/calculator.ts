@@ -273,13 +273,32 @@ export class Calculator extends Graph {
      * this is a function that does sumif/averageif/countif.
      * args is one or more sets of [criteria_range, criteria]
      */
-    const XIf = (type: 'sum'|'count'|'average', value_range: CellValue[][], ...args: unknown[]): UnionValue => {
+    const XIf = (type: 'sum'|'count'|'average', value_range: CellValue[][]|CellValue, ...args: unknown[]): UnionValue => {
+
+      // there's a bug here if the value range is a single value? 
+      // that happens if countif passes in a one-cell range... we should 
+      // handle this in the caller, or here?
+
+      // NOTE we also have to address this in the set of 
+      // arguments, in which each pair could have a single
+      // value as the criterion
+
+      if (!Array.isArray(value_range)) {
+        value_range = [[value_range]];
+      }
 
       const filter: boolean[] = [];
 
       for (let i = 0; i < args.length; i += 2) {
-        if (Array.isArray(args[i])) {
-          const step = CountIfInternal(args[i] as CellValue[][], args[i+1] as CellValue);
+
+        let criteria_range = args[i] as (CellValue|CellValue[][]);
+        if (!Array.isArray(criteria_range)) {
+          criteria_range = [[criteria_range]];
+        }
+
+        { // if (Array.isArray(args[i])) {
+
+          const step = CountIfInternal(criteria_range, args[i+1] as CellValue);
           if (step.type !== ValueType.array) {
             return step;
           }
