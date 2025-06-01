@@ -39,6 +39,9 @@ class UAType {
   /** more testing. ios safari doesn't support grid+sticky (apparently) */
   public readonly is_ipad = /iPad|iPhone/.test(user_agent);
 
+  /** for iphone so we can change font size to prevent auto-zoom */
+  public readonly is_iphone = /iPhone/.test(user_agent);
+
   /** more testing. firefox android doesn't support grid+sticky (apparently) */
   public readonly is_android = /android|samsung/i.test(user_agent);
 
@@ -84,19 +87,20 @@ class UAType {
     /webkit|firefox/i.test(user_agent);
 }
 
-const null_ua = {
+const null_ua: UAType = {
 
     is_edge: false,
     is_ipad: false,
+    is_iphone: false,
     is_android: false,
     is_firefox: false,
     is_safari: false,
     is_mac: false,
     is_chrome: false,
-    trident: false,
+    // trident: false,
     is_windows: false,
     is_modern: true,
-    is_node: true,
+    // is_node: true,
     is_mobile: false,
 
 };

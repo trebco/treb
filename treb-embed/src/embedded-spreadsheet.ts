@@ -894,6 +894,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         else if (UA.is_mac) {
           container.parentElement?.classList.add('treb-ua-osx');
         }
+
+        if (UA.is_iphone) {
+          container.parentElement?.classList.add('treb-ua-iphone');
+        }
+
       }
       
       // container is "treb-views", which contains individual "treb-view" 
