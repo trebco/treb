@@ -311,6 +311,7 @@
       background: transparent;
       position: absolute;
       z-index: $z-index-grid-selection;
+      transform: translateZ(0); // patch for ios safari bug
       -moz-transform: scale(1); // firefox anti-blur
     }
 
@@ -323,6 +324,7 @@
       position: absolute;
       z-index: $z-index-frozen-selection;
       overflow: hidden; // needed for IE11 (put in legacy?) 
+      transform: translateZ(0); // patch for ios safari bug
       -moz-transform: scale(1); // firefox anti-blur
       pointer-events: none;
 
