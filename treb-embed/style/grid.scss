@@ -43,6 +43,9 @@
     position: absolute;
     pointer-events: none;
 
+    // patch for ios safari bug
+    transform: translateZ(0);
+
     rect {
       stroke: var(--treb-spill-border-color, rgb(92, 92, 224));
       stroke-dasharray: var(--treb-spill-border-dasharray, 0);
