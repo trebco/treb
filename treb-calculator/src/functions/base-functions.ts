@@ -959,6 +959,26 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    Factdouble: {
+      description: 'Returns the double factorial of a number',
+      arguments: [
+        { name: 'number', unroll: true },
+      ],
+      fn: (number: number): UnionValue => {
+        number = Math.round(number);
+
+        let value = 1;
+        while (number > 1) {
+          value *= number;
+          number -= 2;
+        }
+        return {
+          type: ValueType.number,
+          value,
+        }
+      },
+    },
+
     Power: {
       description: 'Returns base raised to the given power',
       arguments: [
