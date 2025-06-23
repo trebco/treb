@@ -7889,6 +7889,10 @@ export class Grid extends GridBase {
    */
   protected ResizeColumnsInternal(command: ResizeColumnsCommand) {
 
+    if (this.headless) {
+      return super.ResizeColumnsInternal(command);
+    }
+
     const sheet = command.sheet_id ? this.FindSheet(command.sheet_id) : this.active_sheet;
 
     // normalize
