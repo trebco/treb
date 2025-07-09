@@ -32,7 +32,7 @@ const Log1p = (x: number) => {
 /** 
  * continued fraction expansion 
  */
-const BetaContFrac = (a: number, b: number, x: number, epsabs: number) => {
+export const BetaContFrac = (a: number, b: number, x: number, epsabs: number) => {
 
   const cutoff = 2.0 * Number.MIN_VALUE;
 
@@ -241,4 +241,18 @@ export const BetaCDF = (x: number, a: number, b: number) => {
   }
 
 };
+
+export const BetaInc = (x: number, a: number, b: number): number => {
+  if (x < 0 || x > 1) return 0; // throw new Error("Invalid x in betainc");
+  const bt =
+    x === 0 || x === 1
+      ? 0
+      : Math.exp(LnGamma(a + b) - LnGamma(a) - LnGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+  if (x < (a + 1) / (a + b + 2)) {
+    return bt * BetaContFrac(a, b, x, 0) / a;
+  } else {
+    return 1 - bt * BetaContFrac(b, a, 1 - x, 0) / b;
+  }
+};
+
 

@@ -27,6 +27,8 @@ import * as ComplexMath from '../complex-math';
 
 import { BetaCDF, BetaPDF, InverseBeta, LnGamma } from './beta';
 import { gamma_p } from './gamma';
+import { InverseNormal } from './normal';
+import { tCDF, tInverse, tPDF } from './students-t';
 
 /** error function (for gaussian distribution) */
 const erf = (x: number): number => {
@@ -62,21 +64,7 @@ const norm_dist = (x: number, mean: number, stdev: number, cumulative: boolean) 
 
 }
 
-/** imprecise but reasonably fast normsinv function */
-const inverse_normal = (q: number): number => {
 
-  if (q === 0.50) {
-    return 0;
-  }
-  
-  const p = (q < 1.0 && q > 0.5) ? (1 - q) : q;
-  const t = Math.sqrt(Math.log(1.0 / Math.pow(p, 2.0)));
-  const x = t - (2.515517 + 0.802853 * t + 0.010328 * Math.pow(t, 2.0)) /
-    (1.0 + 1.432788 * t + 0.189269 * Math.pow(t, 2.0) + 0.001308 * Math.pow(t, 3.0));
-
-  return (q > 0.5 ? x : -x);
-
-};
 
 const Median = (data: number[]) => {
   const n = data.length;
@@ -478,7 +466,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     fn: (q: number, mean = 0, stdev = 1): UnionValue => {
       return {
         type: ValueType.number,
-        value: inverse_normal(q) * stdev + mean,
+        value: InverseNormal(q) * stdev + mean,
       }
     }
   },
@@ -492,7 +480,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     fn: (q: number): UnionValue => {
       return {
         type: ValueType.number,
-        value: inverse_normal(q),
+        value: InverseNormal(q),
       }
     }
   }, 
@@ -829,6 +817,71 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       };
 
     }    
+  },
+
+  'T.DIST': {  
+    description: `Returns the left-tailed Student's t-distribution`,
+    arguments: [
+      { name: 'X', unroll: true, boxed: true, },
+      { name: 'degrees of freedom', unroll: true, boxed: true, },
+      { name: 'cumulative', unroll: true, boxed: true, },
+    ],
+    fn: (x: UnionValue, df: UnionValue, cumulative?: UnionValue) => {
+
+      const cum = cumulative ? !!cumulative.value : false;
+
+      if (df.type !== ValueType.number || x.type !== ValueType.number || df.value < 1) {
+        return ArgumentError();
+      }
+      
+      return {
+        type: ValueType.number,
+        value: cum ? tCDF(x.value, df.value) : tPDF(x.value, df.value),
+      }
+
+    },
+  },
+
+  'T.Inv': {
+    description: `Returns the left-tailed inverse of the Student's t-distribution`,
+    arguments: [
+      { 
+        name: 'Probability', boxed: true, unroll: true,
+      }, 
+      {
+        name: 'Degrees of freedom', boxed: true, unroll: true,
+      },
+    ],
+    fn: (p: UnionValue, df: UnionValue) => {
+      if (df.type !== ValueType.number || df.value < 1 || p.type !== ValueType.number || p.value <= 0 || p.value >= 1) {
+        return ArgumentError();
+      }
+      return {
+        type: ValueType.number,
+        value: tInverse(p.value, df.value),
+      };
+    },
+  },
+
+  'T.Inv.2T': {
+    description: `Returns the two-tailed inverse of the Student's t-distribution`,
+    arguments: [
+      { 
+        name: 'Probability', boxed: true, unroll: true,
+      }, 
+      {
+        name: 'Degrees of freedom', boxed: true, unroll: true,
+      },
+    ],
+    fn: (p: UnionValue, df: UnionValue) => {
+      if (df.type !== ValueType.number || df.value < 1 ||p.type !== ValueType.number || p.value <= 0 || p.value >= 1) {
+        return ArgumentError();
+      }
+      return {
+        type: ValueType.number,
+        value: Math.abs(tInverse(1 - p.value/2, df.value)),
+      };
+    },
   },
 
   GammaLn: {
