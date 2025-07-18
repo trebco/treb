@@ -1014,65 +1014,141 @@ export class Calculator extends Graph {
 
       /**
        * FIXME: there are cases we are not handling
+       * 
+       * update to return a reference so you can use it as part of a 
+       * range. we're not handling literal arrays atm.
        */
       Index: {
+        return_type: 'reference',
         arguments: [
-          { name: 'range', boxed: true }, 
+          { name: 'range', metadata: true, }, 
           { name: 'row', }, 
           { name: 'column', }
         ],
+
+        // volatile: true, // not sure this is necessary bc input is the range
         volatile: false,
 
         // FIXME: handle full row, full column calls
-        fn: (data: UnionValue, row?: number, column?: number) => {
+        fn: (range: UnionValue, row: number|undefined, column: number|undefined) => {
 
-          // ensure array
-          if (data && data.type !== ValueType.array) {
-            data = {
-              type: ValueType.array,
-              value: [[data]],
+          if (!range) {
+            return ArgumentError();
+          }
+
+          // this is illegal, although we could just default to zeros
+
+          if (row === undefined && column === undefined) {
+            return ArgumentError();
+          }
+
+          row = row || 0;
+          column = column || 0;
+
+          let arr: { value: {address: UnitAddress }}[][] = [];
+
+          // NOTE: could be a single cell. in that case it won't be passed
+          // as an array so we'll need a second branch (or convert it)
+
+          if (range.type === ValueType.array) {
+
+            // FIXME: validate these are addresses (shouldn't be necessary
+            // if we're marking the argument as metadata? what about literals?)
+
+            // check rows and columns. we might need to return an array.
+
+            arr = range.value as unknown as { value: {address: UnitAddress }}[][];
+
+          }
+          else if (range.type === ValueType.object) {
+
+            const metadata = range.value as { type: string, address?: UnitAddress };
+
+            if (metadata.type === 'metadata' && metadata.address) {
+              arr.push([range as { value: { address: UnitAddress }}]);
+            }
+
+          }
+
+          const columns = arr.length;
+          const rows = arr[0]?.length || 0;
+
+          if (rows <= 0 || columns <= 0 || row > rows || column > columns || row < 0 || column < 0) {
+            return ArgumentError();
+          }
+
+
+          // return everything if arguments are (0, 0)
+
+          if (column === 0 && row === 0) {
+
+            // because of the way we're structured this we might be 
+            // returning a range of length 1; in that case we want 
+            // to return it as an address
+
+            const expression: ExpressionUnit = (columns === 1 && rows === 1) ? {
+              ...arr[0][0].value.address,
+            } : {
+              type: 'range', 
+              start: arr[0][0].value.address, 
+              end: arr[columns-1][rows-1].value.address,
+              label: '', position: 0,
+              id: 0,
             };
-          }
 
-          if (row && column) {
-
-            // simple case: 2 indexes
-
-            const c = data.value[column - 1];
-            if (c) {
-              const cell = c[row - 1];
-              if (cell) {
-                return cell;
-              }
-            }
-          }
-          else if (row) {
-
-            // return an array
-
-            const value: UnionValue[][] = [];
-            for (const c of data.value) {
-              if (!c[row - 1]) {
-                return ArgumentError();
-              }
-              value.push([c[row-1]]);
-            }
             return {
-              type: ValueType.array,
-              value,
+              type: ValueType.object,
+              value: expression,  
             };
+
+          }
+
+          // single cell
+
+          if ((row || rows === 1) && (column || columns === 1)) {
+            return {
+              type: ValueType.object,
+              value: arr[column ? column - 1 : 0][row ? row - 1 : 0].value.address,  
+            };
+          }
+
+          // sub array
+
+          if (row) {
+
+            // return column
+
+            const expression: ExpressionUnit = {
+              type: 'range', 
+              start: arr[0][row - 1].value.address, 
+              end: arr[columns-1][row-1].value.address,
+              label: '', position: 0,
+              id: 0,
+            };
+
+            return {
+              type: ValueType.object,
+              value: expression,  
+            };
+
           }
           else if (column) {
 
-            // return an array
+            // return row
+            
+            const expression: ExpressionUnit = {
+              type: 'range', 
+              start: arr[column - 1][0].value.address, 
+              end: arr[column-1][rows-1].value.address,
+              label: '', position: 0,
+              id: 0,
+            };
 
-            const c = data.value[column - 1];
-            if (c) {
-              return {
-                type: ValueType.array,
-                value: [c],
-              };
-            }
+            return {
+              type: ValueType.object,
+              value: expression,  
+            };
+
           }
 
           return ArgumentError();
