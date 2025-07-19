@@ -630,13 +630,23 @@ export class Parser {
           }).join(', ')).join('; ') + '}';
 
       case 'binary':
-        return (
-          this.Render(unit.left, options) +
-          ' ' +
-          unit.operator +
-          ' ' +
-          this.Render(unit.right, options)
-        );
+
+        // in some cases we might see range constructs as binary units
+        // because one side (or maybe both sides) of the range is a 
+        // function. in that case we don't want a space in front of the 
+        // operator.
+
+        {
+          const separator = (unit.operator === ':' ? '': ' ');
+
+          return (
+            this.Render(unit.left, options) +
+            separator +
+            unit.operator +
+            separator +
+            this.Render(unit.right, options)
+          );
+        }
 
       case 'unary':
         return (
