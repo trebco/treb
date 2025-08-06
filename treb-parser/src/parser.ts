@@ -636,8 +636,13 @@ export class Parser {
         // function. in that case we don't want a space in front of the 
         // operator.
 
+        // UPDATE: for aesthetic reasons, also remove spaces around a
+        // power operator (caret, "^")
+
+        // FIXME: parameterize?
+
         {
-          const separator = (unit.operator === ':' ? '': ' ');
+          const separator = ((unit.operator === ':' || unit.operator === '^') ? '': ' ');
 
           return (
             this.Render(unit.left, options) +
