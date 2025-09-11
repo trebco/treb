@@ -87,6 +87,7 @@ export interface ReferenceMetadata {
 }
 
 export type BindingFrame = Record<string, ExpressionUnit>; // FIXME (type?)
+
 export type PositionalFrame = ExpressionUnit[];
 
 export interface CalculationContext {
@@ -464,8 +465,6 @@ export class ExpressionCalculator {
       return ExpressionError();
     }
 
-    // let frame = value.bindings(expr.args);
-
     const frame: BindingFrame = {};
 
     for (let i = 0; i < value.bindings.length; i++) {
@@ -479,8 +478,6 @@ export class ExpressionCalculator {
       }
     }
 
-    // frame = this.NormalizeBindings(frame); // inline
-
     const munged = JSON.parse(JSON.stringify(value.func));
     
     this.parser.Walk2(munged, (unit: ExpressionUnit) => {
@@ -493,11 +490,6 @@ export class ExpressionCalculator {
       }
       return true;
     });
-    
-    // console.info({frame, func, munged});
-   
-    // const exec_result = this.CalculateExpression(munged as ExtendedExpressionUnit);
-    // return exec_result || ExpressionError();
 
     return this.CalculateExpression(munged as ExtendedExpressionUnit);
 
@@ -582,6 +574,7 @@ export class ExpressionCalculator {
    * the parsing stage, it's a simple translation between the two
    */
   protected ImplicitCall(): (expr: UnitImplicitCall|UnitCall) => UnionValue {
+
     return (expr: UnitImplicitCall|UnitCall) => {
 
       if (expr.type === 'call') {
@@ -634,6 +627,7 @@ export class ExpressionCalculator {
       const upper_case = outer.name.toUpperCase();
 
       const binding = this.LookupBinding(upper_case);
+
       if (binding) {
         return this.ImplicitCall();
       }
