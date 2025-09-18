@@ -235,6 +235,79 @@ const TrigFunction = (real: (value: number) => number, complex: (value: Complex)
 }
 
 /**
+ * helper for sorting. kind of weird rules
+ */
+const SortHelper = (order: number, av: CellValue, bv: CellValue) => {
+  
+  // OK from what I can tell the rules are
+  //
+  // (1) no type coercion (but see below for blanks)
+  // (2) strings are sorted case-insensitive
+  // (3) blank values are coerced -> 0 but these are not sorted as numbers
+  // (4) order is numbers, strings, booleans, then blanks
+  //
+  // some of which makes sense, I guess...
+  // 
+  // blanks are always sorted last, irrespective of sort order. which
+  // means we can't sort and then reverse, because reverse sort is not
+  // the inverse of forward sort
+
+  // special case
+
+  if (av === bv) {
+    return 0;
+  }
+
+  // special case
+
+  if (av === undefined) {
+    return 1;
+  }
+  if (bv === undefined) {
+    return -1;
+  }
+
+  // actual comparisons
+
+  if (typeof av === 'number' && typeof bv === 'number') {
+    return (av - bv) * order;
+  }
+
+  if (typeof av === 'string' && typeof bv === 'string') {
+    return av.toLocaleLowerCase().localeCompare(bv.toLowerCase()) * order;
+  }
+
+  if (typeof av === 'boolean' && typeof bv === 'boolean') {
+    return av ? order : -order;
+  }
+
+  if (IsComplex(av) && IsComplex(bv)) {
+    return 0; // no sort order
+  }
+
+  // type rules
+
+  const types = [av, bv].map(x => {
+    switch (typeof x) {
+      case 'number':
+        return 0;
+      case 'string': 
+        return 2; 
+      case 'boolean':
+        return 3;
+      default: 
+        if (IsComplex(x)) {
+          return 1;
+        }
+        return 4;
+    }
+  });
+
+  return (types[0] - types[1]) * order;
+
+};
+
+/**
  * alternate functions. these are used (atm) only for changing complex 
  * behavior.
  */
@@ -1177,28 +1250,148 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     /**
+     * sortby allows multiple sort indexes, but no column sorting
+     */
+    SortBy: {
+      arguments: [
+        { name: 'array', },
+        { name: 'index', },
+        { name: 'order', description: 'Set to -1 to sort in descending order', default: 1 }
+      ],
+      fn: (ref: CellValue|CellValue[][], ...args: (CellValue|CellValue[][])[]): UnionValue => {
+
+        if (!Array.isArray(ref)) {
+          ref = [[ref]];
+        }
+
+        // must have at least one sort order? 
+
+        if (args.length < 1) {
+          return ArgumentError();
+        }
+
+        // ensure any sort argument pairs are valid... I guess they
+        // need to be the same length? what happens if not? [A: error]
+
+        const rows = ref[0]?.length || 0;
+        const orders: number[] = [];
+        const values: CellValue[][] = [];
+
+        for (let i = 0; i < args.length; i += 2) {
+          
+          const target = i/2;
+
+          let sort_range = args[i];
+          if (!Array.isArray(sort_range)) {
+            sort_range = [[sort_range]];
+          }
+
+          const check = sort_range[0]?.length || 0;
+          if (check !== rows) {
+            return ArgumentError();
+          }
+
+          let order = 1;
+          const arg = args[i+1];
+          if (typeof arg === 'number' && arg < 0) {
+            order = -1;
+          }
+
+          orders[target] = order;
+          values[target] = sort_range[0]; // (sort_range[0]).slice(0);
+          
+        }
+
+        const mapped = ref[0]?.map((value, index) => (index));
+        mapped.sort((a, b) => {
+
+          for (let i = 0; i < orders.length; i++) {
+            const order = orders[i];
+            const value_set = values[i];
+            const result = SortHelper(order, value_set[a], value_set[b]);
+            if (result) {
+              return result;
+            }
+          }
+
+          return 0;
+
+        });
+
+        // output is same shape
+
+        const columns = ref.length;
+        const result: UnionValue[][] = [];
+
+        for (let c = 0; c < columns; c++) {
+          const column: UnionValue[] = [];
+          for (const index of mapped) {
+            column.push(Box(ref[c][index]));
+          }
+          result.push(column);
+        }
+
+        return { type: ValueType.array, value: result };
+
+
+      },
+    },
+
+    /**
      * sort arguments, but ensure we return empty strings to
      * fill up the result array
      * 
      * FIXME: instead of boxing all the values, why not pass them in boxed?
      * was this function just written at the wrong time?
+     * 
+     * UPDATE: rewriting to match Excel args
+     * 
      */
     Sort: {
       arguments: [
-        { name: 'values' }
+        { name: 'array', },
+        { name: 'index', },
+        { name: 'order', description: 'Set to -1 to sort in descending order', default: 1 }
       ],
-      fn: (...args: CellValue[]): UnionValue => {
+      fn: (ref: CellValue|CellValue[][], index = 1, order = 1): UnionValue => {
 
-        args = Utils.FlattenCellValues(args);
+        if (!Array.isArray(ref)) {
+          ref = [[ref]];
+        }
 
-        if(args.every(test => typeof test === 'number')) {
-          (args as number[]).sort((a, b) => a - b);
+        // FIXME: transpose for column sort
+
+        const sort_column = ref[index - 1];
+        if (!sort_column) {
+          return ArgumentError();
+        }
+
+        // clean (and be lenient)
+
+        if (order < 0) {
+          order = -1;
         }
         else {
-          args.sort(); // lexical
+          order = 1;
+        }
+        
+        const mapped = sort_column.map((value, index) => ({value, index}));
+        mapped.sort((a, b) => SortHelper(order, a.value, b.value));
+
+        // output is same shape
+
+        const columns = ref.length;
+        const result: UnionValue[][] = [];
+
+        for (let c = 0; c < columns; c++) {
+          const column: UnionValue[] = [];
+          for (const { index } of mapped) {
+            column.push(Box(ref[c][index]));
+          }
+          result.push(column);
         }
 
-        return { type: ValueType.array, value: [args.map(value => Box(value))] };
+        return { type: ValueType.array, value: result };
 
       },
     },
