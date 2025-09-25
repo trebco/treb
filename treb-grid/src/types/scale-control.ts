@@ -142,9 +142,9 @@ export class ScaleControl extends EventSource<ScaleEvent> {
 
     container.addEventListener('wheel', (event: WheelEvent) => {
       event.stopPropagation();
-      event.preventDefault();
+      // event.preventDefault();
       this.Tick(event.deltaY)
-    });
+    }, { passive: true });
 
   }
 
