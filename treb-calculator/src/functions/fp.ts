@@ -23,6 +23,7 @@ import type { FunctionMap } from '../descriptors';
 import type { CellValue, FunctionUnion, UnionValue} from 'treb-base-types';
 import { Box, ValueType } from 'treb-base-types';
 import { ArgumentError, ValueError } from '../function-error';
+import { FlattenCellValues } from '../utilities';
 
 export const FPFunctionLibrary: FunctionMap = {
  
@@ -64,6 +65,116 @@ export const FPFunctionLibrary: FunctionMap = {
 
       }
       return ArgumentError();
+    },
+  },
+
+  ChooseCols: {
+    description: 'Returns one or more columns from an array, by column index',
+    arguments: [{
+      name: 'array',
+    }, {
+      name: 'column',
+      repeat: true,
+    }],
+    fn: function(data: CellValue|CellValue[][], ...args: number[]) {
+
+      if (!Array.isArray(data)) {
+        data = [[data]];
+      }
+      
+      const flat = FlattenCellValues(args);
+      // console.info({flat});
+
+      const columns = data.length;
+      const result: UnionValue[][] = [];
+
+      for (let arg of flat) {
+        if (typeof arg === 'number') {
+
+          if (arg < 0) {
+            arg = columns + arg;
+          }
+          else {
+            arg--;
+          }
+
+          const col = data[arg];
+          if (col) {
+            const column: UnionValue[] = [];
+            for (const value of col) {
+              column.push(Box(value));
+            }
+            result.push(column);
+          }
+          else {
+            return ArgumentError(); // invalid column
+          }
+        }
+      }
+
+      if (!result.length) {
+        result.push([]);
+      }
+
+      return {
+        type: ValueType.array,
+        value: result,
+      };
+
+    },
+  },
+
+  ChooseRows: {
+    description: 'Returns one or more rows from an array, by row index',
+    arguments: [{
+      name: 'array',
+    }, {
+      name: 'row',
+      repeat: true,
+    }],
+    fn: function(data: CellValue|CellValue[][], ...args: number[]) {
+
+      if (!Array.isArray(data)) {
+        data = [[data]];
+      }
+      
+      const flat = FlattenCellValues(args);
+      // console.info({flat});
+
+      const rows = data[0]?.length || 0;
+      const result: UnionValue[][] = [];
+
+      for (let arg of flat) {
+        if (typeof arg === 'number') {
+
+          if (arg < 0) {
+            arg = rows + arg;
+          }
+          else {
+            arg--;
+          }
+
+          for (const [column_index, col] of data.entries()) {
+            const column = result[column_index] || [];
+            if (arg < 0 || arg >= col.length) {
+              return ArgumentError();
+            }
+            column.push(Box(col[arg]));
+            result[column_index] = column;
+          }
+
+        }
+      }
+
+      if (!result.length) {
+        result.push([]);
+      }
+
+      return {
+        type: ValueType.array,
+        value: result,
+      };
+
     },
   },
 
@@ -142,7 +253,7 @@ export const FPFunctionLibrary: FunctionMap = {
         type: ValueType.array,
         value: result,
       }
-      
+
     },
   },
 
