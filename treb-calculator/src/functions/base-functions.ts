@@ -1757,8 +1757,10 @@ export const BaseFunctionLibrary: FunctionMap = {
         //}
 
         let rng: Area|undefined;
+        let return_from_array = false;
 
         if (return_array.type === ValueType.array) {
+
           // console.info({return_array});
 
           const arr = return_array.value;
@@ -1772,9 +1774,16 @@ export const BaseFunctionLibrary: FunctionMap = {
             rng = new Area(start.value.address, end.value.address);
           }
 
+          // we can allow a regular array here... perhaps we should 
+          // check the dimensions to ensure they match? TODO/FIXME
+
+          else {
+            return_from_array = true;
+          }
+
         }
 
-        if (!rng) {
+        if (!rng && !return_from_array) {
           console.info('invalid range');
           return ReferenceError(); 
         }
@@ -1848,7 +1857,55 @@ export const BaseFunctionLibrary: FunctionMap = {
         // an array. we might prefer to return a scalar if there's only 
         // one value, not sure what's the intended behavior
         // 
-        const ReturnIndex = (rng: Area, index: number): UnionValue => {
+        const ReturnIndex = (index: number): UnionValue => {
+
+          // FIXME: we could almost certainly merge these two paths
+
+          if (return_from_array && return_array.type === ValueType.array) {
+
+            // instead of a range, we're returning values from a static array
+
+            const src_columns = return_array.value.length;
+            const src_rows = return_array.value[0]?.length || 0;
+            const result: UnionValue[][] = [];
+
+            let start_row = 0;
+            let end_row = src_rows - 1;
+
+            let start_column = 0;
+            let end_column = src_columns - 1;
+
+            if (transpose) {
+              if (search_mode < 0) {
+                index = src_rows - 1 - index; // invert FIXME: test
+              }
+              start_row = end_row = index;
+            }
+            else {
+              if (search_mode < 0) {
+                index = src_columns - 1 - index; // invert FIXME: test
+              }
+              start_column = end_column = index;
+            }
+
+            for (let c = start_column; c <= end_column; c++) {
+              const column: UnionValue[] = [];
+              for (let r = start_row; r <= end_row; r++) {
+                column.push(return_array.value[c][r]);
+              }
+              result.push(column);
+            }
+
+            return {
+              type: ValueType.array,
+              value: result,
+            };
+            
+          }
+          
+          if (!rng) {
+            throw new Error('invalid range');
+          }
 
           // console.info("transpose?", transpose, {rng}, 'shape', rng.rows, rng.columns);
 
@@ -1953,7 +2010,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
               // check for exact match first, just in case
               if (value === lookup_value) {
-                return ReturnIndex(rng, i); 
+                return ReturnIndex(i); 
               }
 
               const delta = Math.abs(value - lookup_value);
@@ -1969,7 +2026,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           }
 
           if (index >= 0) {
-            return ReturnIndex(rng, index);
+            return ReturnIndex(index);
           }
 
         }
@@ -1987,7 +2044,7 @@ export const BaseFunctionLibrary: FunctionMap = {
               for (let i = 0; i < lookup_array.length; i++) {
                 const value = lookup_array[i][0];
                 if (typeof value === 'string' && regex.exec(value)) {
-                  return ReturnIndex(rng, i);
+                  return ReturnIndex(i);
                 }
               }
 
@@ -2005,7 +2062,7 @@ export const BaseFunctionLibrary: FunctionMap = {
                 value = value.toLowerCase();
               }
               if (value === lookup_value) {
-                return ReturnIndex(rng, i);
+                return ReturnIndex(i);
               }
             }
 

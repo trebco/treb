@@ -20,8 +20,8 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import type { FunctionUnion, UnionValue} from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
+import type { CellValue, FunctionUnion, UnionValue} from 'treb-base-types';
+import { Box, ValueType } from 'treb-base-types';
 import { ArgumentError, ValueError } from '../function-error';
 
 export const FPFunctionLibrary: FunctionMap = {
@@ -64,6 +64,85 @@ export const FPFunctionLibrary: FunctionMap = {
 
       }
       return ArgumentError();
+    },
+  },
+
+  Take: {
+    description: 'Returns some number of rows/columns from the start or end of an array',
+    arguments: [{
+      name: 'array',
+    }, {
+      name: 'rows',
+    }, {
+      name: 'columns',
+    }],
+    fn: function(data: CellValue|CellValue[][], rows?: number, columns?: number) {
+
+      // we need one of rows, columns to be defined. neither can === 0.
+
+      if ((!rows && !columns) || rows === 0 || columns === 0 || (typeof rows !== 'number' && typeof rows !== 'undefined') || (typeof columns !== 'number' && typeof columns !== 'undefined')) {
+        return ArgumentError();
+      }
+
+      if (!Array.isArray(data)) {
+        data = [[data]];
+      }
+      
+      const data_columns = data.length;
+      const data_rows = data[0].length;
+      const result: UnionValue[][] = [];
+
+      // I guess we can compose?
+
+      // data is column-first
+
+      let start_column = 0;
+      let end_column = data_columns - 1;
+
+      let start_row = 0;
+      let end_row = data_rows - 1;
+
+      if (typeof columns === 'number') {
+
+        // clip data so it has the first (or last) X columns
+
+        if (columns > 0) {
+          end_column = Math.min(columns, data_columns) - 1;
+        }
+        else if (columns < 0) {
+          end_column = data_columns - 1;
+          start_column = Math.max(0, end_column + columns + 1);
+        }
+
+      }
+
+      if (typeof rows === 'number') {
+
+        // clip data so it has the first (or last) X columns
+
+        if (rows > 0) {
+          end_row = Math.min(rows, data_rows) - 1;
+        }
+        else if (rows < 0) {
+          end_row = data_rows - 1;
+          start_row = Math.max(0, end_row + rows + 1);
+        }
+
+      }
+
+      for (let c = start_column; c <= end_column; c++) {
+        const column: UnionValue[] = [];
+        for (let r = start_row; r <= end_row; r++) {
+          column.push(Box(data[c][r]));
+        }
+        result.push(column);
+      }
+
+      return {
+        type: ValueType.array,
+        value: result,
+      }
+      
     },
   },
 
