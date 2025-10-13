@@ -140,11 +140,15 @@ export class ScaleControl extends EventSource<ScaleEvent> {
       }
     });
 
+    // we're overriding scroll behavior here, but it's a tiny panel.
+    // if we explicitly mark passive:false we can avoid the console
+    // warning (I think)
+
     container.addEventListener('wheel', (event: WheelEvent) => {
       event.stopPropagation();
-      // event.preventDefault();
+      event.preventDefault();
       this.Tick(event.deltaY)
-    }, { passive: true });
+    }, { passive: false });
 
   }
 
