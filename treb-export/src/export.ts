@@ -1220,6 +1220,10 @@ export class Exporter {
     data = this.zip?.Get('xl/styles.xml');
     style_cache.FromXML(this.xmlparser2.parse(data || ''), theme);
 
+    // new flag: we need metadata for dynamic arrays
+
+    let dynamic_array_metadata = false;
+
     // reset counters
 
     Drawing.next_drawing_index = 1;
@@ -1573,6 +1577,7 @@ export class Exporter {
               }
               
               if (cell.area && cell.area.start.row === r && cell.area.start.column === c) {
+
                 if (typeof f === 'string') {
                   f = {
                     t$: f,
@@ -1582,6 +1587,25 @@ export class Exporter {
                     },
                   }
                 }
+              }
+
+              let cm: number|undefined = undefined;
+
+              if (cell.spill && cell.spill.start.row === r && cell.spill.start.column === c) {
+
+                cm = 1;
+                dynamic_array_metadata = true;
+
+                if (typeof f === 'string') {
+                  f = {
+                    t$: f,
+                    a$: {
+                      t: 'array',
+                      ref: cell.spill.spreadsheet_label,
+                    },
+                  }
+                }
+
               }
 
               row.push({
@@ -1597,6 +1621,9 @@ export class Exporter {
                   // or there is no column style and it's equal to sheet style
 
                   s,
+
+                  cm,
+
                 },
 
                 f,
@@ -2357,6 +2384,83 @@ export class Exporter {
       `worksheets/sheet${index + 1}.xml`,
     ));
 
+    if (dynamic_array_metadata) {
+
+      const metadata_dom: DOMContent = {
+        metadata: {
+          a$: {
+            xmlns: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
+            'xmlns:xda': 'http://schemas.microsoft.com/office/spreadsheetml/2017/dynamicarray',
+          },
+
+          metadataTypes: {
+            a$: {
+              count: 1,
+            },
+            metadataType: {
+              a$: {
+                name: 'XLDAPR',
+                minSupportedVersion: '120000',
+                copy: 1,
+                pasteAll: 1,
+                pasteValues: 1,
+                merge: 1,
+                splitFirst: 1,
+                rowColShift: 1,
+                clearFormats: 1,
+                clearComments: 1,
+                assign: 1,
+                coerce: 1,
+                cellMeta: 1,
+              },
+            },
+          },
+
+          futureMetadata: {
+            a$: {
+              name: 'XLDAPR',
+              count: 1,
+            },
+            bk: {
+              extLst: {
+                ext: {
+                  a$: {
+                    uri: '{bdbb8cdc-fa1e-496e-a857-3c3f30c029c3}',
+                  },
+                  'xda:dynamicArrayProperties': {
+                    a$: {
+                      fDynamic: 1,
+                      fCollapsed: `0`,
+                    },
+                  },
+                },
+              },
+            },
+          },
+
+          cellMetadata: {
+            a$: { count: 1 },
+            bk: {
+              rc: {
+                a$: {
+                  t: 1, 
+                  v: `0`,
+                }
+              },
+            },
+          },
+
+
+        },
+      };
+      const metadata_xml = XMLDeclaration + this.xmlbuilder1.build(metadata_dom);
+      // console.info(metadata_xml);
+      this.zip?.Set(`xl/metadata.xml`, metadata_xml);
+       
+      // add rel
+      AddRel(workbook_rels, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/sheetMetadata', 'metadata.xml');
+    }
+
     this.WriteRels(workbook_rels, `xl/_rels/workbook.xml.rels`);
 
     const definedNames: DOMContent|undefined = source.named?.length ? {
@@ -2381,8 +2485,8 @@ export class Exporter {
 
       }),
     } : undefined;
-    
-    
+   
+   
     const workbook_dom: DOMContent = {
       workbook: {
         a$: {
@@ -2486,6 +2590,11 @@ export class Exporter {
           { a$: { PartName: '/xl/theme/theme1.xml', ContentType: 'application/vnd.openxmlformats-officedocument.theme+xml' }},
           { a$: { PartName: '/xl/styles.xml', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml' }},
           { a$: { PartName: '/xl/sharedStrings.xml', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml' }},
+
+          // metadata
+          ...(dynamic_array_metadata ? [
+            { a$: { PartName: '/xl/metadata.xml', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml' }},
+          ] : []),
 
           // tables
           ...global_tables.map(table => {
