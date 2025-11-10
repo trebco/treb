@@ -2371,6 +2371,8 @@ export const BaseFunctionLibrary: FunctionMap = {
         unroll: true, 
       } ],
 
+      xlfn: true,
+
       fn: (a: number, significance = 1, mode?: number) => {
 
         let value = 0;
