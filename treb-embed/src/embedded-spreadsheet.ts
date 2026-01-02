@@ -832,8 +832,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     }
 
-    //this.extra_calculator = //new Calculator(this.model);
-    //  this.CreateCalculator(this.model);
+    // FIXME: we should start figuring out what can happen before
+    // this async init, and what has to wait. then we can split the 
+    // ctor into two parts, and move stuff that has to wait to part 2
+
+    const calculator_init = this.calculator.InitResources();
 
     if (container) {
       this.DOM = DOMContext.GetInstance(container.ownerDocument);
@@ -1151,7 +1154,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         data = JSON.parse(data);
       }
       if (data) {
-        this.LoadDocument(data as TREBDocument, { recalculate: !!this.options.recalculate, source});
+        calculator_init.then(() => {
+          this.LoadDocument(data as TREBDocument, { recalculate: !!this.options.recalculate, source});
+        });
       }
       else {
         this.UpdateDocumentStyles();
@@ -1206,13 +1211,16 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       this.spinner = new Spinner(container);
     }
 
+
     // don't load if we are a split view
     // UPDATE: don't load if we have a local_storage document. this is taking
     // over the old alternate_document flow, because it doesn't make any sense
     // otherwise. what would local_storage with document_name mean otherwise?
 
     if (network_document && !options.model && !data) {
-      this.LoadNetworkDocument(network_document, this.options);
+      calculator_init.then(() => {
+        this.LoadNetworkDocument(network_document, this.options);
+      });
     }
 
     // create mask dialog

@@ -192,6 +192,8 @@ export class Calculator extends Graph {
 
   protected options: CalculatorOptions;
 
+  protected async_resource_init = false;
+
   /**
    * this is a flag we're using to communicate back to the embedded
    * sheet, when the grid has expanded as a result of a calculation 
@@ -1269,6 +1271,24 @@ export class Calculator extends Graph {
     });
 
 
+  }
+
+  /** 
+   * new async init method. we need this for subclasses, but 
+   * we should consider moving base methods in here as well.
+   * 
+   * this function must be idempotent, so we can call it from
+   * multiple paths
+   */
+  public async InitResources() {
+    if (this.async_resource_init) {
+      // console.info("init resources noop");
+      return;
+    }
+
+    // console.info("init resources (async)");
+
+    this.async_resource_init = true;
   }
 
   /**
