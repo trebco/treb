@@ -9,7 +9,7 @@ import { minify } from 'html-minifier-terser';
 import path from 'path';
 import * as sass from 'sass';
 import cssnano from 'cssnano';
-import postcss from 'postcss';
+import postcss, { Result } from 'postcss';
 
 /** @type {import('html-minifier').Options} */
 const html_minifier_options = {
@@ -148,6 +148,7 @@ export const WorkerPlugin = (options) => ({
           format: 'esm',
 
           define: options?.define,
+          external: ['*.wasm'],
 
           // don't write to filesystem
           write: false,
@@ -309,3 +310,53 @@ export const RewriteIgnoredImports = () => {
   };
 };
 
+/**
+ * 
+ * 
+ * 
+ * @param {*} options 
+ */
+export const CopyFilesPlugin = (options) => {
+  return {
+    name: 'CopyFiles',
+    setup(build){
+
+      build.onLoad({ filter: new RegExp(options.trigger) }, async (args) => {
+        const source = await fs.readFile(args.path, 'utf8');
+      
+        return {
+          contents: source,
+          loader: args.path.endsWith('ts') ? 'ts' : 'js',
+          watchFiles: options.files,
+        };
+      });
+
+      build.onEnd(async (result) => {
+        const outdir = options.outdir;
+        const promises = (options.files || []).map(file => {
+          const filename = path.basename(file);
+          const target = path.join(outdir, filename);
+
+          if (options.verbose) {
+            console.info('static copy', file, '->', target);
+          }
+
+          return fs.cp(file, target, {
+            preserveTimestamps: true,
+          });
+        });
+        await Promise.all(promises);
+
+        result.watchFiles = result.watchFiles || [];
+        result.watchFiles.push(...options.files);
+
+        /*
+        return {
+          watchFiles: options.files,
+        };
+        */
+        
+      });
+    }
+  }
+};
