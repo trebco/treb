@@ -87,11 +87,9 @@ const build_options = {
     'process.env.BUILD_VERSION': `"${pkg.version}"`,
     'process.env.BUILD_NAME': `"${pkg.name}"`,
   },
-  write: false,
+  write: true,
   plugins: [
-    RewriteIgnoredImports(),
     NotifyPlugin(),
-    // WorkerPlugin(options),
     HTMLPlugin(options),
     SassPlugin(options),
     CopyFilesPlugin({
@@ -102,7 +100,6 @@ const build_options = {
         'i18n/languages',
       ]
     }),
-
   ],
 };
 
