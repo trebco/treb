@@ -243,6 +243,18 @@ export type TableFilterFunction = (value: CellValue, calculated_value: CellValue
  */
 export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> { 
 
+  /**
+   * this is temporary. we need a better way to handle this, perhaps
+   * making the factory method (createSpreadsheet) async.
+   * 
+   * for now, you can test on this set of promises to see when the 
+   * app is ready
+   */
+  protected _ready_state: Promise<void>[] = [];
+  public get ready () {
+    return Promise.all(this._ready_state);
+  }
+
   /** @internal */
   public static treb_base_path = '';
 
@@ -837,6 +849,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // ctor into two parts, and move stuff that has to wait to part 2
 
     const calculator_init = this.calculator.InitResources();
+    this._ready_state.push(calculator_init);
 
     if (container) {
       this.DOM = DOMContext.GetInstance(container.ownerDocument);
@@ -6589,6 +6602,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * see `export-worker.ts` (in this directory) for more detail.
    */
   protected async LoadWorker(): Promise<Worker> {
+
+    const worker = new Worker(new URL('./treb-export-worker.mjs', import.meta.url), { 
+      type: 'module' 
+    });
+
+    return worker;
+
+    /*
     try {
       const worker = `export`;
       const mod = await import(`esbuild-ignore-import:./treb-${worker}-worker.mjs`) as {
@@ -6600,6 +6621,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       console.error(err);
       throw(err);
     }
+    */
   }
 
   /**

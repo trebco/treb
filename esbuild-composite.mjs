@@ -4,7 +4,7 @@
 
 import * as esbuild from 'esbuild';
 
-import { SassPlugin, WorkerPlugin, NotifyPlugin, HTMLPlugin, RewriteIgnoredImports } from './esbuild-utils.mjs';
+import { SassPlugin, WorkerPlugin, NotifyPlugin, HTMLPlugin, RewriteIgnoredImports, CopyFilesPlugin } from './esbuild-utils.mjs';
 import { promises as fs } from 'fs';
 
 import pkg from './package.json' with { type: 'json' }; 
@@ -18,6 +18,7 @@ import pkg from './package.json' with { type: 'json' };
  * @property {boolean} minify - separate from dev/production, in case we need to test
  * @property {boolean} xlsx_support - import/export xlsx files
  * @property {string} output_filename - generated filename. we enforce the directory.
+ * @property {string} outdir - target directory
  */
 
 /** 
@@ -33,6 +34,7 @@ const options = {
   verbose: false,
   xlsx_support: true,
   output_filename: 'treb-spreadsheet',
+  outdir: 'dist',
 };
 
 //------------------------------------------------------------------------------
@@ -65,16 +67,18 @@ for (let i = 0; i < process.argv.length; i++) {
 const build_options = {
   entryPoints: [
     { in: 'treb-embed/src/index.ts', out: options.output_filename },
-    { in: 'treb-embed/src/export-worker.ts', out: 'treb-export-worker' },
+    // { in: 'treb-embed/src/export-worker.ts', out: 'treb-export-worker' },
+    { in: 'treb-export/src/index.worker.ts', out: 'treb-export-worker' },
   ],
   banner: { 
     js: `/*! TREB v${pkg.version}. Copyright 2018-${new Date().getFullYear()} trebco, llc. All rights reserved. LGPL: https://treb.app/license */`
   },
   bundle: true,
-  outdir: 'dist',
+  outdir: options.outdir,
   // outfile: 'dist/' + options.output_filename,
   outExtension: { '.js': '.mjs' },
   minify: options.minify,
+  splitting: true,
   metafile: true,
   format: 'esm',
   define: {
@@ -87,9 +91,18 @@ const build_options = {
   plugins: [
     RewriteIgnoredImports(),
     NotifyPlugin(),
-    WorkerPlugin(options),
+    // WorkerPlugin(options),
     HTMLPlugin(options),
     SassPlugin(options),
+    CopyFilesPlugin({
+      outdir: options.outdir,
+      verbose: true,
+      trigger: 'treb-embed/src/index.ts', // we have to piggyback on an existing file (I think? this sucks)
+      files: [
+        'i18n/languages',
+      ]
+    }),
+
   ],
 };
 
