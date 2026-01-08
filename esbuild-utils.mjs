@@ -301,8 +301,15 @@ export const RewriteIgnoredImports = () => {
       build.onEnd(async (result) => {
         if (result.outputFiles) {
           for (const file of result.outputFiles) {
-            const { path, text } = file;
-            await fs.writeFile(path, text.replace(/esbuild-ignore-import:/g, ''));
+
+            // need to ensure directory has been created already. we 
+            // should check, rather than always create, but... also this
+            // plugin is going to go away soon so nbd
+            
+            const dir = path.dirname(file.path);
+            await fs.mkdir(dir, { recursive: true });
+            
+            await fs.writeFile(file.path, file.text.replace(/esbuild-ignore-import:/g, ''));
           }
         }
       });
@@ -342,6 +349,7 @@ export const CopyFilesPlugin = (options) => {
           }
 
           return fs.cp(file, target, {
+            recursive: true,
             preserveTimestamps: true,
           });
         });
