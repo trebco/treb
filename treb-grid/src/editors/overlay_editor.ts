@@ -446,6 +446,9 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
 
     switch (event.key) {
 
+      case 'F4':
+        return undefined;
+
       case 'Enter':
       case 'Tab':
         return 'commit'; 

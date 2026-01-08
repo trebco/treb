@@ -51,11 +51,16 @@ export interface TollEvent {
   value?: string;
 }
 
+export interface ToggleReferenceEvent {
+  type: 'toggle-reference';
+}
+
 export type FormulaBar2Event
   = FormulaButtonEvent
   // | FormulaBarResizeEvent
   | AddressLabelEvent
   | TollEvent
+  | ToggleReferenceEvent
   ;
 
 // ---
@@ -553,6 +558,12 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
     }
 
     switch (event.key){
+    case 'F4':
+      if (this.selecting) {
+        this.Publish({ type: 'toggle-reference' });
+      }
+      break;
+
     case 'Enter':
     case 'Tab':
       {

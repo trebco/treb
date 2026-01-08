@@ -374,7 +374,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
   /**
    * 
    */
-  public InsertReference(reference: string) {
+  public InsertReference(reference: string, toggle_reference_type = false, typed_reference_list: string[] = []) {
 
     if (!this.active_editor) {
       return;
@@ -421,6 +421,8 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
         const substrings = this.SubstringToCaret2(this.active_editor.node);
 
+        // console.info("Case 1", substrings);
+
         /*
         // console.info('case 1');
 
@@ -451,7 +453,14 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
         const parent = range.startContainer.parentElement;
         if (parent instanceof view.HTMLElement && parent.dataset.reference) {
 
-          // console.info('case 2');
+          if (toggle_reference_type && typed_reference_list.length) {
+            for (const [index, ref] of typed_reference_list.entries()) {
+              if (ref === parent.textContent) {
+                reference = typed_reference_list[index + 1] || typed_reference_list[0];
+                break;
+              }
+            }
+          }
 
           // replace text
           parent.textContent = reference;

@@ -3090,6 +3090,12 @@ export class Grid extends GridBase {
           this.HandleAddressLabelEvent(event.text)
           break;
 
+        case 'toggle-reference':
+          if (this.SelectingArgument() && !this.active_selection?.empty) {
+            this.UpdateSelectedArgument(this.active_selection, true);
+          }
+          break;
+
         case 'stop-editing':
 
           if (this.pending_reset_selection) {
@@ -4838,9 +4844,80 @@ export class Grid extends GridBase {
     
   }
 
-  private UpdateSelectedArgument(selection: GridSelection) {
+  protected CreateTypedReferences(start: ICellAddress, end?: ICellAddress) {
+    const references: string[] = [];
 
-    // console.info("USA", selection);
+    // five cases: (1) one cell; (2) range: (3) rows; (4) columns; (5) all 
+
+    let single = false;
+
+    if (end) {
+      single = (start.row === end.row && start.column === end.column);
+    }
+
+    if (start.row === Infinity) {
+
+      // case 3/5
+
+      // ...
+    }
+    else if (start.column === Infinity) {
+
+      // case 4
+
+      // ...
+    }
+    else if (!end || single) {
+
+      // case 1
+
+      start.absolute_column = false;
+      start.absolute_row = false;
+      references.push(Area.CellAddressToLabel(start));
+      
+      start.absolute_column = true;
+      start.absolute_row = true;
+      references.push(Area.CellAddressToLabel(start));
+
+      start.absolute_column = true;
+      start.absolute_row = false;
+      references.push(Area.CellAddressToLabel(start));
+
+      start.absolute_column = false;
+      start.absolute_row = true;
+      references.push(Area.CellAddressToLabel(start));
+      
+    }
+    else {
+
+      // case 2
+
+      start.absolute_column = end.absolute_column = false;
+      start.absolute_row = end.absolute_row = false;
+      references.push(Area.CellAddressToLabel(start) + ':' + Area.CellAddressToLabel(end));
+      
+      start.absolute_column = end.absolute_column = true;
+      start.absolute_row = end.absolute_row = true;
+      references.push(Area.CellAddressToLabel(start) + ':' + Area.CellAddressToLabel(end));
+
+      start.absolute_column = end.absolute_column = true;
+      start.absolute_row = end.absolute_row = false;
+      references.push(Area.CellAddressToLabel(start) + ':' + Area.CellAddressToLabel(end));
+
+      start.absolute_column = end.absolute_column = false;
+      start.absolute_row = end.absolute_row = true;
+      references.push(Area.CellAddressToLabel(start) + ':' + Area.CellAddressToLabel(end));
+      
+    }
+
+    // ...other cases TODO...
+
+    return references;
+  }
+
+  private UpdateSelectedArgument(selection: GridSelection, toggle_reference_type = false) {
+
+    // console.info("USA", selection, toggle_reference_type);
 
     // if this is a single merged block, we want to insert it as the
     // root cell and not the range.
@@ -4850,23 +4927,44 @@ export class Grid extends GridBase {
 
     let label = this.model.named.MatchSelection(selection.area, target);
 
+    // this seems like a clumsy way to do it, but for now...
+
+    let typed_reference_list: string[] = [];
+
     if (!label) {
 
       label = selection.area.spreadsheet_label;
       if (data.merge_area && data.merge_area.Equals(selection.area)) {
         label = Area.CellAddressToLabel(data.merge_area.start);
+        typed_reference_list = this.CreateTypedReferences({...data.merge_area.start});
+      }
+      else {
+        typed_reference_list = this.CreateTypedReferences({
+          ...selection.area.start
+        }, {
+          ...selection.area.end
+        });
       }
 
       if (this.external_editor_config || this.active_sheet.id !== this.editing_cell.sheet_id) {
-        const name = this.active_sheet.name;
+        let name = this.active_sheet.name;
+        if (QuotedSheetNameRegex.test(name)) {
+          name = `'${name}'`;
+        }
+        label = name + `!${label}`;
+        typed_reference_list = typed_reference_list.map(entry => name + entry);
 
+        /*
         if (QuotedSheetNameRegex.test(name)) {
           label = `'${name}'!${label}`;
         }
         else {
           label = `${name}!${label}`;
         }
+        */
       }
+
+      // console.info(typed_reference_list);
 
     }
 
@@ -4874,10 +4972,10 @@ export class Grid extends GridBase {
     // for now, we might update that in the future.
 
     if (this.overlay_editor?.editing && this.overlay_editor.selecting) {
-      this.overlay_editor.InsertReference(label);
+      this.overlay_editor.InsertReference(label, toggle_reference_type, typed_reference_list);
     }
     else if (this.formula_bar && this.formula_bar.selecting) {
-      this.formula_bar.InsertReference(label);
+      this.formula_bar.InsertReference(label, toggle_reference_type, typed_reference_list);
     }
     else if (this.external_editor_config) {
 
@@ -5184,6 +5282,23 @@ export class Grid extends GridBase {
     }
     else {
 
+      if (event.key === 'F4') {
+
+        // we're always intercepting f4, although we only actual handle it
+        // if you are selecting a cell.
+        
+        event.stopPropagation();
+        event.preventDefault();
+
+        if (selecting_argument && !selection.empty) {
+          this.UpdateSelectedArgument(selection, true);
+        }
+
+        return;
+
+      }
+      
+      
       // ignore function keys 
       
       if (/^F\d+$/.test(event.key)) {

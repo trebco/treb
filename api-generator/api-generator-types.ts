@@ -34,6 +34,9 @@ export interface Config {
   /** map declaration files directly (by prefix) */
   map: Record<string, string>;
 
+  /** testing */
+  remap: Record<string, string>;
+
   /** turn enums into union types. this helps import. */
   flatten_enums: boolean;
 

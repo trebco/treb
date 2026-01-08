@@ -25,6 +25,7 @@ let config: Config = {
   rename_types: {},
   drop_generics: [],
   map: {},
+  remap: {},
   include: [],
   flatten_enums: false,
 };
@@ -700,7 +701,7 @@ let var_index = 0;
 
 const ReadTypes = async (file: string, types?: string[], origination = 'C', depth = 0, stack: string[] = []): Promise<ReadTypeArgs> => {
 
-  // console.info('read types:', file, types);
+  console.info('read types:', file, types);
 
   if (stack.includes(file)) {
     console.info(file, stack);
@@ -757,6 +758,16 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
     extra_types: {},
     exported_variables: [],
   };
+
+  const RemapFile = ((src: string) => {
+    for (const [key, value] of Object.entries(config.remap)) {
+      src = src.replace(key, value);
+    }
+    return src;
+  });
+
+  console.info("original", file);
+  file = RemapFile(file);
 
   const text = await fs.promises.readFile(file, { encoding: 'utf8' });
   const node = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
@@ -1003,7 +1014,10 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
   for (const key of Object.keys(mapped)) {
 
     let list = mapped[key];
+
     const file_path = RelativeFilePath(key);
+  
+    console.info({key, list, file_path});
 
     // filter types we've already read from this file
     list = list.filter(test => {
