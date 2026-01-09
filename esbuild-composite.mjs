@@ -87,8 +87,9 @@ const build_options = {
     'process.env.BUILD_VERSION': `"${pkg.version}"`,
     'process.env.BUILD_NAME': `"${pkg.name}"`,
   },
-  write: true,
+  write: false,
   plugins: [
+    RewriteIgnoredImports(),
     NotifyPlugin(),
     HTMLPlugin(options),
     SassPlugin(options),
