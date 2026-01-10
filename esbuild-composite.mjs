@@ -4,7 +4,7 @@
 
 import * as esbuild from 'esbuild';
 
-import { SassPlugin, WorkerPlugin, NotifyPlugin, HTMLPlugin, RewriteIgnoredImports, CopyFilesPlugin } from './esbuild-utils.mjs';
+import { SassPlugin, NotifyPlugin, HTMLPlugin, CopyFilesPlugin } from './esbuild-utils.mjs';
 import { promises as fs } from 'fs';
 
 import pkg from './package.json' with { type: 'json' }; 
