@@ -2224,7 +2224,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       // comments
 
       try {
-        mod = await import(`esbuild-ignore-import:./languages/treb-i18n-${language}.mjs`);
+        const path = `./languages/treb-i18n-${language}.mjs`;
+        mod = await import(path);
       }
       catch (err) {
         console.error(err);
