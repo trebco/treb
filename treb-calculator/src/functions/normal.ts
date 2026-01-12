@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License along 
  * with TREB. If not, see <https://www.gnu.org/licenses/>. 
  *
- * Copyright 2022-2025 trebco, llc. 
+ * Copyright 2022-2026 trebco, llc. 
  * info@treb.app
  * 
  */
