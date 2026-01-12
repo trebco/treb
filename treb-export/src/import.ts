@@ -294,6 +294,27 @@ export class Importer {
 
                   unit.name = TrimPrefixes(unit.name);
 
+                  // excel export may be translating dynamic range references 
+                  // (e.g D2#) to `ANCHORARRAY(D2)`. this is for compatibility
+                  // with older versions of excel, I guess? 
+
+                  // we can translate these but let's be conservative here and
+                  // start with just ANCHORARRAY taking a single address -- 
+                  // that we know we can handle. 
+
+                  // so for example, if the formula is `=SUM(ANCHORARRAY(D2))`
+                  // we can translate that to explicitly `=SUM(D2#)`. in our
+                  // scheme that's just the address plus a flag bit indicating
+                  // "take the full dynamic array range".
+
+                  if (unit.name === 'ANCHORARRAY') {
+                    if (unit.args.length === 1 && unit.args[0].type === 'address') {
+                      return {
+                        ...(unit.args[0]), spill: true,
+                      }
+                    }
+                  }
+
                   /*
                   if (/^_xll\./.test(unit.name)) {
                     unit.name = unit.name.substring(5);
