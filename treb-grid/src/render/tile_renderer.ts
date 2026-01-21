@@ -886,7 +886,8 @@ export class TileRenderer {
         const render_part: RenderTextPart = { 
           width: mt_width, 
           text: part.text, 
-          hidden: part.flag === TextPartFlag.hidden 
+          hidden: part.flag === TextPartFlag.hidden,
+          indent: part.flag === TextPartFlag.indent,
         };
 
         strings.push(render_part);
@@ -1067,7 +1068,7 @@ export class TileRenderer {
 
             max_width = Math.max(max_width, last.width);
 
-            const line_string = line2.map((metric) => {
+            const line_string: RenderTextPart[] = line2.map((metric) => {
               return {
                 ...metric.part,
                 hidden: false, 
@@ -1078,10 +1079,10 @@ export class TileRenderer {
 
             if (style.indent) {
               if (align === 'right') {
-                line_string.push({ text: indent, hidden: false, width: indent_width });
+                line_string.push({ text: indent, hidden: false, width: indent_width, indent: true });
               }
               else if (align === 'left') {
-                line_string.unshift({ text: indent, hidden: false, width: indent_width });
+                line_string.unshift({ text: indent, hidden: false, width: indent_width, indent: true });
               }
             }
 
@@ -1100,6 +1101,7 @@ export class TileRenderer {
         for (const line of md) {
           const parts: RenderTextPart[] = [];
 
+          /*
           if (style.indent) {
             if (align === 'right') {
               line.push({ text: indent });
@@ -1108,8 +1110,25 @@ export class TileRenderer {
               line.unshift({ text: indent });
             }
           }
+          */
 
           let line_width = 0;
+          let indent_width = 0;
+
+          if (style.indent) {
+            context.font = fonts.base;
+            indent_width = context.measureText(indent).width;
+          }
+
+          if (style.indent && align === 'left') {
+            line_width += indent_width;
+            parts.push({
+              text: indent,
+              hidden: false,
+              width: indent_width,
+              indent: true,
+            });
+          }
 
           for (const element of line) {
 
@@ -1137,6 +1156,16 @@ export class TileRenderer {
               width,
             });
 
+          }
+
+          if (style.indent && align === 'right') {
+            line_width += indent_width;
+            parts.push({
+              text: indent,
+              hidden: false,
+              width: indent_width,
+              indent: true,
+            });
           }
 
           max_width = Math.max(max_width, line_width);
@@ -2211,12 +2240,12 @@ export class TileRenderer {
               context.fillText(part.text, x, baseline);
             }
 
-            if (style.underline) {
+            if (style.underline && !part.indent) {
               context.moveTo(x, underline_y);
               context.lineTo(x + part.width, underline_y);
             }
             
-            if (style.strike || part.strike) {
+            if ((style.strike || part.strike) && !part.indent) {
               context.moveTo(x, strike_y);
               context.lineTo(x + part.width, strike_y);
             }

@@ -51,6 +51,12 @@ export interface RenderTextPart {
   emphasis?: boolean;
   strike?: boolean;
 
+  // indent is just text here but we need to omit 
+  // underline and strikethrough on this part, so 
+  // we need to track it
+
+  indent?: boolean;
+
 }
 
 export interface PreparedText {
