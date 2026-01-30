@@ -214,6 +214,12 @@ export interface FocusViewEvent {
   type: 'focus-view';
 }
 
+/** event sent when the loaded language changes (FIXME: should we include the locale?) */
+export interface LanguageChangeEvent {
+  type: 'language-change';
+}
+
+
 /**
  * EmbeddedSheetEvent is a discriminated union. Switch on the `type` field
  * of the event.
@@ -228,6 +234,7 @@ export type EmbeddedSheetEvent
   | FocusViewEvent
   | SelectionEvent
   | ResizeEvent
+  | LanguageChangeEvent
   | AnnotationSelectionEvent
   ;
 

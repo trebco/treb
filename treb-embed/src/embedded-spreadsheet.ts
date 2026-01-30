@@ -2244,6 +2244,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     this.grid.Update(true);
     this.UpdateAC();
 
+    this.Publish({
+      type: 'language-change',
+    });
+
   }
 
   /**
