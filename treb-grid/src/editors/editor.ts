@@ -598,8 +598,6 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
       }
     }
 
-    console.info("IX", {indexes});
-
     // FIXME: compare against current and short-circuit
 
     // console.info({map, indexes});
