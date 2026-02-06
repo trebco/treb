@@ -590,13 +590,15 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     for (const support of this.nodes) {
       for (const area of support.references || []) {
-        const label = this.model.AddressToLabel(area);
+        const label = this.model.AddressToLabel(area, true);
         if (!map.has(label)) {
           map.set(label, area);
           indexes.set(label, indexes.size);
         }
       }
     }
+
+    console.info("IX", {indexes});
 
     // FIXME: compare against current and short-circuit
 
@@ -742,7 +744,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     for (const entry of reference_list) {
 
-      const label = this.model.AddressToLabel(entry); // , this.view.active_sheet);
+      const label = this.model.AddressToLabel(entry, true); // , this.view.active_sheet);
       const area = IsCellAddress(entry) ? 
           new Area(entry) : 
           new Area(entry.start, entry.end);
@@ -776,7 +778,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
    * @param options 
    */
   protected UpdateReferences(descriptor: NodeDescriptor, references: Area[] = []) {
-    descriptor.node.dataset.references = JSON.stringify(references.map(entry => this.model.AddressToLabel(entry)));
+    descriptor.node.dataset.references = JSON.stringify(references.map(entry => this.model.AddressToLabel(entry, true)));
     descriptor.references = references;
   }
 

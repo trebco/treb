@@ -395,17 +395,44 @@ export class DataModel {
   }
 
   /**
-   * return an address label for this address (single cell or range)
+   * return an address label for this address (single cell or range).
+   * 
+   * this is doing something unexpected: for dynamic arrays, it seems
+   * to be filling out the full array. this could be an issue with how
+   * we're calling it in the specific case of external editors.
+   * 
+   * there should be no case where this is actually intended, because
+   * the resulting label is garbage. nevertheless, I don't want to change
+   * any existing behavior so we will move it behind a flag and default to 
+   * prior behavior. if necessary later we can change the default/remove the
+   * old behavior.
    * 
    * @param address 
    * @param active_sheet 
    */
-  public AddressToLabel(address: ICellAddress|IArea) {
+  public AddressToLabel(address: ICellAddress|IArea, correct_dynamic_arrays = false) {
 
-    const start = IsCellAddress(address) ? address : address.start;
-    const parts = IsCellAddress(address) ? 
+    let start: ICellAddress;
+    const parts: string[] = [];
+
+    if (IsCellAddress(address)) {
+      start = address;
+      parts.push(Area.CellAddressToLabel(address));
+    }
+    else {
+      start = address.start;
+      parts.push(Area.CellAddressToLabel(address.start));
+      if (!(address.start.spill && correct_dynamic_arrays)) {
+        parts.push(Area.CellAddressToLabel(address.end));
+      }
+    }
+
+    /*
+    const start = is_address ? address : address.start;
+    const parts = is_address ? 
       [Area.CellAddressToLabel(address)] : 
       [Area.CellAddressToLabel(address.start), Area.CellAddressToLabel(address.end)];
+    */
 
     const sheet = this.sheets.Find(start.sheet_id || 0);
     const name = (sheet?.name) ? 

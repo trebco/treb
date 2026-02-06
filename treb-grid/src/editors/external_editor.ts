@@ -34,12 +34,6 @@ export class ExternalEditor extends Editor {
 
   /**
    * attach to a set of nodes (one is fine). 
-   * 
-   * FIXME: since this is not used in subclasses for ICE and formula bar,
-   * perhaps we should move it into a new subclass specifically for 
-   * external editor. we can add some flags as well. TODO/FIXME
-   * 
-   * update modifying how this works. we will now watch focus ourselves.
    */
   public AttachNodes(nodes: HTMLElement[] = [], assume_formula = true) {
 
