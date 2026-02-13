@@ -158,7 +158,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
     description: 'Returns the present value of a series of future cashflows',
     arguments: [
       { name: 'Rate' },
-      { name: 'Cashflow' },
+      { name: 'Cashflow', repeat: true },
     ],
     fn: (rate = 0, ...args: CellValue[]): UnionValue => {
 

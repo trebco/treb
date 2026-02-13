@@ -49,7 +49,7 @@ export const RegexFunctionLibrary: FunctionMap = {
 
       }
     ],
-    fn: (text: string, pattern: string, return_mode = 0, icase = false) => {
+    fn: (text = '', pattern = '', return_mode = 0, icase = false) => {
 
       const args: string[] = [];
       if (icase) {
@@ -59,7 +59,14 @@ export const RegexFunctionLibrary: FunctionMap = {
         args.push('g');
       }
 
-      const rex = new RegExp(pattern, args.length ? args.join('') : undefined);
+      let rex: RegExp|undefined;
+
+      try {
+        rex = new RegExp(pattern, args.length ? args.join('') : undefined);
+      }
+      catch {
+        return ArgumentError();
+      }
 
       switch (return_mode) {
         case 0:
