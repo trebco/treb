@@ -81,6 +81,7 @@ const build_options = {
   splitting: true,
   metafile: true,
   format: 'esm',
+  external: ['*.wasm', 'node:*'],
   define: {
     'process.env.XLSX_SUPPORT': `${options.xlsx_support}`,
     'process.env.NODE_ENV': `"${options.version}"`,
