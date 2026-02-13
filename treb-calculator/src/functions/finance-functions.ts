@@ -24,8 +24,6 @@ import { type CellValue, type UnionValue, ValueType } from 'treb-base-types';
 import { FlattenCellValues } from '../utilities';
 
 import { ArgumentError, ValueError } from '../function-error';
-import { LotusDate, UnlotusDate } from 'treb-format';
-import { ConstructDate, DaysInYear } from './date-utils';
 
 // use a single, static object for base functions
 

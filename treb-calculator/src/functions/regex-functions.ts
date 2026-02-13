@@ -49,7 +49,7 @@ export const RegexFunctionLibrary: FunctionMap = {
 
       }
     ],
-    fn: (text = '', pattern = '', return_mode = 0, icase = false) => {
+    fn: (source_text, pattern = '', return_mode = 0, icase = false) => {
 
       const args: string[] = [];
       if (icase) {
@@ -58,6 +58,8 @@ export const RegexFunctionLibrary: FunctionMap = {
       if (return_mode === 1) {
         args.push('g');
       }
+
+      const text = String(source_text ?? '');
 
       let rex: RegExp|undefined;
 
