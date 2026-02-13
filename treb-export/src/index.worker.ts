@@ -25,7 +25,10 @@ import type { SerializedModel } from 'treb-data-model';
 import { Exporter } from './export';
 import { Importer } from './import';
 
-const ctx: Worker = self as unknown as Worker;
+import { GetWorkerContext } from 'treb-embed/src/worker-proxy';
+
+const ctx = await GetWorkerContext();
+
 const exporter = new Exporter();
 
 const ExportSheets = (data: {

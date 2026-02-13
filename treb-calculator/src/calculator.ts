@@ -148,6 +148,9 @@ export interface CalculatorOptions {
   /** enable spill arrays */
   spill?: boolean;
 
+  /** helpful flag for resource initialization */
+  headless?: boolean;
+
 }
 
 const default_calculator_options: CalculatorOptions = {

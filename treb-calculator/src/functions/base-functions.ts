@@ -2295,7 +2295,11 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Product: {
-      arguments: [{boxed: true}],
+      arguments: [{
+        boxed: true,
+        name: 'values or ranges' ,
+        repeat: true,
+      }],
       fn: (...args: UnionValue[]): UnionValue => {
 
         let product: Complex = { real: 1, imaginary: 0 };

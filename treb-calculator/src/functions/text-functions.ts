@@ -333,6 +333,10 @@ export const TextFunctionLibrary: FunctionMap = {
  /** canonical should be CONCAT; concatenate can be an alias */
  Concat: {
   description: 'Pastes strings together',
+  arguments: [{
+    name: 'text',
+    repeat: true,
+  }],
   fn: (...args: CellValue[]): UnionValue => {
 
     const values = Utils.FlattenCellValues(args);

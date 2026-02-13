@@ -109,6 +109,7 @@ import type { StateLeafVertex } from 'treb-calculator';
  * import type for our worker, plus markup files
  */
 import './content-types.d.ts';
+import { WorkerProxy } from './worker-proxy';
 
 // --- types -------------------------------------------------------------------
 
@@ -475,8 +476,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   /**
    * export worker (no longer using worker-loader).
    * export worker is loaded on demand, not by default.
+   * 
+   * FIXME: type
    */
-  protected export_worker?: Worker;
+  protected export_worker?: WorkerProxy<any>;
 
   /**
    * undo pointer points to the next insert spot. that means that when
@@ -1150,10 +1153,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
     else {
       if (!EmbeddedSpreadsheet.one_time_warnings.headless) {
-        EmbeddedSpreadsheet.one_time_warnings.headless = true;
-        console.info('not initializing layout; don\'t call UI functions');
+
+        // suppress this warning if you explicitly set headless mode
+
+        if (!options.headless) {
+          EmbeddedSpreadsheet.one_time_warnings.headless = true;
+          console.info('not initializing layout; don\'t call UI functions');
+        }
       }
-      // this.grid.headless = true; // ensure
     }
 
     if (options.preload) {
@@ -1307,6 +1314,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     return new Calculator(model, {
       complex_numbers: options.complex,
       spill: options.spill,
+      headless: options.headless,
     });
   }
 
@@ -3110,14 +3118,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     return new Promise<Blob>((resolve, reject) => {
 
       if (this.export_worker) {
-        this.export_worker.onmessage = (event) => {
+        this.export_worker.OnMessage((event) => {
           resolve(event.data ? event.data.blob : undefined);
-        };
-        this.export_worker.onerror = (event) => {
+        });
+        this.export_worker.OnError((event) => {
           console.error('export worker error');
           console.info(event);
           reject(event);
-        };
+        });
 
         if (!serialized) {        
           serialized = this.Serialize({
@@ -3135,7 +3143,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         // why do _we_ put this in, instead of the grid method? 
         serialized.decimal_mark = Localization.decimal_separator;
 
-        this.export_worker.postMessage({
+        this.export_worker.PostMessage({
           command: 'export', 
           sheet: serialized, 
           decorated: this.calculator.DecoratedFunctionList(),
@@ -5115,7 +5123,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           message: 'Importing XLSX...'
         });
 
-        this.export_worker.onmessage = (event) => {
+        this.export_worker.OnMessage((event) => {
           if (event.data) {
 
             if (event.data.status === 'error') {
@@ -5197,15 +5205,18 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
           this.dialog?.HideDialog();
           resolve();
-        };
-        this.export_worker.onerror = (event) => {
+        });
+
+        this.export_worker.OnError((event) => {
           console.error('import worker error');
           console.info(event);
           reject(event);
-        };
-        this.export_worker.postMessage({
+        });
+
+        this.export_worker.PostMessage({
           command: 'import', data,
         });
+
       }
       else {
         reject('worker failed');
@@ -5655,21 +5666,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       }
     }
   }
-
-  /*
-  public SetHeadless(headless = true): void {
-    if (this.grid.headless === headless) {
-      return;
-    }
-
-    this.grid.headless = headless;
-    if (!headless) {
-      this.grid.Update(true);
-      this.RebuildAllAnnotations();
-      // this.InflateAnnotations();
-    }
-  }
-  */
 
   /**
    * this method should be called after changing the headless flag
@@ -6266,12 +6262,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   }
 
-  /* * overloadable for subclasses * /
-  protected InitCalculator(): CalcType {
-    return new Calculator();
-  }
-  */
-
   /**
    * this function is called when the file locale (as indicated by the
    * decimal separator) is different than the current active locale.
@@ -6603,30 +6593,15 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /**
-   * worker now uses a dynamic import with a module built separately.
-   * see `export-worker.ts` (in this directory) for more detail.
+   * switching to worker proxy so we can support node
+   * FIXME: type
    */
-  protected async LoadWorker(): Promise<Worker> {
+  protected async LoadWorker(): Promise<WorkerProxy<any>> {
 
-    const worker = new Worker(new URL('./treb-export-worker.mjs', import.meta.url), { 
-      type: 'module' 
-    });
-
+    const worker = new WorkerProxy();
+    await worker.Init('./treb-export-worker.mjs');
     return worker;
 
-    /*
-    try {
-      const worker = `export`;
-      const mod = await import(`esbuild-ignore-import:./treb-${worker}-worker.mjs`) as {
-        CreateWorker: () => Promise<Worker>;
-      };
-      return await mod.CreateWorker();
-    }
-    catch (err) {
-      console.error(err);
-      throw(err);
-    }
-    */
   }
 
   /**
