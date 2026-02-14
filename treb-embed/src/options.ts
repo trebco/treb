@@ -348,6 +348,9 @@ export interface EmbeddedSpreadsheetOptions {
    */
   // plugins?: TREBPlugin[];
 
+  /** @internal */
+  in_process_workers?: boolean;
+
 }
 
 /**

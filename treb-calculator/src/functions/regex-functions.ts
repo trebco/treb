@@ -160,7 +160,7 @@ export const RegexFunctionLibrary: FunctionMap = {
       if (occurrence === 0) {
         return {
           type: ValueType.string,
-          value: (text as any).replaceAll(rex, replacement), // huh?
+          value: text.replaceAll(rex, replacement), // huh?
         };
       }
 

@@ -109,7 +109,7 @@ import type { StateLeafVertex } from 'treb-calculator';
  * import type for our worker, plus markup files
  */
 import './content-types.d.ts';
-import { WorkerProxy } from './worker-proxy';
+import { CreateWorker, type WorkerProxy } from './worker-proxy';
 
 // --- types -------------------------------------------------------------------
 
@@ -6597,8 +6597,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * FIXME: type
    */
   protected async LoadWorker(): Promise<WorkerProxy<any>> {
-
-    const worker = new WorkerProxy();
+    const worker = CreateWorker<any>(!!this.options.in_process_workers);
     await worker.Init('./treb-export-worker.mjs');
     return worker;
 

@@ -27,6 +27,10 @@ import { Importer } from './import';
 
 import { GetWorkerContext } from 'treb-embed/src/worker-proxy';
 
+export function AttachInProcess() {
+  console.info("AOP");
+}
+
 const ctx = await GetWorkerContext();
 
 const exporter = new Exporter();

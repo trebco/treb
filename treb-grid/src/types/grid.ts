@@ -1293,7 +1293,9 @@ export class Grid extends GridBase {
     // should already be added, right?
 
     for (const element of this.active_sheet.annotations) {
-      this.AddAnnotation(element, true);
+      if (!this.headless) {
+        this.AddAnnotation(element, true);
+      }
     }
 
     // handle any necessary activation tasks
