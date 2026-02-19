@@ -4026,7 +4026,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     this.calculator.Calculate(area);
 
-    if (this.calculator.grid_expanded) {
+    if (this.calculator.grid_expanded && !this.grid.headless) {
       // console.info("GRID EXPANDED");
       this.grid.UpdateLayout();
     }
