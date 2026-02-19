@@ -55,6 +55,10 @@ export interface PrecisionToolbarMessage {
   command: 'increase-precision'|'decrease-precision';
 }
 
+export interface GroupingToolbarMessage {
+  command: 'toggle-grouping';
+}
+
 export interface IOToolbarMessage {
   command: 'import-file'|'export-xlsx'|'save-json'|'save-csv';
 }
@@ -122,6 +126,7 @@ export type ToolbarMessage
   | UIToolbarMessage
   | MergeToolbarMessage
   | BorderToolbarMessage
+  | GroupingToolbarMessage
   | LayoutToolbarMessage
   | AnnotationToolbarMessage
   | PrecisionToolbarMessage

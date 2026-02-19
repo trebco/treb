@@ -1910,6 +1910,17 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         case 'insert-scatter-plot': insert_annotation('Scatter.Plot'); break;
         case 'insert-box-plot': insert_annotation('Box.Plot'); break;
 
+        case 'toggle-grouping':
+          if (this.selection_state?.style) {
+            const format = NumberFormatCache.Get(this.selection_state.style.number_format || 'General');
+            if (format.date_format) { break; }
+            const clone = new NumberFormat(format.pattern);
+            clone.ToggleGrouping();
+            const rendered = clone.toString();
+            updated_style.number_format = NumberFormatCache.SymbolicName(rendered) || rendered;
+          }
+          break;
+
         case 'increase-precision':
         case 'decrease-precision':
           if (this.selection_state?.style) {
@@ -1919,81 +1930,18 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
             const clone = new NumberFormat(format.pattern);
 
-            // special case: from general, we want to go to a relative number...
-            // for that to work, we need a (the first) value... then go from there.
-
-            // NOTE: this isn't really the way to identify this, we only want
-            // to do this if the style === 'General'. 
-
-            /*
-            if (format.magic_decimal) {
-
-              // but what we're doing here, if there's a magic decimal, is
-              // measuring the decimal part of the first number we find. then
-              // we increase/decrease from that.
-
-              let len = 0;
-              let rng = this.GetRange();
-              
-              // find the first number...
-
-              if (!Array.isArray(rng)) {
-                rng = [[rng]];
-              }
-
-              find_number:
-              for (let i = 0; i < rng.length; i++) {
-                for (let j = 0; j < rng[i].length; j++) {
-                  const value = rng[i][j];
-
-                  if (typeof value !== 'undefined' && IsComplex(value)) {
-
-                    // find the longer of the two, use that as base
-
-                    //const f2 = NumberFormatCache.Get(this.active_selection_style.number_format || 'General', true);
-                    const f2 = NumberFormatCache.Get(this.selection_state.style.number_format || 'General', true);
-                    const real_parts = f2.BaseFormat(value.real);
-                    const imaginary_parts = f2.BaseFormat(value.imaginary);
-
-                    if (real_parts.parts && typeof real_parts.parts[1] === 'string') {
-                      len = real_parts.parts[1].length;
-                    }
-                    if (imaginary_parts.parts && typeof imaginary_parts.parts[1] === 'string') {
-                      len = Math.max(len, imaginary_parts.parts[1].length);
-                    }
-                    
-                    break find_number;
-
-                  }
-                  else if (typeof value === 'number') {
-                    const parts = format.BaseFormat(value);
-                    if (parts.parts && typeof parts.parts[1] === 'string') {
-                      len = parts.parts[1].length;
-                    }
-                    break find_number;
-                  }
-                }
-              }
-
-              if (event.command === 'increase-precision') {
-                clone.SetDecimal(len + 1);
-              }
-              else {
-                clone.SetDecimal(Math.max(0, len - 1));
-              }
-              
+            if (event.command === 'increase-precision' ) {
+              clone.IncreaseDecimal();
             }
-            else 
-              */
-            {
-              if (event.command === 'increase-precision' ) {
-                clone.IncreaseDecimal();
-              }
-              else {
-                clone.DecreaseDecimal();
-              }
+            else {
+              clone.DecreaseDecimal();
             }
-            updated_style.number_format = clone.toString();
+
+            // try to resolve this to a standard format, if possible
+
+            const rendered = clone.toString();
+            updated_style.number_format = NumberFormatCache.SymbolicName(rendered) || rendered;
+
           }
           break;
 
