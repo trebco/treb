@@ -125,8 +125,8 @@ export class NumberFormat {
   public static minus_character = '-'; // hyphen
   // public static minus_character = '−'; // minus
 
-  /** for the "General" format, a magic decimal point */
-  public magic_decimal = false;
+  /* * for the "General" format, a magic decimal point */
+  // public magic_decimal = false;
 
   /**
    * (testing) transformer. this is not rendered or persisted, like magic
@@ -595,11 +595,11 @@ export class NumberFormat {
     }
     else {
 
-      // magic 
-
+      /*      
       if (this.magic_decimal && parts[1] === '') {
         parts.splice(1, 1);
       }
+      */
 
       text_parts = [
         ...(section.prefix.map((text_part) => {
@@ -936,7 +936,14 @@ export class NumberFormat {
 
     const parts = representation.split('.');
 
+    if (parts.length === 2 && parts[1] === '' && section.decimal_min_digits === 0) {
+      parts.splice(1, 1);
+    }
+
     while (parts[0].length < section.integer_min_digits) {
+
+      // this is sloppy
+
       parts[0] = ('0000000000000000' + parts[0]).slice(-section.integer_min_digits);
     }
 

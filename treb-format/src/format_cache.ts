@@ -169,12 +169,12 @@ export class NumberFormatCache {
     // we're doing this to hide it, but we might as well allow it
     // since js interfaces will find it regardless
 
-    this.cache['General'].magic_decimal = true;
+    // this.cache['General'].magic_decimal = true;
 
     // special general type for complex has fewer digits by default
 
     this.complex_general = new NumberFormat('0.###');
-    this.complex_general.magic_decimal = true;
+    // this.complex_general.magic_decimal = true;
 
     for (const key of Object.keys(this.aliases)) {
       this.cache[key] = this.cache[this.aliases[key]];
