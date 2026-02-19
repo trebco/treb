@@ -1925,7 +1925,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             // NOTE: this isn't really the way to identify this, we only want
             // to do this if the style === 'General'. 
 
-            if (false) { /* if (format.magic_decimal) {
+            /*
+            if (format.magic_decimal) {
 
               // but what we're doing here, if there's a magic decimal, is
               // measuring the decimal part of the first number we find. then
@@ -1980,9 +1981,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
               else {
                 clone.SetDecimal(Math.max(0, len - 1));
               }
-              */
+              
             }
-            else {
+            else 
+              */
+            {
               if (event.command === 'increase-precision' ) {
                 clone.IncreaseDecimal();
               }
