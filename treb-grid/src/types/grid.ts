@@ -79,7 +79,7 @@ import { GridLayout } from '../layout/grid_layout';
 import { OverlayEditor } from '../editors/overlay_editor';
 
 import { TileRenderer } from '../render/tile_renderer';
-import type { GridEvent } from './grid_events';
+import type { GridEvent, GridSelectionEvent } from './grid_events';
 import { ErrorCode } from './grid_events';
 
 import type { 
@@ -2842,10 +2842,10 @@ export class Grid extends GridBase {
       if (candidate.selection && !candidate.selection.empty) {
         this.Select(this.primary_selection,
           new Area(candidate.selection.area.start, candidate.selection.area.end),
-          candidate.selection.target);
+          candidate.selection.target, undefined, 'sheet-change');
       }
       else {
-        this.ClearSelection(this.primary_selection);
+        this.ClearSelection(this.primary_selection, 'sheet-change');
       }
 
     }
@@ -6822,8 +6822,8 @@ export class Grid extends GridBase {
   /**
    * utility method, internally calls Select with an undefined area
    */
-  private ClearSelection(selection: GridSelection) {
-    this.Select(selection);
+  private ClearSelection(selection: GridSelection, reason?: GridSelectionEvent['reason']) {
+    this.Select(selection, undefined, undefined, undefined, reason);
   }
 
   private HideGridSelection() {
@@ -6857,7 +6857,7 @@ export class Grid extends GridBase {
    * cell of the selection area
    * @param preserve_target preserve existing selection target
    */
-  private Select(selection: GridSelection, area?: Area, target?: ICellAddress, preserve_target = false) {
+  private Select(selection: GridSelection, area?: Area, target?: ICellAddress, preserve_target = false, reason?: GridSelectionEvent['reason']) {
 
     if (!selection.empty) {
       if (preserve_target) target = selection.target;
@@ -6942,12 +6942,10 @@ export class Grid extends GridBase {
       // FIXME: drop support for old edge
       if (UA.is_edge) { this.Focus(); }
 
-      console.info("Marko");
-      console.trace();
-
       this.grid_events.Publish({
         type: 'selection',
         selection: this.primary_selection,
+        reason,
       });
 
       this.UpdateAddressLabel();

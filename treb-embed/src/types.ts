@@ -196,6 +196,7 @@ export interface DocumentChangeEvent {
  */
 export interface SelectionEvent {
   type: 'selection';
+  reason?: 'sheet-change';
 }
 
 /**

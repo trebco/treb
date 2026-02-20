@@ -53,6 +53,7 @@ export interface SheetChangeEvent {
 export interface GridSelectionEvent {
   type: 'selection';
   selection: GridSelection;
+  reason?: 'sheet-change';
 }
 
 export interface GridAlternateSelectionEvent {

@@ -26,6 +26,7 @@ import type {
   SheetChangeEvent, GridOptions, 
   CellEvent, FunctionDescriptor, 
   ExternalEditorConfig,
+  GridSelectionEvent,
 } from 'treb-grid';
 
 import { DataModel, Sheet, StandardGradientsList } from 'treb-data-model';
@@ -92,7 +93,7 @@ import { NumberFormatCache, ValueParser, NumberFormat, LotusDate, UnlotusDate } 
 import { Dialog, DialogType } from './progress-dialog';
 import { Spinner } from './spinner';
 import { type EmbeddedSpreadsheetOptions, DefaultOptions, type ExportOptions } from './options';
-import { type TREBDocument, SaveFileType, LoadSource, type EmbeddedSheetEvent, type InsertTableOptions } from './types';
+import { type TREBDocument, SaveFileType, LoadSource, type EmbeddedSheetEvent, type InsertTableOptions, type SelectionEvent } from './types';
 
 import type { SelectionState } from './selection-state';
 import type { BorderToolbarMessage, ToolbarMessage } from './toolbar-message';
@@ -989,7 +990,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
           case 'selection':
             // console.info('selection event');
-            this.UpdateSelection(event.selection);
+            this.UpdateSelection(event.selection, event.reason);
             this.UpdateSelectionStyle(event.selection);
             break;
 
@@ -6092,14 +6093,19 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * we can also use this to better manage selection in the undo system...
    * 
    */
-  protected UpdateSelection(selection: GridSelection): void {
+  protected UpdateSelection(selection: GridSelection, reason?: GridSelectionEvent['reason']): void {
 
     // console.info("US", JSON.stringify(selection));
 
     // cache for undo
     this.last_selection = JSON.stringify(selection);
 
-    this.Publish({ type: 'selection' });
+    const event: SelectionEvent = { type: 'selection' };
+    if (reason === 'sheet-change') {
+      event.reason = reason;
+    }
+
+    this.Publish(event);
   }
 
   /** update selection style for the toolbar, when an annotation is selected. */
