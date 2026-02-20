@@ -2838,12 +2838,14 @@ export class Grid extends GridBase {
     // effects of clearing the formula bar and so on
 
     if (!selecting_argument) {
-      this.ClearSelection(this.primary_selection);
 
       if (candidate.selection && !candidate.selection.empty) {
         this.Select(this.primary_selection,
           new Area(candidate.selection.area.start, candidate.selection.area.end),
           candidate.selection.target);
+      }
+      else {
+        this.ClearSelection(this.primary_selection);
       }
 
     }
@@ -6939,6 +6941,9 @@ export class Grid extends GridBase {
 
       // FIXME: drop support for old edge
       if (UA.is_edge) { this.Focus(); }
+
+      console.info("Marko");
+      console.trace();
 
       this.grid_events.Publish({
         type: 'selection',
