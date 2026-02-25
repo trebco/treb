@@ -31,72 +31,77 @@ export function AttachInProcess() {
   console.info("AOP");
 }
 
-const ctx = await GetWorkerContext();
+// avoid top-level await so we can support older js engines
 
-const exporter = new Exporter();
+GetWorkerContext().then(ctx => {
 
-const ExportSheets = (data: {
-  sheet: SerializedModel,
-  decorated: Record<string, string>,
-}) => {
+  const exporter = new Exporter();
 
-  if (data.sheet) {
-    exporter.Init(data.decorated || []);
-    exporter.Export(data.sheet);
-    ctx.postMessage({ status: 'complete', blob: exporter.Blob() });
-  }
+  const ExportSheets = (data: {
+    sheet: SerializedModel,
+    decorated: Record<string, string>,
+  }) => {
 
-};
-
-const ImportSheet = (data: { data: ArrayBuffer }) => {
-
-  const importer = new Importer();
-
-  try {
-    importer.Init(data.data);
-
-    const named = importer.workbook?.GetNamedRanges();
-
-    const count = importer.SheetCount();
-    const results = {
-      sheets: [] as ImportedSheetData[],
-      named,
-      active_tab: importer.workbook?.active_tab,
-    };
-
-    for (let i = 0; i < count; i++) {
-      const result = importer.GetSheet(i);
-      if (result) {
-        results.sheets.push(result);
-      }
+    if (data.sheet) {
+      exporter.Init(data.decorated || []);
+      exporter.Export(data.sheet);
+      ctx.postMessage({ status: 'complete', blob: exporter.Blob() });
     }
 
-    for (const entry of named || []) {
-      if (typeof entry.local_scope === 'number') {
-        const sheet = results.sheets[entry.local_scope];
-        if (sheet) {
-          entry.scope = sheet.name;
+  };
+
+  const ImportSheet = (data: { data: ArrayBuffer }) => {
+
+    const importer = new Importer();
+
+    try {
+      importer.Init(data.data);
+
+      const named = importer.workbook?.GetNamedRanges();
+
+      const count = importer.SheetCount();
+      const results = {
+        sheets: [] as ImportedSheetData[],
+        named,
+        active_tab: importer.workbook?.active_tab,
+      };
+
+      for (let i = 0; i < count; i++) {
+        const result = importer.GetSheet(i);
+        if (result) {
+          results.sheets.push(result);
         }
       }
+
+      for (const entry of named || []) {
+        if (typeof entry.local_scope === 'number') {
+          const sheet = results.sheets[entry.local_scope];
+          if (sheet) {
+            entry.scope = sheet.name;
+          }
+        }
+      }
+
+      ctx.postMessage({ status: 'complete', results });
+
+    }
+    catch (err) {
+      console.warn('error importing xlsx file');
+      console.info(err);
+      ctx.postMessage({ status: 'error', data: err });
     }
 
-    ctx.postMessage({ status: 'complete', results });
+  };
 
-  }
-  catch (err) {
-    console.warn('error importing xlsx file');
-    console.info(err);
-    ctx.postMessage({ status: 'error', data: err });
-  }
+  // initialize message handler
+  ctx.addEventListener('message', (event) => {
+    if (event.data && event.data.command === 'export'){
+      ExportSheets(event.data as { sheet: SerializedModel, decorated: Record<string, string>});
+    }
+    else if (event.data && event.data.command === 'import'){
+      ImportSheet(event.data as { data: ArrayBuffer });
+    }
+  });
 
-};
-
-// initialize message handler
-ctx.addEventListener('message', (event) => {
-  if (event.data && event.data.command === 'export'){
-    ExportSheets(event.data as { sheet: SerializedModel, decorated: Record<string, string>});
-  }
-  else if (event.data && event.data.command === 'import'){
-    ImportSheet(event.data as { data: ArrayBuffer });
-  }
 });
+

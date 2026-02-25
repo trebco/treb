@@ -37,6 +37,9 @@ export const LambdaFunctionLibrary: FunctionMap = {
       { name: 'Function', boxed: true, passthrough: true },
     ],
 
+    // pass through render/click functions
+    pass_through_ui: 'indirect',
+
     fn: (...args: ExpressionUnit[]) => {
       return {
         type: ValueType.function, 

@@ -34,7 +34,7 @@ export interface WorkerProxy<TX, RX = TX> {
   Terminate: () => void;
 
   /** initialize, possibly loading code */
-  Init: (url: string) => Promise<void>;
+  Init: (url: string, browser_init_method: () => Worker) => Promise<void>;
 
   /** wrapper for postMessage */
   PostMessage: (message: TX) => void;
@@ -59,10 +59,34 @@ export class WorkerProxyBrowser<TX, RX=TX> implements WorkerProxy<TX, RX> {
     this.worker?.terminate();
   }
 
-  public async Init(url: string) {
+  /**
+   * OK this changed to support svelte/vite/I guess it's rollup under 
+   * the hood. whatever the tool is to does static analysis and it has
+   * to see the pattern loaded in order to bundle the worker module. so
+   * we play ball. this is not a good situation.
+   * 
+   * the browser init method should look something like this:
+   * 
+   * () => {
+   *    return new Worker(new URL(url, import.meta.url), { 
+   *       type: 'module' 
+   *    }) as Worker;
+   * }
+   * 
+   * so that the code analyzer will see it.
+   * 
+   * @param url 
+   * @param browser_init_method 
+   */
+  public async Init(url: string, browser_init_method: () => Worker) {
+    this.worker = browser_init_method();
+
+    /*
     this.worker = new Worker(new URL(url, import.meta.url), { 
       type: 'module' 
     }) as Worker;
+    */
+
   }
 
   public PostMessage(message: TX) {

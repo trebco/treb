@@ -36,7 +36,7 @@ import * as Utilities from './utilities';
 import { StringUnion } from './utilities';
 
 import { FunctionLibrary } from './function-library';
-import type { FunctionMap } from './descriptors';
+import type { ExtendedFunctionDescriptor, FunctionMap } from './descriptors';
 // import * as Utils from './utilities';
 
 import { AltFunctionLibrary, BaseFunctionLibrary } from './functions/base-functions';
@@ -3181,30 +3181,126 @@ export class Calculator extends Graph {
 
       if (parse_result.expression) {
 
-        // FIXME: move macro function parsing here; so that we don't
-        // need special call semantics, and dependencies work as normal.
+        // some functions have UI - render and/or click. we want to attach
+        // those to the cell. this is complicated in the case of lambdas.
 
-        // NOTE: the problem with that is you have to deep-parse every function,
-        // here, to look for macros. that might be OK, but the alternative is
-        // just to calculate them on demand, which seems a lot more efficient
+        // case 1: library function. check directly.
+        // case 2: inline lambda. check the last parameter.
+        // case 3: indirect lambda (implicit-call), also
+        // case 4: named lambda: resolve, then handle like a lambda.
 
-        // TEMP removing old macro handling
-        // const modified = this.ApplyMacroFunctions(parse_result.expression);
-        // if (modified) { parse_result.expression = modified; }
+        // AND NOTE, these could be nested... ?
 
-        // ...
+        // case 5: this is _not_ a pass through situation: an explicit call 
+        //         to lambda, which just defines a function.
 
-        if (parse_result.expression.type === 'call') {
-          const func = this.library.Get(parse_result.expression.name);
+        let descriptor: ExtendedFunctionDescriptor|undefined;
+        let base: ExpressionUnit|undefined = parse_result.expression;
 
-          // this is for sparklines and checkboxes atm
+        if (base?.type === 'implicit-call') {
 
-          if (func && (func.render || func.click)) {
-            cell.render_function = func.render;
-            cell.click_function = func.click;
+          // if this is a function, it's easy
+
+          if (base.call.type === 'call') {
+            base = base.call;
+          }
+          else { // else if (base.call.type === 'address') {
+           
+            // if this is an address, we'll have to resolve it...
+            // I don't _think_ we need to handle any other types here 
+            // TODO/FIXME
+
+          }
+        }
+        else if (base?.type === 'call' ){
+
+          // handle case 5. top-level call, but indirect. this is the 
+          // case for lambdas defined in cell functions but not _called_
+
+          descriptor = this.library.Get(base.name);
+          if (descriptor?.pass_through_ui === 'indirect') {
+            base = undefined;
           }
 
         }
+
+        while (base?.type === 'call') {
+
+          descriptor = this.library.Get(base.name);
+          if (descriptor) {
+            if (descriptor.pass_through_ui && base.args.length) {
+              base = base.args[base.args.length - 1];
+            }
+            else {
+              break;
+            }
+          }
+          else {
+            const named = this.model.GetName(base.name, address.sheet_id);
+            if (named?.type === 'expression') {
+              base = named.expression;
+            }
+            else {
+              break;
+            }
+          }
+        }
+
+        if (descriptor) {
+          cell.render_function = descriptor.render;
+          cell.click_function = descriptor.click;
+        }
+
+        /*
+        if (parse_result.expression.type === 'call') {
+
+          descriptor = this.library.Get(parse_result.expression.name);
+          if (!descriptor) {
+            const named = this.model.GetName(parse_result.expression.name, address.sheet_id);
+            if (named?.type === 'expression' && named.expression.type === 'call') {
+              descriptor = this.library.Get(named.expression.name);
+              console.info("D", descriptor);
+            }
+          }
+
+          if (descriptor) {
+            cell.render_function = descriptor.render;
+            cell.click_function = descriptor.click;
+          }
+
+        }
+        */
+
+        /*
+        if (parse_result.expression.type === 'call') {
+          const func = this.library.Get(parse_result.expression.name);
+          if (func) {
+
+            cell.render_function = func.render;
+            cell.click_function = func.click;
+
+            if (func.pass_through_ui) {
+              // ...
+            }
+
+          }
+          else {
+            const named = this.model.GetName(parse_result.expression.name, address.sheet_id);
+            if (named?.type === 'expression') {
+              if (named.expression.type === 'call') {
+                const func = this.library.Get(named.expression.name);
+                if (func?.pass_through_ui && named.expression.args.length) {
+
+                  // check the _last_ argument
+                  const last = named.expression.args[named.expression.args.length - 1];
+                  console.info({last});
+
+                }
+              }
+            }
+          }
+        }
+        */
 
         const dependencies = this.RebuildDependencies(parse_result.expression, address.sheet_id, '', undefined, address); // cell.sheet_id);
 

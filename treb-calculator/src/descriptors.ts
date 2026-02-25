@@ -218,6 +218,14 @@ export interface CompositeFunctionDescriptor {
   export?: (...args: any[]) => string;
 
   /**
+   * pass through UI functions, if possible. this is for lambda and let; we
+   * want to pass through sparklines, if a sparkline is the first function call
+   * 
+   * @internal
+   */
+  pass_through_ui?: 'direct' | 'indirect';
+
+  /**
    * flag indicating we've unrolled this function. it's possible functions
    * will run through the registration process more than once and we don't
    * want to have extra depth.

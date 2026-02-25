@@ -6555,7 +6555,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    */
   protected async LoadWorker(): Promise<WorkerProxy<any>> {
     const worker = CreateWorker<any>(!!this.options.in_process_workers);
-    await worker.Init('./treb-export-worker.mjs');
+    await worker.Init('./treb-export-worker.mjs', () => {
+      return new Worker(new URL('./treb-export-worker.mjs', import.meta.url), { 
+        type: 'module' 
+    }) as Worker;
+    });
     return worker;
 
   }
