@@ -19,7 +19,10 @@
  * 
  */
 
-import { XMLUtils } from './xml-utils';
+import * as OOXML from 'ooxml-types';
+import { IterateTags } from './ooxml';
+
+// import { XMLUtils } from './xml-utils';
 
 /**
  * https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.spreadsheet.metadatarecord?view=openxml-3.0.1
@@ -139,8 +142,7 @@ export const LookupMetadata = (source: Metadata, type: 'cell'|'value', index: nu
 
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const ParseMetadataXML = (xml: any): Metadata => {
+export const ParseMetadataXML = (root: OOXML.Metadata): Metadata => {
 
   const metadata: Metadata = {
     metadata_types: [],
@@ -148,6 +150,17 @@ export const ParseMetadataXML = (xml: any): Metadata => {
     future_metadata: {},
   };
 
+  IterateTags(root.metadataTypes, metadataTypes => {
+    IterateTags(metadataTypes.metadataType, entry => {
+      const name: string = entry.$attributes?.name || '';
+      const cell_meta = !!entry.$attributes?.cellMeta;
+      metadata.metadata_types.push({ 
+        name, cell_meta 
+      });
+    });
+  });
+
+  /*
   const metadata_types = XMLUtils.FindAll(xml, 'metadata/metadataTypes/metadataType');
   for (const entry of metadata_types) {
 
@@ -160,7 +173,26 @@ export const ParseMetadataXML = (xml: any): Metadata => {
     });
 
   }
+  */
 
+  IterateTags(root.futureMetadata, entry => {
+    const name = entry.$attributes?.name;
+    if (name) {
+      const future_metadata_list: FutureMetadata[] = [];
+      IterateTags(entry.bk, bk => {
+        const future_metadata: FutureMetadata = { flags: {} };
+        IterateTags(bk.extLst?.ext, ext => {
+          if (ext.dynamicArrayProperties?.$attributes?.fDynamic) {
+            future_metadata.flags['dynamic-array'] = true;
+          }
+        });
+        future_metadata_list.push(future_metadata);
+      });
+      metadata.future_metadata[name] = future_metadata_list;
+    }
+  });
+
+  /*
   const future_metadata_blocks = XMLUtils.FindAll(xml, 'metadata/futureMetadata');
   for (const entry of future_metadata_blocks) {
 
@@ -193,13 +225,28 @@ export const ParseMetadataXML = (xml: any): Metadata => {
 
     }
   }
+  */
 
+  IterateTags(root.cellMetadata, cellMetadata => {
+    IterateTags(cellMetadata.bk, bk => {
+      IterateTags(bk.rc, rc => {
+        if (rc.$attributes) {
+          metadata.cell_metadata.push({
+            ...rc.$attributes
+          })
+        }
+      });
+    });
+  });
+
+  /*
   for (const entry of XMLUtils.FindAll(xml, 'metadata/cellMetadata/bk/rc')) {
     metadata.cell_metadata.push({
       t: Number(entry.a$?.t || -1),
       v: Number(entry.a$?.v || -1),
     });
   }
+  */
 
   // console.info({metadata});
 

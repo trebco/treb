@@ -35,7 +35,7 @@ import type { SerializedValueType } from 'treb-base-types';
 import type { Sheet} from './workbook-sheet';
 import { VisibleState } from './workbook-sheet';
 import type { CellAnchor } from './drawing/drawing';
-import { type GenericDOMElement, XMLUtils } from './xml-utils';
+// import { type GenericDOMElement, XMLUtils } from './xml-utils';
 
 // import { one_hundred_pixels } from './constants';
 import { ColumnWidthToPixels } from './column-width';
@@ -43,6 +43,10 @@ import type { DataValidation, AnnotationType } from 'treb-data-model';
 import { ZipWrapper } from './zip-wrapper';
 import type { ConditionalFormat } from 'treb-data-model';
 import { LookupMetadata, type MetadataFlags } from './metadata';
+
+import * as OOXML from 'ooxml-types';
+import { EnsureArray, FirstTag, IterateTags } from './ooxml';
+
 
 interface SharedFormula {
   row: number;
@@ -53,6 +57,7 @@ interface SharedFormula {
 
 interface SharedFormulaMap { [index: string]: SharedFormula }
 
+/*
 interface CellElementType {
   a$: {
     r?: string;
@@ -121,6 +126,7 @@ interface ConditionalFormatRule {
 const ElementHasTextNode = (test: unknown): test is {t$: string} => {
   return typeof test === 'object' && typeof (test as {$t: string}).$t !== 'undefined';
 }
+*/
 
 export class Importer {
 
@@ -146,7 +152,7 @@ export class Importer {
 
   public ParseCell(
     sheet: Sheet,
-    element: CellElementType,
+    element: OOXML.Cell, // CellElementType,
     shared_formulae: SharedFormulaMap,
     arrays: RangeType[],
     dynamic_arrays: RangeType[],
@@ -156,8 +162,8 @@ export class Importer {
     ): CellParseResult | undefined {
 
     // must have, at minimum, an address (must be a single cell? FIXME)
-    const address_attr = element.a$?.r;
-    if (!address_attr) {
+    const address_attr = element.$attributes?.r;
+    if (address_attr === undefined) {
       console.warn('cell missing address');
       return undefined;
     }
@@ -168,10 +174,10 @@ export class Importer {
       return undefined;
     }
 
-    // new (to us) metadata
+    // metadata
     let metadata_flags: MetadataFlags = {};
-    if (element.a$?.cm) {
-      const cm_index = Number(element.a$?.cm);
+    if (element.$attributes?.cm !== undefined) {
+      const cm_index = element.$attributes.cm;
       if (this.workbook?.metadata) {
         metadata_flags = LookupMetadata(this.workbook.metadata, 'cell', cm_index).flags;
       }
@@ -207,10 +213,10 @@ export class Importer {
 
     // console.info(address, 'e', element, 'm', mapped);
 
-    if (element.a$?.t && element.a$.t === 's') {
-      type = 'string'; // ValueType.string;
-      if (typeof element.v !== 'undefined') {
-        const index = Number(element.v);
+    if (element.$attributes?.t === 's') {
+      type = 'string';
+      if (element.v?.$text !== undefined) {
+        const index = Number(element.v.$text);
         if (!isNaN(index) && sheet.shared_strings) {
           value = sheet.shared_strings.Get(index) || '';
           if (value[0] === '=') { value = '\'' + value; }
@@ -218,14 +224,10 @@ export class Importer {
       }
     }
     else {
-      if (typeof element.f !== 'undefined') {
-        type = 'formula'; // ValueType.formula;
-
-        const formula = (typeof element.f === 'string' ? element.f : element.f.t$) || '';
-
+      if (element.f !== undefined) {
+        type = 'formula'; 
+        const formula = element.f.$text || '';
         if (formula) {
-
-          // console.info("F", formula);
 
           // doing it like this is sloppy (also does not work properly).
           value = '=' + formula.replace(/^_xll\./g, '');
@@ -315,20 +317,6 @@ export class Importer {
                     }
                   }
 
-                  /*
-                  if (/^_xll\./.test(unit.name)) {
-                    unit.name = unit.name.substring(5);
-                  }
-                  if (/^_xlfn\./.test(unit.name)) {
-                    console.info("xlfn:", unit.name);
-                    unit.name = unit.name.substring(6);
-                  }
-                  if (/^_xlws\./.test(unit.name)) {
-                    console.info("xlws:", unit.name);
-                    unit.name = unit.name.substring(6);
-                  }
-                  */
-
                 }
                 return true;
 
@@ -340,20 +328,18 @@ export class Importer {
             }
           }
 
-          if (typeof element.f !== 'string') {
-            if (element.f.a$?.t === 'shared' && element.f.a$.si) {
-              shared_formulae[element.f.a$.si] = {
-                row: address.row - 1,
-                column: address.col - 1,
-                formula: value,
-                parse_result: this.parser.Parse(value),
-              };
-            }
+          if (element.f.$attributes?.t === 'shared' && element.f.$attributes.si !== undefined) {
+            shared_formulae[element.f.$attributes.si] = {
+              row: address.row - 1,
+              column: address.col - 1,
+              formula: value,
+              parse_result: this.parser.Parse(value),
+            };
           }
 
         }
-        else if ((typeof element.f !== 'string') && element.f.a$?.t === 'shared' && element.f.a$.si) {
-          const f = shared_formulae[element.f.a$.si];
+        else if (element.f.$attributes?.t === 'shared' && element.f.$attributes.si !== undefined) {
+          const f = shared_formulae[element.f.$attributes.si];
           if (f) {
             if (f.parse_result.expression) {
               value = '=' + this.parser.Render(f.parse_result.expression, {
@@ -375,8 +361,8 @@ export class Importer {
         // arrays and spill/dynamic arrays
         //
 
-        if (typeof element.f !== 'string' &&  element.f.a$?.t === 'array') {
-          const translated = sheet.TranslateAddress(element.f.a$.ref || '');
+        if (element.f.$attributes?.t === 'array') {
+          const translated = sheet.TranslateAddress(element.f.$attributes.ref ?? '');
 
           // why are we checking "is_range" here? this should be valid 
           // even if the ref attribute is one cell, if it explicitly
@@ -406,31 +392,37 @@ export class Importer {
           }
         }
 
-        if (typeof element.v !== 'undefined') {
+        if (element.v !== undefined) {
 
-          const V = (typeof element.v === 'object') ? element.v?.t$ : element.v;
+          const V = element.v?.$text ?? '';
 
-          const num = Number(V.toString());
+          // FIXME: use parser?
+
+          const num = Number(V);
           if (!isNaN(num)) {
-            calculated_type = 'number'; // ValueType.number;
+            calculated_type = 'number';
             calculated_value = num;
           }
           else {
-            calculated_type = 'string'; // ValueType.string;
-            calculated_value = V.toString();
+            calculated_type = 'string';
+            calculated_value = V;
           }
+
         }
 
       }
-      else if (typeof element.v !== 'undefined') {
-        const num = Number(element.v.toString());
+      else if (element.v !== undefined) {
+
+        // FIXME: use parser?
+
+        const num = Number(element.v.$text || '');
         if (!isNaN(num)) {
-          type = 'number'; // ValueType.number;
+          type = 'number';
           value = num;
         }
         else {
-          type = 'string'; // ValueType.string;
-          value = element.v.toString();
+          type = 'string';
+          value = element.v.$text || '';
         }
       }
     }
@@ -462,8 +454,8 @@ export class Importer {
       result.calculated = calculated_value;
     }
 
-    if (element.a$?.s) {
-      result.style_ref = Number(element.a$.s);
+    if (element.$attributes?.s !== undefined) {
+      result.style_ref = element.$attributes.s;
     }
 
     for (const link of links) {
@@ -543,68 +535,70 @@ export class Importer {
 
   }
 
-  public ParseConditionalFormat(address: RangeType|AddressType, rule: ConditionalFormatRule, extensions?: any[]): ConditionalFormat|ConditionalFormat[]|undefined {
+  public ParseConditionalFormat(
+      address: RangeType|AddressType, 
+      rule: OOXML.CfRule, // ConditionalFormatRule, 
+      extensions: OOXML.X14ConditionalFormatting[] = []): ConditionalFormat|ConditionalFormat[]|undefined {
 
     const area = this.AddressToArea(address);
     const operators = ConditionalFormatOperators;
 
     // console.info({rule});
 
-    switch (rule.a$.type) {
+    switch (rule.$attributes?.type) {
       case 'duplicateValues':
       case 'uniqueValues':
 
         {
           let style = {};
 
-          if (rule.a$.dxfId) {
-            const index = Number(rule.a$.dxfId);
-            if (!isNaN(index)) {
-              style = this.workbook?.style_cache.dxf_styles[index] || {};
-            }
+          if (rule.$attributes.dxfId !== undefined) {
+            style = this.workbook?.style_cache.dxf_styles[rule.$attributes.dxfId] || {};
           }
 
           return {
             type: 'duplicate-values',
             area,
             style,
-            unique: (rule.a$.type === 'uniqueValues'),
-            priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
-
+            unique: (rule.$attributes.type === 'uniqueValues'),
+            priority: rule.$attributes.priority,
           };
+
         }
 
       case 'cellIs':
-        if (rule.a$.operator && (rule.formula || typeof rule.formula === 'number')) {
+        if (rule.$attributes.operator && rule.formula) {
           let style = {};
 
-          if (rule.a$.dxfId) {
-            const index = Number(rule.a$.dxfId);
-            if (!isNaN(index)) {
-              style = this.workbook?.style_cache.dxf_styles[index] || {};
-            }
+          if (rule.$attributes.dxfId !== undefined) {
+            style = this.workbook?.style_cache.dxf_styles[rule.$attributes.dxfId] || {};
           }
 
-          if (rule.a$.operator === 'between') {
-            if (Array.isArray(rule.formula) && rule.formula.length === 2
-                && typeof rule.formula[0] === 'number' && typeof rule.formula[1] === 'number') {
+          if (rule.$attributes.operator === 'between') {
+            if (Array.isArray(rule.formula) && rule.formula.length === 2) { 
+                // && typeof rule.formula[0] === 'number' && typeof rule.formula[1] === 'number') {
+
+              const between: [number, number] = [
+                Number(rule.formula[0]?.$text || ''),
+                Number(rule.formula[1]?.$text || ''),
+              ];
 
               return {
                 type: 'cell-match',
                 expression: '',
-                between: rule.formula, // special case? ugh
+                between, // : rule.formula, // special case? ugh
                 area,
                 style,
-                priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+                priority: rule.$attributes.priority,
               };
 
             }
           }
 
-          const operator = operators[rule.a$.operator || ''];
+          const operator = operators[rule.$attributes.operator || ''];
 
           if (!operator) {
-            console.info('unhandled cellIs operator:', rule.a$.operator, {rule});
+            console.info('unhandled cellIs operator:', rule.$attributes.operator, {rule});
           }
           else {
             return {
@@ -612,7 +606,7 @@ export class Importer {
               expression: operator + ' ' + rule.formula,
               area,
               style,
-              priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+              priority: rule.$attributes.priority,
             };
           }
 
@@ -628,6 +622,10 @@ export class Importer {
 
         if (rule.formula) {
 
+          const first = FirstTag(rule.formula);
+          const formula = first?.$text || '';
+
+          /*
           if (typeof rule.formula !== 'string') {
             if (ElementHasTextNode(rule.formula)) {
 
@@ -643,17 +641,15 @@ export class Importer {
               rule.formula = '';
             }
           }
+          */
 
           let style = {};
           
-          if (rule.a$.dxfId) {
-            const index = Number(rule.a$.dxfId);
-            if (!isNaN(index)) {
-              style = this.workbook?.style_cache.dxf_styles[index] || {};
-            }
+          if (rule.$attributes.dxfId !== undefined) {
+            style = this.workbook?.style_cache.dxf_styles[rule.$attributes.dxfId] || {};
           }
 
-          if (rule.a$.type === 'expression' && (area.start.row !== area.end.row || area.start.column !== area.end.column)) {
+          if (rule.$attributes.type === 'expression' && (area.start.row !== area.end.row || area.start.column !== area.end.column)) {
 
             // (1) this is only required if there are relative references
             //     in the formula. so we could check and short-circuit.
@@ -667,7 +663,7 @@ export class Importer {
             const list: ConditionalFormat[] = [];
             const a2 = new Area(area.start, area.end);
 
-            const parse_result = this.parser.Parse(rule.formula);
+            const parse_result = this.parser.Parse(formula);
             if (parse_result.expression) {
               for (const cell of a2) {
                 const f = this.parser.Render(parse_result.expression, {
@@ -680,7 +676,7 @@ export class Importer {
                   expression: f,
                   style,
                   area: { start: cell, end: cell },
-                  priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+                  priority: rule.$attributes.priority,
                 })
 
                 // console.info(f);
@@ -694,10 +690,10 @@ export class Importer {
 
           return {
             type: 'expression',
-            expression: rule.formula,
+            expression: formula,
             area,
             style,
-            priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
+            priority: rule.$attributes.priority,
           };
 
         }
@@ -705,38 +701,49 @@ export class Importer {
 
       case 'dataBar':
         {
-          const hide_values = (rule.dataBar?.a$?.showValue === '0');
-          let extension: any = undefined;
+          const show_value = rule.dataBar?.$attributes?.showValue ?? true; // default true
 
-          if (rule.extLst?.ext?.['x14:id']) {
-            for (const test of (extensions || [])) {
-              if (test['x14:cfRule']?.a$?.id === rule.extLst.ext['x14:id']) {
-                extension = test;
-                break;
+          // const hide_values = !rule.dataBar?.$attributes?.showValue;
+          // let extension: any = undefined;
+
+          let extension: OOXML.X14ConditionalFormatting|undefined;
+
+          IterateTags(rule.extLst?.ext, ext => {
+            if (ext.id !== undefined) {
+              for (const test of extensions) {
+                return IterateTags(test.cfRule, cfRule => {
+                  if (cfRule.$attributes?.id === ext.id) {
+                    extension = test;
+                    return false;
+                  }
+                });
               }
             }
-            if (!extension) {
-              console.info("conditional format extension not found");
-            }
+          });
+
+          if (!extension) {
+            console.info("conditional format extension not found");
           }
 
-          if (rule.dataBar?.color?.a$?.rgb) {
+          if (rule.dataBar?.color?.$attributes?.rgb) {
 
             let negative: Color|undefined = undefined;
+            const first = FirstTag(extension?.cfRule);
 
-            if (extension?.['x14:cfRule']?.['x14:dataBar']?.['x14:negativeFillColor']?.a$?.rgb) {
-              const rgb = extension['x14:cfRule']['x14:dataBar']['x14:negativeFillColor'].a$.rgb;
+            const rgb = first?.dataBar?.negativeFillColor?.$attributes?.rgb;
+            if (rgb !== undefined) {
               negative = { text: '#' + rgb.toString().substring(2) };
             }
 
-            const fill: Color = { text: '#' + rule.dataBar.color.a$.rgb.substring(2) };
+            const fill: Color = { text: '#' + rule.dataBar.color.$attributes.rgb.substring(2) };
             return {
               type: 'data-bar',
               area,
               fill,
-              hide_values,
+              hide_values: !show_value,
               negative,
             };
+
           }
         }
         break;
@@ -750,17 +757,17 @@ export class Importer {
             const color: Color = {};
 
             const color_element = rule.colorScale.color[index];
-            if (color_element.a$.rgb) {
-              (color as HTMLColor).text = '#' + color_element.a$.rgb.substring(2);
+            if (color_element.$attributes?.rgb) {
+              (color as HTMLColor).text = '#' + color_element.$attributes.rgb.substring(2);
             } 
-            else if (color_element.a$.theme) {
-              (color as ThemeColor).theme = Number(color_element.a$.theme) || 0;
-              if (color_element.a$.tint) {
-                (color as ThemeColor).tint = Math.round(Number(color_element.a$.tint) * 1000) / 1000;
+            else if (color_element.$attributes?.theme) {
+              (color as ThemeColor).theme = Number(color_element.$attributes.theme) || 0;
+              if (color_element.$attributes.tint) {
+                (color as ThemeColor).tint = Math.round(Number(color_element.$attributes.tint) * 1000) / 1000;
               }
             }           
 
-            switch (entry.a$.type) {
+            switch (entry.$attributes?.type) {
               case 'min':
                 value = 0;
                 break;
@@ -770,7 +777,7 @@ export class Importer {
                 break;
 
               case 'percentile':
-                value = (Number(entry.a$.val) || 0) / 100;
+                value = (Number(entry.$attributes.val) || 0) / 100;
                 break;
             }
 
@@ -783,8 +790,7 @@ export class Importer {
             stops,
             color_space: 'RGB',
             area,
-            priority: rule.a$.priority ? Number(rule.a$.priority) : undefined,
-
+            priority: rule.$attributes.priority,
           };
 
         }
@@ -832,25 +838,25 @@ export class Importer {
 
     const annotations: AnchoredAnnotation[] = [];
 
-    const FindAll: <T = GenericDOMElement>(path: string) => T[] = XMLUtils.FindAll.bind(XMLUtils, sheet.sheet_data);
+    // const FindAll: <T = GenericDOMElement>(path: string) => T[] = XMLUtils.FindAll.bind(XMLUtils, sheet.sheet_data);
 
     // tab color
 
-    const tab_color_element = FindAll('worksheet/sheetPr/tabColor');
+    // const tab_color_element = FindAll('worksheet/sheetPr/tabColor');
 
+    const tab_color_element = sheet.root.sheetPr?.tabColor;
     let tab_color: Color|undefined;
     
-    if (tab_color_element?.[0]) {
+    if (tab_color_element) {
 
-      const element = tab_color_element[0];
-      if (element.a$?.theme) {
-        tab_color = { theme: Number(element.a$.theme) };
-        if (element.a$?.tint) {
-          tab_color.tint = Number(element.a$.tint);
+      if (tab_color_element.$attributes?.theme !== undefined) {
+        tab_color = { theme: tab_color_element.$attributes.theme };
+        if (tab_color_element.$attributes.tint !== undefined) {
+          tab_color.tint = tab_color_element.$attributes.tint;
         }
       }
-      if (element.a$?.rgb) {
-        const argb = element.a$.rgb;
+      if (tab_color_element.$attributes?.rgb !== undefined) {
+        const argb = tab_color_element.$attributes.rgb;
         tab_color = {
           text: '#' + (
             argb.length > 6 ?
@@ -863,26 +869,31 @@ export class Importer {
 
     // conditionals 
 
-    const conditional_formatting = FindAll('worksheet/conditionalFormatting');
+    // const conditional_formatting = // FindAll('worksheet/conditionalFormatting');
+    //   sheet.root.conditionalFormatting;
 
     // we might need extensions as well? TODO
+    // const conditional_formattings = FindAll('worksheet/extLst/ext/x14:conditionalFormattings/x14:conditionalFormatting');
 
-    const conditional_formattings = FindAll('worksheet/extLst/ext/x14:conditionalFormattings/x14:conditionalFormatting');
+    const extensions: OOXML.X14ConditionalFormatting[] = [];
+    IterateTags(sheet.root.extLst?.ext, ext => {
+      extensions.push(...EnsureArray(ext.conditionalFormattings?.conditionalFormatting));
+    });
 
-    for (const element of conditional_formatting) {
-      if (element.a$?.sqref ){
+    IterateTags(sheet.root.conditionalFormatting, element => {
+
+      if (element.$attributes?.sqref ){
 
         // FIXME: this attribute might include multiple ranges? e.g.:
         //
         // <conditionalFormatting sqref="B31:I31 B10:E30 G10:I30 F14:F15">
 
-        const parts = element.a$.sqref.split(/\s+/);
+        const parts = element.$attributes.sqref.split(/\s+/);
         for (const part of parts) {
           const area = sheet.TranslateAddress(part);
           if (element.cfRule) {
-            const rules = Array.isArray(element.cfRule) ? element.cfRule : [element.cfRule];
-            for (const rule of rules) {
-              const format = this.ParseConditionalFormat(area, rule as unknown as ConditionalFormatRule, conditional_formattings);
+            IterateTags(element.cfRule, rule => {
+              const format = this.ParseConditionalFormat(area, rule, extensions);
               if (format) {
                 if (Array.isArray(format)) {
                   conditional_formats.push(...format);
@@ -891,36 +902,37 @@ export class Importer {
                   conditional_formats.push(format);
                 }
               }
-            }
+            });
           }
         }
 
       }
-    }
+
+    });
     
     // merges
 
-    const merge_cells = FindAll('worksheet/mergeCells/mergeCell');
+    // const merge_cells = FindAll('worksheet/mergeCells/mergeCell');
 
-    for (const element of merge_cells) {
-      if (element.a$?.ref) {
-        const merge = sheet.TranslateAddress(element.a$.ref);
+    IterateTags(sheet.root.mergeCells?.mergeCell, element => {
+      if (element.$attributes?.ref) {
+        const merge = sheet.TranslateAddress(element.$attributes.ref);
         if (is_range(merge)) {
           merges.push(ShiftRange(merge, -1, -1));
         }
       }
-    }
+    });
 
     // validation
 
-    const validation_entries = FindAll('worksheet/dataValidations/dataValidation');
-    for (const entry of validation_entries) {
-      const type = entry.a$?.type;
-      const ref = entry.a$?.sqref;
-      const formula = entry.formula1;
+    IterateTags(sheet.root.dataValidations?.dataValidation, entry => {
 
-      if (ref && formula && typeof formula === 'string' && type === 'list') {
-        // let address: ICellAddress|undefined;
+      const type = entry.$attributes?.type;
+      const ref = entry.$attributes?.sqref;
+      const formula = entry.formula1?.$text || '';
+
+      if (ref && formula && type === 'list') {
+
         let validation: DataValidation|undefined;
         let parse_result = this.parser.Parse(ref);
         const target: IArea[] = [];
@@ -933,11 +945,9 @@ export class Importer {
 
         if (parse_result.expression) {
           if (parse_result.expression.type === 'address') {
-            // address = parse_result.expression;
             target.push({start: parse_result.expression, end: parse_result.expression});
           }
           else if (parse_result.expression.type === 'range') {
-            // address = parse_result.expression.start;
             target.push(parse_result.expression);
           }
         }
@@ -1012,15 +1022,15 @@ export class Importer {
 
       }
 
-    }
+    });
     
     // links
 
-    const hyperlinks = FindAll('worksheet/hyperlinks/hyperlink');
+    // const hyperlinks = FindAll('worksheet/hyperlinks/hyperlink');
+    // for (const child of hyperlinks) {
+    IterateTags(sheet.root.hyperlinks?.hyperlink, child => {
 
-    for (const child of hyperlinks) {
-
-      let address = sheet.TranslateAddress(child.a$?.ref || '');
+      let address = sheet.TranslateAddress(child.$attributes?.ref || '');
       if (is_range(address)) {
         address = address.from;
       }
@@ -1028,42 +1038,46 @@ export class Importer {
       let text = '';
       let reference = '';
 
-      if (child.a$ && child.a$['r:id']) {
+      if (child.$attributes?.id !== undefined) {
 
         text = 'remote link';
-        const relationship = sheet.rels[child.a$['r:id']];
+        const relationship = sheet.rels[child.$attributes.id];
         if (relationship) {
           reference = relationship.target || '';
         }
 
       }
       else {
+
+        // what's up with these weird attributes? did we change this at
+        // some point and not update this block? (probably)
+
+        /*
         reference = typeof child.__location === 'string' ? child.__location : '';
         text = typeof child.__display === 'string' ? child.__display : '';
+        */
+
+        reference = child.$attributes?.location || '';
+        text = child.$attributes?.display || '';
+        
       }
 
       links.push({ address, reference, text });
-    }
+
+    });
 
     // base
 
     let default_row_height = 21;
     let default_column_width = 100; // ?
 
-    const sheet_format = sheet.sheet_data.worksheet?.sheetFormatPr;
+    const sheet_format = sheet.root.sheetFormatPr;
     if (sheet_format) {
-      if (sheet_format.a$?.defaultColWidth) {
-        const width = Number(sheet_format.a$.defaultColWidth);
-        if (!isNaN(width)) {
-          // default_column_width = Math.round(width / one_hundred_pixels * 100);
-          default_column_width = ColumnWidthToPixels(width);
-        }
+      if (sheet_format.$attributes?.defaultColWidth !== undefined) {
+        default_column_width = ColumnWidthToPixels(sheet_format.$attributes.defaultColWidth);
       }
-      if (sheet_format.a$?.defaultRowHeight) {
-        const height = Number(sheet_format.a$.defaultRowHeight);
-        if (!isNaN(height)) {
-          default_row_height = Math.round(height * 4 / 3); // ??
-        }
+      if (sheet_format.$attributes?.defaultRowHeight) {
+        default_row_height = Math.round((sheet_format.$attributes.defaultRowHeight) * 4 / 3); // ??
       }
     }
 
@@ -1072,30 +1086,24 @@ export class Importer {
     const row_heights: number[] = [];
     const outline: number[] = [];
 
-    const rows = FindAll('worksheet/sheetData/row');
+    // const rows = FindAll('worksheet/sheetData/row');
+    // for (const row of rows) {
 
-    for (const row of rows) {
-      const row_index = row.a$?.r ? Number(row.a$.r) : 1;
+    IterateTags(sheet.root.sheetData.row, row => {
+
+      const row_index = row.$attributes?.r ?? 1;
 
       let height = default_row_height;
-      if (row.a$?.ht) {
-        const num = Number(row.a$.ht);
-        if (!isNaN(num)) {
-          height = Math.round(num * 4 / 3); // seems to be the excel unit -> pixel ratio
-        }
-      }
-      if (row.a$?.outlineLevel) {
-        const num = Number(row.a$.outlineLevel);
-        if (!isNaN(num)) {
-          outline[row_index - 1] = num;
-        }
+      if (row.$attributes?.ht !== undefined) {
+        height = Math.round((row.$attributes.ht) * 4 / 3); // seems to be the excel unit -> pixel ratio
       }
 
-      if (row.a$?.s) {
-        const style_reference = Number(row.a$?.s);
-        if (!isNaN(style_reference)) {
-          row_styles[row_index - 1] = style_reference;
-        }
+      if (row.$attributes?.outlineLevel !== undefined) {
+        outline[row_index - 1] = row.$attributes?.outlineLevel;
+      }
+
+      if (row.$attributes?.s !== undefined) {
+        row_styles[row_index - 1] = row.$attributes.s;
       }
 
       // if there's a height which is not === default height, but 
@@ -1106,32 +1114,30 @@ export class Importer {
         row_heights[row_index - 1] = height;
       }
 
-      const cells = row.c ? Array.isArray(row.c) ? row.c : [row.c] : [];
-
-      for (const element of cells) {
-        const cell = this.ParseCell(sheet, element as unknown as CellElementType, shared_formulae, arrays, dynamic_arrays, merges, links); // , validations);
+      // const cells = row.c ? Array.isArray(row.c) ? row.c : [row.c] : [];
+      // for (const element of cells) {
+      IterateTags(row.c, element => {
+        const cell = this.ParseCell(sheet, element, shared_formulae, arrays, dynamic_arrays, merges, links);
         if (cell) {
           data.push(cell);
         }
-      }
-    }
+      });
+
+    });
 
     const column_styles: number[] = [];
     let default_column_style = -1;
     const column_widths: number[] = [];
 
-    const columns = FindAll('worksheet/cols/col');
+    IterateTags(sheet.root.cols, cols => {
+      IterateTags(cols.col, child => {
+          
+        const min = child.$attributes?.min ?? 0; 
+        const max = child.$attributes?.max ?? 0;
 
-    for (const child of columns) {
+        if (child.$attributes?.style !== undefined) {
 
-      const min = Number(child.a$?.min);
-      const max = Number(child.a$?.max);
-
-      if (child.a$?.style) {
-
-        const style = Number(child.a$.style);
-
-        if (!isNaN(min) && !isNaN(max) && !isNaN(style)) {
+          const style = child.$attributes.style;
 
           // this is not the way to do this? for the time being
           // it's OK because style doesn't need to extend past
@@ -1147,13 +1153,9 @@ export class Importer {
           }
 
         }
+        if (child.$attributes?.customWidth) {
 
-      }
-      if (child.a$?.customWidth) {
-
-        let width = Number(child.a$.width);
-
-        if (!isNaN(min) && !isNaN(max) && !isNaN(width)) {
+          let width = child.$attributes.width ?? 0;
 
           if (max === 16384) {
 
@@ -1173,97 +1175,103 @@ export class Importer {
           }
         }
 
-      }
-    }
+      });
+    });
 
     // --- import tables -------------------------------------------------------
 
-    const table_references = FindAll('worksheet/tableParts/tablePart')
-    for (const child of table_references) {
-      const rel = child.a$ ? child.a$['r:id'] : undefined;
-      if (rel) {
-        let reference = '';
+    IterateTags(sheet.root.tableParts, tablePart => {
+      IterateTags(tablePart.tablePart, child => {
 
-        const relationship = sheet.rels[rel];
-        if (relationship) {
-          reference = relationship.target || '';
-          const description = this.workbook.ReadTable(reference);
-          if (description) {
+        const rel = child.$attributes?.id;
+        if (rel !== undefined) {
+          let reference = '';
 
-            // console.info({description});
+          const relationship = sheet.rels[rel];
+          if (relationship) {
+            reference = relationship.target || '';
+            const description = this.workbook?.ReadTable(reference);
+            if (description) {
 
-            const ref = sheet.TranslateAddress(description.ref);
-            const area: IArea = is_address(ref) ? { 
-                start: { row: ref.row - 1, column: ref.col - 1}, 
-                end: { row: ref.row - 1, column: ref.col - 1},
-              } : { 
-                start: { row: ref.from.row - 1, column: ref.from.col - 1}, 
-                end: { row: ref.to.row - 1, column: ref.to.col - 1},
-              };
+              // console.info({description});
 
-            for (const cell of data) {
-              if (cell.row === area.start.row && cell.column === area.start.column) {
-                cell.table = {
-                  area,
-                  name: description.name,
-                  totals_row: (!!description.totals_row_count),
-
-                  // NOTE: column headers are added on first load, we don't 
-                  // read them from here. not super efficient but we do it
-                  // that way for regular loads as well
-
+              const ref = sheet.TranslateAddress(description.ref);
+              const area: IArea = is_address(ref) ? { 
+                  start: { row: ref.row - 1, column: ref.col - 1}, 
+                  end: { row: ref.row - 1, column: ref.col - 1},
+                } : { 
+                  start: { row: ref.from.row - 1, column: ref.from.col - 1}, 
+                  end: { row: ref.to.row - 1, column: ref.to.col - 1},
                 };
-                break;
+
+              for (const cell of data) {
+                if (cell.row === area.start.row && cell.column === area.start.column) {
+                  cell.table = {
+                    area,
+                    name: description.name,
+                    totals_row: (!!description.totals_row_count),
+
+                    // NOTE: column headers are added on first load, we don't 
+                    // read them from here. not super efficient but we do it
+                    // that way for regular loads as well
+
+                  };
+                  break;
+                }
               }
+
             }
 
           }
-
         }
-      }
-    }
+
+      });
+    });
 
     // --- import drawings -----------------------------------------------------
 
     // wip...
 
-    const drawings = FindAll('worksheet/drawing');
+    // const drawings = FindAll('worksheet/drawing');
     const chart_descriptors: AnchoredChartDescription[] = [];
     const image_descriptors: AnchoredImageDescription[] = [];
     const textbox_descriptors: AnchoredTextBoxDescription[] = [];
 
-    for (const child of drawings) {
+    if (this.workbook) {
+      const workbook = this.workbook;
+      IterateTags(sheet.root.drawing, child => {
       
-      const rel = child.a$ ? child.a$['r:id'] : undefined;
-      if (rel) {
+        const rel = child.$attributes?.id;
+        if (rel !== undefined) {
 
-        let reference = '';
+          let reference = '';
 
-        const relationship = sheet.rels[rel];
-        if (relationship) {
-          reference = relationship.target || '';
-        }
+          const relationship = sheet.rels[rel];
+          if (relationship) {
+            reference = relationship.target || '';
+          }
 
-        if (reference) {
-          const drawing = this.workbook.ReadDrawing(reference);
-          if (drawing && drawing.length) {
-            for (const entry of drawing) {
-              switch (entry.type) {
-                case 'chart':
-                  chart_descriptors.push(entry);
-                  break;
-                case 'image':
-                  image_descriptors.push(entry);
-                  break;
-                case 'textbox':
-                  textbox_descriptors.push(entry);
-                  break;
+          if (reference) {
+            const drawing = workbook.ReadDrawing(reference);
+            if (drawing && drawing.length) {
+              for (const entry of drawing) {
+                switch (entry.type) {
+                  case 'chart':
+                    chart_descriptors.push(entry);
+                    break;
+                  case 'image':
+                    image_descriptors.push(entry);
+                    break;
+                  case 'textbox':
+                    textbox_descriptors.push(entry);
+                    break;
+                }
               }
             }
           }
-        }
 
-      }
+        }
+      });
     }
 
     const AnchorToCorner = (anchor: CellAnchor): LayoutCorner => {
@@ -1491,43 +1499,27 @@ export class Importer {
 
     // /wip
 
-    const ext = FindAll('worksheet/extLst/ext');
-    for (const entry of ext) {
-    
-      // find the prefix
-      let prefix = '';
-      for (const key of Object.keys(entry?.a$ || {})) {
-        const match = key.match(/^xmlns:(.*)$/);
-        if (match) {
-          prefix = match[1];
-          break;
-        }
-      }
+    IterateTags(sheet.root.extLst?.ext, entry => {
+      IterateTags(entry.sparklineGroups?.sparklineGroup, group => {
 
-      const groups = XMLUtils.FindAll(entry, `${prefix}:sparklineGroups/${prefix}:sparklineGroup`);
-      for (const group of groups) {
+      // const groups = XMLUtils.FindAll(entry, `${prefix}:sparklineGroups/${prefix}:sparklineGroup`);
+      // for (const group of groups) {
+
         let func = 'Sparkline.line';
         let reference = '';
         let source = '';
 
-        if (group.a$?.type === 'column') {
+        if (group.$attributes?.type === 'column') {
           func = 'Sparkline.column';
         }
 
         // TODO: gap optional
         // TODO: colors
 
-        const sparklines = XMLUtils.FindAll(group, `${prefix}:sparklines/${prefix}:sparkline`);
-        for (const sparkline of sparklines) {
-          for (const key of Object.keys(sparkline)) {
-            if (/:f$/.test(key)) {
-              source = sparkline[key];
-            }
-            else if (/:sqref$/.test(key)) {
-              reference = sparkline[key];
-            }
-          }
-        }
+        IterateTags(group.sparklines.sparkline, sparkline => {
+          source = sparkline.f?.$text ?? '';
+          reference = sparkline.sqref?.$text ?? '';
+        });
 
         //
 
@@ -1573,9 +1565,9 @@ export class Importer {
 
         //
 
-      }
+      });
       
-    }
+    });
 
     const result: ImportedSheetData = {
       name: sheet.options.name,

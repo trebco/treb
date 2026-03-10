@@ -2856,6 +2856,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @param column - column, or columns (array), or undefined means all columns
    * @param width - desired width (can be 0) or undefined means 'auto-size'
+   * @param allow_shrinking - for auto-size, allow shrinking. defaults to true.
    * 
    * @privateRemarks
    * 
@@ -2864,9 +2865,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @public
    */
-  public SetColumnWidth(column?: number | number[], width?: number): void {
-   
-    this.grid.SetColumnWidth(column, width);
+  public SetColumnWidth(column?: number | number[], width?: number, allow_shrinking?: boolean): void {
+    this.grid.SetColumnWidth(column, width, allow_shrinking);
   }
 
   /**

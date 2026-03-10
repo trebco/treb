@@ -19,7 +19,8 @@
  * 
  */
 
-import {XMLUtils} from './xml-utils'; 
+import * as OOXML from 'ooxml-types';
+import { EnsureArray, IterateTags } from './ooxml';
 
 export class SharedStrings {
 
@@ -27,7 +28,7 @@ export class SharedStrings {
   public reverse: Record<string, number> = {};
 
   /** read strings table from (pre-parsed) xml; removes any existing strings */
-  public FromXML(xml: any) {
+  public FromXML(sst: OOXML.SharedStringTable) {
 
     // clear
 
@@ -36,7 +37,7 @@ export class SharedStrings {
 
     let index = 0;
 
-    for (const si of XMLUtils.FindAll(xml, 'sst/si')) {
+    IterateTags(sst.si, si => {
 
       // simple string looks like
       //
@@ -57,8 +58,8 @@ export class SharedStrings {
 
         let base = '';
         if (typeof si.t === 'string') { base = si.t; }
-        else if (si.t.t$) {
-          base = si.t.t$;
+        else if (si.t.$text) {
+          base = si.t.$text;
         }
 
         this.strings[index] = base;
@@ -80,14 +81,17 @@ export class SharedStrings {
       // collect text.
 
       else if (si.r) {
-        const parts = XMLUtils.FindAll(si.r, 't');
-        
-        const composite = parts.map(part => {
-          return (typeof part === 'string') ? part : (part.t$ || '');
-        }).join('');
-        
-        this.strings[index] = composite;
-        this.reverse[composite] = index;
+
+        // not sure what happens if there are multiple <r/> tags
+
+        const r = EnsureArray(si.r)[0];
+        if (r) {
+          const parts = EnsureArray(r.t);
+          const composite = parts.map(part => part.$text || '').join('');
+          this.strings[index] = composite;
+          this.reverse[composite] = index;
+        }
+
       }
       else {
         console.warn(` ** unexpected shared string @ ${index}`);
@@ -96,7 +100,7 @@ export class SharedStrings {
 
       index++;
 
-    }
+    });
  
   }
   

@@ -8028,8 +8028,12 @@ export class Grid extends GridBase {
     const width = Math.round((command.width || 0) / this.scale);
 
     if (auto) {
+
+      // defaults to true if not provided
+      const allow_shrinking = !(command.allow_shrinking === false);
+
       for (const entry of column) {
-        this.AutoSizeColumn(sheet, entry, true);
+        this.AutoSizeColumn(sheet, entry, allow_shrinking);
       }
     }
     else {

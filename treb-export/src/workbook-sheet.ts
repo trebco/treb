@@ -47,10 +47,12 @@ import type { SharedStrings } from './shared-strings';
 import type { Drawing } from './drawing/drawing';
 import type { RelationshipMap } from './relationship';
 
+import * as OOXML from 'ooxml-types';
+
 export interface SheetOptions {
   name?: string;
   id?: number;
-  rid?: any;
+  rid?: string;
 }
 
 export interface RangeOptions {
@@ -74,7 +76,7 @@ export class Sheet {
   public rels_path?: string;
   public rels: RelationshipMap = {};
 
-  public sheet_data: any = {};
+  // public sheet_data: any = {};
 
   public shared_strings?: SharedStrings;
   public extent?: RangeType;
@@ -86,8 +88,9 @@ export class Sheet {
 
   public drawings: Drawing[] = [];
 
-  constructor(public options: SheetOptions = {}) {
-  }
+  constructor(
+      public options: SheetOptions, 
+      public root: OOXML.Worksheet) {}
 
   /**
    * A1 -> {row: 1, col: 1} etc.
@@ -165,8 +168,10 @@ export class Sheet {
     // we can read column/row sizes in here, or anything else we need to do
     // atm just extent
 
-    const dim = this.sheet_data.worksheet?.dimension?.a$?.ref;
+    // const dim = this.sheet_data.worksheet?.dimension?.a$?.ref;
+    const dim = this.root.dimension?.$attributes?.ref;
 
+    // what's up with the copies? 
     const extent = this.TranslateAddress(dim || '');
     if (is_range(extent)) {
       this.extent = JSON.parse(JSON.stringify(extent));

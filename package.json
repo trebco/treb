@@ -1,6 +1,6 @@
 {
   "name": "@trebco/treb",
-  "version": "35.4.0",
+  "version": "35.4.1",
   "license": "LGPL-3.0-or-later",
   "homepage": "https://treb.app",
   "repository": {
@@ -20,6 +20,7 @@
     "eslint": "^9.39.1",
     "fast-xml-parser": "^5.3.2",
     "html-minifier-terser": "^7.2.0",
+    "ooxml-types": "file:../ooxml",
     "sass": "^1.94.2",
     "treb-base-types": "file:treb-base-types",
     "treb-calculator": "file:treb-calculator",

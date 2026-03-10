@@ -40,6 +40,13 @@ import type { CellStyle, ThemeColor } from 'treb-base-types';
 import type { SerializedNamed } from 'treb-data-model';
 import { type Metadata, ParseMetadataXML } from './metadata';
 
+///////////////
+
+import * as OOXML from 'ooxml-types';
+import { ooxml_parser, IterateTags, MapTags, FirstTag } from './ooxml';
+
+///////////////
+
 /**
  * @privateRemarks -- FIXME: not sure about the equal/equals thing. need to check.
  */
@@ -196,21 +203,23 @@ export class Workbook {
 
     const rels: RelationshipMap = {};
     const data = this.zip.Has(path) ? this.zip.Get(path) : '';
+    const root = ooxml_parser.parse(data);
 
-    //
-    // force array on <Relationship/> elements, but be slack on the rest
-    // (we know they are single elements)
-    //
-    const xml = xmlparser2.parse(data || '');
-
-    for (const relationship of xml.Relationships?.Relationship || []) {
-      const id = relationship.a$.Id;
-      rels[id] = {
-        id, 
-        type: relationship.a$.Type,
-        target: relationship.a$.Target,
-      };
+    if (root.Relationships) {
+      const relationships = root.Relationships as OOXML.Relationships;
+      IterateTags(relationships.Relationship, (relationship) => {
+        const id = relationship.$attributes?.Id;
+        if (id) {
+          rels[id] = {
+            id, 
+            type: relationship.$attributes?.Type || '',
+            target: relationship.$attributes?.Target || '',
+          };
+        }
+      });
     }
+
+    // console.info({rels});
 
     return rels;
 
@@ -223,109 +232,97 @@ export class Workbook {
 
     // shared strings
     let data = this.zip.Has('xl/sharedStrings.xml') ? this.zip.Get('xl/sharedStrings.xml') : '';
-    let xml = xmlparser2.parse(data || '');
-    this.shared_strings.FromXML(xml);
+    let parsed = ooxml_parser.parse(data || '');
+    if (parsed.sst) {
+      this.shared_strings.FromXML(parsed.sst as OOXML.SharedStringTable);
+    }
 
-    // new(ish) metadata
+    // metadata
     if (this.zip.Has('xl/metadata.xml')) {
       data = this.zip.Get('xl/metadata.xml');
-      xml = xmlparser2.parse(data);
-      this.metadata = ParseMetadataXML(xml);
+      parsed = ooxml_parser.parse(data || '');
+      if (parsed.metadata) {
+        this.metadata = ParseMetadataXML(parsed.metadata as OOXML.Metadata);
+      }
     }
 
     // theme
     data = this.zip.Get('xl/theme/theme1.xml');
-    xml = xmlparser2.parse(data);
-    this.theme.FromXML(xml);
+    parsed = ooxml_parser.parse(data);
+    if (parsed.theme) {
+      this.theme.FromXML(parsed.theme as OOXML.Theme);
+    }
 
     // styles
     data = this.zip.Get('xl/styles.xml');
-    xml = xmlparser2.parse(data);
-    this.style_cache.FromXML(xml, this.theme);
-
-    // console.info({c: this.style_cache});
+    parsed = ooxml_parser.parse(data);
+    if (parsed.styleSheet) {
+      this.style_cache.FromXML(parsed.styleSheet as OOXML.StyleSheet, this.theme);
+    }
 
     // read workbook
     data = this.zip.Get('xl/workbook.xml');
-    xml = xmlparser2.parse(data);
+    parsed = ooxml_parser.parse(data);
 
     // defined names
-    this.named = [];
-    const defined_names = XMLUtils.FindAll(xml, 'workbook/definedNames/definedName');
-    for (const defined_name of defined_names) {
-      const name = defined_name.a$?.name;
-      const expression = defined_name.t$ || '';
-      const sheet_index = (defined_name.a$?.localSheetId) ? Number(defined_name.a$.localSheetId) : undefined;
+    if (parsed.workbook) {
 
-      // console.info({defined_name, name, expression, sheet_index});
+      const wb = parsed.workbook as OOXML.Workbook;
 
-      this.named.push({
-        name, 
-        expression: typeof expression === 'string' ? expression : expression?.toString() || '',  
-        local_scope: sheet_index,
+      this.named = MapTags(wb.definedNames?.definedName, defined_name => {
+        return {
+          name: defined_name.$attributes?.name || '',
+          expression: defined_name.$text || '',
+          local_scope: defined_name.$attributes?.localSheetId,
+        };
+      });
+
+      const view = FirstTag(wb.bookViews?.workbookView);
+      this.active_tab = view?.$attributes?.activeTab ?? 0;
+
+      IterateTags(wb.sheets.sheet, element => {
+
+        const name = element.$attributes?.name;
+        if (name) {
+
+          const state = element.$attributes?.state;
+          const rid = element.$attributes?.id ?? '';
+          const id = element.$attributes?.sheetId;
+
+          const worksheet_path = `xl/${this.rels[rid].target}`;
+          data = this.zip.Get(worksheet_path);
+          parsed = ooxml_parser.parse(data);
+          if (parsed.worksheet) {
+
+            const root = parsed.worksheet as OOXML.Worksheet;            
+            const worksheet = new Sheet({
+              name, rid, id,
+            }, root);
+
+            switch (state) {
+              case 'hidden': 
+                worksheet.visible_state = VisibleState.hidden;
+                break;
+
+              case 'veryHidden':
+                worksheet.visible_state = VisibleState.hidden;
+                break;
+            }
+            
+            worksheet.shared_strings = this.shared_strings;
+
+            worksheet.path = worksheet_path;
+            worksheet.rels_path = worksheet.path.replace('worksheets', 'worksheets/_rels') + '.rels';
+            worksheet.rels = this.ReadRels(worksheet.rels_path);
+
+            worksheet.Parse();
+            this.sheets.push(worksheet);
+
+          }
+        }
       });
 
     }
-
-    /*
-    this.defined_names = {};
-    const defined_names = XMLUtils.FindAll(xml, 'workbook/definedNames/definedName');
-
-    console.info({defined_names});
-
-    for (const defined_name of defined_names) {
-      if (name && expression) {
-        this.defined_names[name] = expression;
-      }
-    }
-    */
-
-    const workbook_views = XMLUtils.FindAll(xml, 'workbook/bookViews/workbookView');
-
-    if (workbook_views[0]?.a$?.activeTab) {
-      this.active_tab = Number(workbook_views[0].a$.activeTab) || 0;
-    }
-
-    // read sheets. in this version we preparse everything.
-    const composite = XMLUtils.FindAll(xml, 'workbook/sheets/sheet');
-
-
-    for (const element of composite) {
-      const name = element.a$?.name;
-
-      if (name) {
-
-        const state = element.a$.state;
-        const rid = element.a$['r:id'];
-  
-        const worksheet = new Sheet({
-          name, rid, id: Number(element.a$.sheetId) 
-        });
-        
-        if (state === 'hidden') {
-          worksheet.visible_state = VisibleState.hidden;
-        }
-        else if (state === 'veryHidden') {
-          worksheet.visible_state = VisibleState.very_hidden;
-        }
-    
-        worksheet.shared_strings = this.shared_strings;
-
-        worksheet.path = `xl/${this.rels[rid].target}`;
-        worksheet.rels_path = worksheet.path.replace('worksheets', 'worksheets/_rels') + '.rels';
-
-        data = this.zip.Get(worksheet.path);
-        worksheet.sheet_data = xmlparser2.parse(data || '');
-        worksheet.rels = this.ReadRels(worksheet.rels_path);
-
-        worksheet.Parse();
-        // console.info("TS", worksheet);
-
-        this.sheets.push(worksheet);
-      }
-    }
-
-    // console.info("TS", this.sheets);
 
 
   }

@@ -603,14 +603,17 @@ export class GridBase {
   /**
    * API method
    *
-   * @param column column, columns, or undefined means all columns
-   * @param width target width, or undefined means auto-size
+   * @param column - column, columns, or undefined means all columns
+   * @param width - target width, or undefined means auto-size
+   * @param allow_shrinking - for auto-size, allow shrinking. defaults to true. 
+   * set false to disallow shrinking.
    */
-  public SetColumnWidth(column?: number | number[], width?: number): void {
+  public SetColumnWidth(column?: number | number[], width?: number, allow_shrinking?: boolean): void {
     this.ExecCommand({
       key: CommandKey.ResizeColumns,
       column,
       width,
+      allow_shrinking,
     });
   }
 

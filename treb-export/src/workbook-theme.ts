@@ -19,6 +19,8 @@
  * 
  */
 
+import * as OOXML from 'ooxml-types';
+
 export interface ColorSchemeElement {
   name?: string;
   value?: string;
@@ -27,8 +29,7 @@ export interface ColorSchemeElement {
 
 export class Theme {
 
-  // where is this defined?
-  public static color_map = [
+  public static color_map: (keyof Omit<OOXML.ColorScheme, '$attributes'>)[] = [
     'lt1', // bg 1
     'dk1', // text 1
     'lt2', // bg 2
@@ -47,8 +48,22 @@ export class Theme {
 
   // private dom?: ElementTree.ElementTree;
 
-  public FromXML(xml: any): void {
+  public FromXML(theme: OOXML.Theme): void {
 
+    const color_scheme = theme.themeElements.clrScheme;
+    for (const name of Theme.color_map) {
+      const element = color_scheme[name];
+      if (element.srgbClr) {
+        this.colors[name] = {name, value: element.srgbClr.$attributes?.val || '', type: 'rgb'};
+
+      }
+      else if (element.sysClr) {
+        this.colors[name] = {name, value: element.sysClr.$attributes?.lastClr || '', type: 'system'};
+
+      }
+    }
+
+    /*    
     const tag = Object.keys(xml)[0];
 
     let namespace = '';
@@ -80,6 +95,7 @@ export class Theme {
 
       }
     }
+    */
 
   }
 

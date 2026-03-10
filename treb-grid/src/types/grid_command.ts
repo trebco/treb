@@ -198,6 +198,12 @@ export interface ResizeColumnsCommand {
   key: CommandKey.ResizeColumns;
   column?: number|number[];
   width?: number;
+
+  /** 
+   * for auto-resized columns, allow shrinking. defaults to true for 
+   * back-compat, so you must explicitly set it to false to disable shrinking.
+   */
+  allow_shrinking?: boolean;
   sheet_id?: number;
 }
 

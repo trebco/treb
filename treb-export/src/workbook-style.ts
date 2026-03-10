@@ -19,13 +19,17 @@
  * 
  */
 
+import * as OOXML from 'ooxml-types';
+import { MapTags } from './ooxml';
+
+
 // import * as ElementTree from 'elementtree';
 // import { Element, ElementTree as Tree } from 'elementtree';
 
 import { type CompositeBorderEdge, Style, type CellStyle, type PropertyKeys, type Color, IsHTMLColor, IsThemeColor, type ThemeColor, type HTMLColor, ThemeColorIndex } from 'treb-base-types';
 import { Theme } from './workbook-theme';
 import { NumberFormatCache } from 'treb-format';
-import { XMLUtils } from './xml-utils';
+// import { XMLUtils } from './xml-utils';
 
 import { Unescape } from './unescape_xml';
 
@@ -1115,14 +1119,20 @@ export class StyleCache {
 
   }
 
-  public FromXML(xml: any, theme: Theme): void {
+  public FromXML(stylesheet: OOXML.StyleSheet, theme: Theme): void {
 
-    const FindAll = XMLUtils.FindAll.bind(XMLUtils, xml);
+    // const FindAll = XMLUtils.FindAll.bind(XMLUtils, xml);
 
     this.theme = theme;
 
     // ---
 
+    this.number_formats = MapTags(stylesheet.numFmts?.numFmt, element => ({
+      id: element.$attributes?.numFmtId,
+      format: Unescape(element.$attributes?.formatCode || ''),
+    }));
+
+    /*
     let composite = FindAll('styleSheet/numFmts/numFmt');
 
     this.number_formats = composite.map(element => ({
@@ -1131,42 +1141,48 @@ export class StyleCache {
       }));
 
     // ---
+    */
 
-    composite = FindAll('styleSheet/borders/border');
-
-    const ElementToBorderEdge = (element: any, edge: BorderEdge) => {
-
-      if (element?.a$) {
-        edge.style = element.a$.style;
-        if (typeof element.color === 'object') {
-          if (typeof element.color.a$?.indexed !== 'undefined') {
-            edge.color = Number(element.color.a$.indexed);
-          }
-          if (typeof element.color.a$?.theme !== 'undefined') {
-            edge.theme = Number(element.color.a$.theme);
-          }
-          if (typeof element.color.a$?.tint !== 'undefined') {
-            edge.tint = Number(element.color.a$.tint);
-          }
+    const ElementToBorderEdge = (element: OOXML.BorderEdge|undefined, edge: BorderEdge) => {
+      if (element?.$attributes) {
+        edge.style = element.$attributes.style;
+        if (element.color) {
+          edge.color = element.color.$attributes?.indexed;
+          edge.theme = element.color.$attributes?.theme;
+          edge.tint = element.color.$attributes?.tint;
         }
       }
-
     };
-    
 
-    this.borders = composite.map(element => {
+    this.borders = MapTags(stylesheet.borders?.border, element => {
       const border: BorderStyle = JSON.parse(JSON.stringify(default_border));
-
       ElementToBorderEdge(element.left, border.left);
       ElementToBorderEdge(element.right, border.right);
       ElementToBorderEdge(element.top, border.top);
       ElementToBorderEdge(element.bottom, border.bottom);
-      
       return border;
     });
 
     // ---
 
+    this.cell_xfs = MapTags(stylesheet.cellXfs?.xf, element => {
+      const xf: CellXf = {
+        number_format: element.$attributes?.numFmtId ?? -1,
+        font: element.$attributes?.fontId ?? -1,
+        fill: element.$attributes?.fillId ?? -1,
+        border: element.$attributes?.borderId ?? -1,
+        xfid: element.$attributes?.xfId ?? -1,
+      };  
+      if (element.alignment) {
+        xf.horizontal_alignment = element.alignment.$attributes?.horizontal;
+        xf.vertical_alignment = element.alignment.$attributes?.vertical;
+        xf.wrap_text = !!element.alignment.$attributes?.wrapText;
+        xf.indent = element.alignment.$attributes?.indent;
+      }
+      return xf;
+    });
+
+    /*
     composite = FindAll('styleSheet/cellXfs/xf');
     this.cell_xfs = composite.map(element => {
 
@@ -1188,9 +1204,46 @@ export class StyleCache {
       return xf;
 
     });
+    */
 
     // ---
 
+    this.fills = MapTags(stylesheet.fills?.fill, element => {
+      const fill: Fill = { pattern_type: 'none' };
+      if (element.patternFill) {
+        const type = element.patternFill.$attributes?.patternType;
+        switch(type) {
+          case 'none':
+          case undefined:
+            break;
+
+          case 'solid':
+            fill.pattern_type = 'solid';
+            if (element.patternFill.fgColor) {
+              fill.fg_color = {
+                theme: element.patternFill.fgColor.$attributes?.theme,
+                indexed: element.patternFill.fgColor.$attributes?.indexed,
+                tint: element.patternFill.fgColor.$attributes?.tint,
+                argb: element.patternFill.fgColor.$attributes?.rgb,
+              };
+            }
+            break;
+
+          default:
+            {
+              const match = type?.match(/^gray(\d+)$/);
+              if (match) {
+                fill.pattern_type = 'gray';
+                fill.pattern_gray = Number(match[1]);
+              }
+            }
+            break;
+        }
+      }
+      return fill;
+    });
+
+    /*
     const ParseFill = (element: any) => {
 
       const fill: Fill = { pattern_type: 'none' };
@@ -1233,9 +1286,31 @@ export class StyleCache {
     composite = FindAll('styleSheet/fills/fill');
 
     this.fills = composite.map(ParseFill);
+    */
 
     // ---
 
+    this.fonts = MapTags(stylesheet.fonts?.font, element => {
+      const font: Font = {};
+
+      font.italic = !!element.i;
+      font.bold = !!element.b;
+      font.underline = !!element.u;
+      font.strike = !!element.strike;
+
+      font.size = element.sz?.$attributes?.val;
+      font.scheme = element.scheme?.$attributes?.val;
+      font.name = element.name?.$attributes?.val;
+      font.family = element.family?.$attributes?.val;
+
+      font.color_theme = element.color?.$attributes?.theme;
+      font.color_tint = element.color?.$attributes?.tint;
+      font.color_argb = element.color?.$attributes?.rgb;
+
+      return font;
+    });
+
+    /*
     const ParseFont = (element: any) => {
 
       const font: Font = {};
@@ -1277,7 +1352,43 @@ export class StyleCache {
 
     composite = FindAll('styleSheet/fonts/font');
     this.fonts = composite.map(ParseFont);
+    */
 
+    // ---
+
+    const ParseDXFColor = (element: OOXML.Color): Color => {
+      const color: Color = {};
+      if (element.$attributes?.rgb) {
+        (color as HTMLColor).text = '#' + element.$attributes.rgb.substring(2);
+      }
+      else if (element.$attributes?.theme !== undefined) {
+        (color as ThemeColor).theme = element.$attributes.theme;
+        if (element.$attributes.tint !== undefined) {
+          (color as ThemeColor).tint = Math.round(element.$attributes.tint * 1000) / 1000;
+        }
+      }
+      return color;
+    };
+
+    this.dxf_styles = MapTags(stylesheet.dxfs?.dxf, dxf => {
+      const style: CellStyle = {};
+
+      if (dxf.font) {
+        style.bold = !!dxf.font?.b;
+        style.italic = !!dxf.font?.i;
+      }
+
+      if (dxf.font?.color?.$attributes) {
+        style.text = ParseDXFColor(dxf.font.color);
+      }
+      if (dxf.fill?.patternFill?.bgColor?.$attributes) {
+        style.fill = ParseDXFColor(dxf.fill.patternFill.bgColor);
+      }
+      
+      return style;
+    });
+
+    /*
     // dxfs (differential formats) are inline. because reasons? not sure
     // what's allowed in there, atm we're just looking at font color and 
     // background color.
@@ -1319,6 +1430,7 @@ export class StyleCache {
 
       return style;
     });
+    */
 
     // console.info({dxfs: this.dxf_styles});
 
