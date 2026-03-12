@@ -2084,7 +2084,16 @@ export class Grid extends GridBase {
         }
 
         this.external_editor.AttachNodes(config.nodes, config.assume_formula ?? true);
- 
+        this.external_editor.key_event_callback = (event: KeyboardEvent) => {
+          
+          event.stopPropagation();
+          event.preventDefault();
+
+          // ??
+          this.OverlayKeyDown(event);
+
+        };
+
       }
       else {
         if (this.external_editor) {
@@ -5183,7 +5192,7 @@ export class Grid extends GridBase {
         case '/':
           event.stopPropagation();
           event.preventDefault();
-          this.SelectArrayOrTable();
+          this.SelectArrayOrTable(selection);
           break;
 
         default:
@@ -5402,30 +5411,35 @@ export class Grid extends GridBase {
    * select the array containing the current cell, if any. if there's no
    * array, do nothing. updated to support selecting tables as well as arrays.
    */
-  private SelectArrayOrTable() {
+  private SelectArrayOrTable(target_selection: GridSelection) {
 
-    if (this.primary_selection.empty) {
+    if (target_selection.empty) {
       return;
     }
 
-    const cell = this.active_sheet.CellData(this.primary_selection.target);
+    const cell = this.active_sheet.CellData(target_selection.target);
 
     if (!cell || (!cell.area && !cell.table && !cell.spill)) {
       return;
     }
 
     if (cell.area) {
-      this.Select(this.primary_selection, cell.area, cell.area.start);
+      this.Select(target_selection, cell.area, cell.area.start);
     }
     if (cell.spill) {
-      this.Select(this.primary_selection, cell.spill, cell.spill.start);
+      this.Select(target_selection, cell.spill, cell.spill.start);
     }
     if (cell.table) {
       const area = new Area(cell.table.area.start, cell.table.area.end);
-      this.Select(this.primary_selection, area, area.start);
+      this.Select(target_selection, area, area.start);
     }
 
-    this.RenderSelections();
+    if (this.SelectingArgument()) {
+      this.UpdateSelectedArgument(target_selection);
+    }
+    else {
+      this.RenderSelections();
+    }
 
   }
 

@@ -19,10 +19,13 @@
  * 
  */
 
-
 import { Editor, type NodeDescriptor } from './editor';
 
+export type KeyEventCallbackType = (event: KeyboardEvent) => void;
+
 export class ExternalEditor extends Editor {
+
+  public key_event_callback?: KeyEventCallbackType;
 
   public get active() {
     return this.nodes.length > 0;
@@ -30,6 +33,7 @@ export class ExternalEditor extends Editor {
 
   public Reset() {
     this.AttachNodes();
+    this.key_event_callback = undefined;
   }
 
   /**
@@ -103,6 +107,33 @@ export class ExternalEditor extends Editor {
       this.RegisterListener(descriptor, 'focusout', () => {
         // console.info('focusout');
         this.active_editor = undefined;
+      });
+
+      this.RegisterListener(descriptor, 'keydown', (event: KeyboardEvent) => {
+        if (this.selecting) {
+          switch (event.key) {
+            case 'ArrowDown':
+            case 'ArrowUp':
+            case 'ArrowLeft':
+            case 'ArrowRight':
+              break;
+
+            case '/':
+              if (event.ctrlKey) {
+                break;
+              }
+              // otherwise fall through
+
+            default:
+              return;
+          }
+        }
+
+        // we need to pass this event up to grid to handle. we might
+        // also want to filter it (let the handler dp that)
+
+        this.key_event_callback?.(event);
+
       });
 
       this.RegisterListener(descriptor, 'input', (event: Event) => {
