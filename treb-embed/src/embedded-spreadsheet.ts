@@ -867,12 +867,22 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // it when we don't have a container? or was it built for something
     // else? (A: it was)
 
-    this.grid = new Grid(
-        grid_options, 
-        this.model, 
-        undefined, 
-        !!container, 
-        this.DOM);
+    if (options.custom_grid) {
+      this.grid = options.custom_grid(
+          grid_options, 
+          this.model, 
+          undefined, 
+          !!container, 
+          this.DOM);
+    }
+    else {
+      this.grid = new Grid(
+          grid_options, 
+          this.model, 
+          undefined, 
+          !!container, 
+          this.DOM);
+      }
 
     if (this.options.headless) {
       this.grid.headless = true; // FIXME: move into grid options

@@ -19,9 +19,12 @@
  * 
  */
 
-import type { ICellAddress } from 'treb-base-types';
+import type { DOMContext, ICellAddress } from 'treb-base-types';
 import type { TREBDocument } from './types';
 import type { ChartRenderer } from 'treb-charts';
+import type { Grid, GridOptions } from 'treb-grid/src';
+import type { DataModel } from 'treb-data-model/src';
+import type { Theme } from 'ooxml-types';
 // import type { TREBPlugin } from './plugin';
 
 /**
@@ -350,6 +353,15 @@ export interface EmbeddedSpreadsheetOptions {
 
   /** @internal */
   in_process_workers?: boolean;
+
+  /** new, intended for tui support but keeping it as generic as possible */
+  custom_grid?: (
+    options: GridOptions, 
+    model: DataModel,
+    theme: Theme|undefined,
+    initialze_dom: boolean,
+    DOM: DOMContext,
+  ) => Grid;
 
 }
 
