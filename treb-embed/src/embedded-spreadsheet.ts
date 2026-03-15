@@ -75,6 +75,7 @@ import type {
   IArea, CellValue, Point,
   Complex, ExtendedUnion, IRectangle,
   AddressReference, RangeReference, TableSortOptions, Table, TableTheme,
+  Theme,
 } from 'treb-base-types';
 
 import {
@@ -111,18 +112,17 @@ import type { StateLeafVertex } from 'treb-calculator';
  */
 import './content-types.d.ts';
 import { CreateWorker, type WorkerProxy } from './worker-proxy';
-import type { Theme } from 'ooxml-types';
 
 // --- types -------------------------------------------------------------------
 
 /** new, intended for tui support but keeping it as generic as possible */
-type CustomGridConstructor = (
+export type CustomGridConstructor = new (
         options: GridOptions, 
         model: DataModel,
         theme: Theme|undefined,
         initialze_dom: boolean,
         DOM: DOMContext,
-      ) => Grid
+      ) => Grid;
 
 
 /**
@@ -879,7 +879,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // else? (A: it was)
 
     if (options.custom_grid) {
-      this.grid = options.custom_grid(
+      this.grid = new options.custom_grid(
           grid_options, 
           this.model, 
           undefined, 
