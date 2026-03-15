@@ -111,8 +111,19 @@ import type { StateLeafVertex } from 'treb-calculator';
  */
 import './content-types.d.ts';
 import { CreateWorker, type WorkerProxy } from './worker-proxy';
+import type { Theme } from 'ooxml-types';
 
 // --- types -------------------------------------------------------------------
+
+/** new, intended for tui support but keeping it as generic as possible */
+type CustomGridConstructor = (
+        options: GridOptions, 
+        model: DataModel,
+        theme: Theme|undefined,
+        initialze_dom: boolean,
+        DOM: DOMContext,
+      ) => Grid
+
 
 /**
  * options for saving files. we add the option for JSON formatting.
@@ -667,7 +678,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @internal
    */
-  constructor(options: EmbeddedSpreadsheetOptions & { model?: EmbeddedSpreadsheet }) { 
+  constructor(options: EmbeddedSpreadsheetOptions & { model?: EmbeddedSpreadsheet, custom_grid?: CustomGridConstructor }) { 
 
     // we renamed this option, default to the new name
 
