@@ -116,7 +116,7 @@ import { CreateWorker, type WorkerProxy } from './worker-proxy';
 // --- types -------------------------------------------------------------------
 
 /** new, intended for tui support but keeping it as generic as possible */
-export type CustomGridConstructor = new (
+export type CustomGridFactory = (
         options: GridOptions, 
         model: DataModel,
         theme: Theme|undefined,
@@ -678,7 +678,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @internal
    */
-  constructor(options: EmbeddedSpreadsheetOptions & { model?: EmbeddedSpreadsheet, custom_grid?: CustomGridConstructor }) { 
+  constructor(options: EmbeddedSpreadsheetOptions & { model?: EmbeddedSpreadsheet, custom_grid?: CustomGridFactory }) { 
 
     // we renamed this option, default to the new name
 
@@ -879,12 +879,20 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // else? (A: it was)
 
     if (options.custom_grid) {
-      this.grid = new options.custom_grid(
+      this.grid = options.custom_grid(
           grid_options, 
           this.model, 
           undefined, 
           !!container, 
           this.DOM);
+
+      // we're going to need to create some sort of capabilities map
+      // for custom grids. for the time being, let's subscribe to events
+      // and see what happens.
+
+      // UPDATE: do that a little later...
+
+
     }
     else {
       this.grid = new Grid(
@@ -1174,6 +1182,195 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     }
     else {
+
+      if (options.custom_grid) {
+        console.info("creating subscription for custom grid (TODO: capabilities)")
+
+        ////
+
+
+        this.grid.grid_events.Subscribe((event) => {
+
+          // console.info({event});
+
+          switch (event.type) {
+
+            // these messages can stack, they don't have undo effect
+
+            case 'error':
+              /*
+              this.dialog?.ShowDialog({
+                type: DialogType.error,
+                ...this.TranslateGridError(event.code),
+                timeout: 3000,
+                close_box: true,
+              });
+              */
+
+              // ??
+
+              break;
+
+            case 'selection':
+              // console.info('selection event');
+              this.UpdateSelection(event.selection, event.reason);
+              this.UpdateSelectionStyle(event.selection);
+              break;
+
+            case 'sheet-change':
+              this.OnSheetChange(event);
+              this.UpdateSelectionStyle();
+              break;
+
+            case 'scale':
+              this.RebuildAllAnnotations();
+              this.Publish({ type: 'view-change' });
+              break;
+    
+            case 'cell-event':
+              this.HandleCellEvent(event);
+              break;
+
+            // messages that trigger undo need some special handling, 
+            // because we don't want to stack a sequence of messages
+            // and push multiple undo events. that applies to data, 
+            // style, structure, and (maybe?) annotations
+
+            // OK, temp we have a composite event for data+style
+
+            case 'composite':
+              {
+                const cached_selection = this.last_selection;
+                if (this.calculation === CalculationOptions.automatic) {
+                  this.Recalculate(event);
+                }
+                this.DocumentChange(cached_selection);
+                this.UpdateDocumentStyles();
+                this.UpdateSelectionStyle();
+              }
+              break;
+
+            case 'data':
+              {
+                // because this is async (more than once), we can't expect the 
+                // selection event to happen after the PushUndo call. we need
+                // to preserve the current selection and pass it through.
+
+                const cached_selection = this.last_selection;
+
+                // recalc is no longer async
+
+                if (this.calculation === CalculationOptions.automatic) {
+                  this.Recalculate(event);
+                }
+
+                this.DocumentChange(cached_selection);
+
+              }
+              break;
+
+            case 'style':
+              this.DocumentChange();
+              this.UpdateDocumentStyles();
+              this.UpdateSelectionStyle();
+              break;
+
+            case 'annotation':
+
+              /*
+              // FIXME: maybe need to update vertices (on create, update, delete,
+              // not on move or resize)
+
+              if (event.annotation) {
+                const view: AnnotationViewData = event.annotation.view[this.grid.view_index] || {};
+
+                let update_toolbar = false;
+
+                if (event.event === 'select') {
+                  update_toolbar = true;
+                }
+                else {
+                  this.DocumentChange();
+                  switch (event.event) {
+                    case 'create':
+                      this.InflateAnnotation(event.annotation);
+                      this.calculator.UpdateAnnotations(event.annotation, this.grid.active_sheet);
+                      this.grid.AnnotationUpdated(event.annotation);
+                      update_toolbar = (event.annotation === this.grid.selected_annotation);
+                      break;
+                    case 'delete':
+                      this.calculator.RemoveAnnotation(event.annotation); // clean up vertex
+                      break;
+                    case 'update':
+                      if (view.update_callback) {
+                        view.update_callback();
+                        this.grid.AnnotationUpdated(event.annotation);
+                      }
+                      else {
+                        console.info('annotation update event without update callback');
+                      }
+                      this.calculator.UpdateAnnotations(event.annotation, this.grid.active_sheet);
+                      update_toolbar = (event.annotation === this.grid.selected_annotation);
+                      break;
+                    case 'resize':
+                      if (view.resize_callback) {
+                        view.resize_callback();
+                        this.grid.AnnotationUpdated(event.annotation);
+                      }
+                      break;
+                  }
+
+                }
+
+                if (update_toolbar) {
+                  this.UpdateSelectionStyleAnnotation(event.annotation);
+                  this.Publish({ type: 'annotation-selection' });
+                  break;
+                }
+
+              }
+              else {
+                console.info('annotation event without annotation');
+              }
+              */
+              break;
+
+            case 'structure':
+              {
+                // console.info("S event", event);
+
+                const cached_selection = this.last_selection;
+                if (event.conditional_format) {
+                  this.calculator.UpdateConditionals();
+                  this.ApplyConditionalFormats(this.grid.active_sheet, false);
+                }
+
+                if (event.rebuild_required) {
+                  this.calculator.Reset();
+
+                  // recalculate is no longer async
+
+                  if (this.calculation === CalculationOptions.automatic) {
+                    this.Recalculate(event);
+                  }
+                  this.DocumentChange(cached_selection);
+
+                }
+                else {
+                  this.DocumentChange(cached_selection);
+                }
+              }
+              this.UpdateSelectionStyle();
+              break;
+
+          }
+        });
+
+        ////
+
+        
+      }
+
       if (!EmbeddedSpreadsheet.one_time_warnings.headless) {
 
         // suppress this warning if you explicitly set headless mode

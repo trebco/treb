@@ -278,7 +278,7 @@ export class Grid extends GridBase {
   private autocomplete?: Autocomplete;
 
   /** formula bar editor (optional) */
-  private formula_bar?: FormulaBar;
+  protected formula_bar?: FormulaBar;
 
   private RESIZE_PIXEL_BUFFER = 5;
 
@@ -318,14 +318,14 @@ export class Grid extends GridBase {
   /**
    * the main selection for interacting with the spreadsheet
    */
-  private readonly primary_selection: GridSelection = {
+  protected readonly primary_selection: GridSelection = {
     target: { row: 0, column: 0 },
     area: new Area({ row: 0, column: 0 }),
     empty: true,
   };
 
   /** reusing type. FIXME? we don't need a target */
-  private readonly spill_selection: GridSelection = {
+  protected readonly spill_selection: GridSelection = {
     target: { row: 0, column: 0 },
     area: new Area({ row: 0, column: 0 }),
     empty: true,
@@ -3345,7 +3345,7 @@ export class Grid extends GridBase {
 
   }
 
-  private Repaint(force = false, full_tile = false, force_headers = false) {
+  protected Repaint(force = false, full_tile = false, force_headers = false) {
 
     if (this.headless || !this.tile_renderer) { return; }
 
@@ -6871,7 +6871,7 @@ export class Grid extends GridBase {
    * cell of the selection area
    * @param preserve_target preserve existing selection target
    */
-  private Select(selection: GridSelection, area?: Area, target?: ICellAddress, preserve_target = false, reason?: GridSelectionEvent['reason']) {
+  protected Select(selection: GridSelection, area?: Area, target?: ICellAddress, preserve_target = false, reason?: GridSelectionEvent['reason']) {
 
     if (!selection.empty) {
       if (preserve_target) target = selection.target;
@@ -6980,7 +6980,7 @@ export class Grid extends GridBase {
   /**
    *
    */
-  private UpdateFormulaBarFormula(override?: string) {
+  protected UpdateFormulaBarFormula(override?: string) {
 
     this.layout.HideDropdownCaret();
 
