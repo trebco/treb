@@ -4098,7 +4098,7 @@ export class Grid extends GridBase {
 
   }
 
-  private HideHoverInfo() {
+  protected HideHoverInfo() {
 
     this.layout.HideTitle();
     this.layout.HideTooltip();
@@ -5411,7 +5411,7 @@ export class Grid extends GridBase {
    * select the array containing the current cell, if any. if there's no
    * array, do nothing. updated to support selecting tables as well as arrays.
    */
-  private SelectArrayOrTable(target_selection: GridSelection) {
+  protected SelectArrayOrTable(target_selection: GridSelection) {
 
     if (target_selection.empty) {
       return;
@@ -5447,7 +5447,7 @@ export class Grid extends GridBase {
    * render selections. we are wrapping this up in a method so we can
    * hide the primary selection in some cases (one case).
    */
-  private RenderSelections(rerender = true) {
+  protected RenderSelections(rerender = true) {
 
     const show_primary_selection = this.hide_selection ? false :
       (!this.editing_state) || (this.editing_cell.sheet_id === this.active_sheet.id);
@@ -5468,7 +5468,7 @@ export class Grid extends GridBase {
    * using ctrl+arrow. selection jumps across all populated cells in
    * a given direction for a given row/column).
    */
-  private BlockSelection(selection: GridSelection, expand_selection: boolean,
+  protected BlockSelection(selection: GridSelection, expand_selection: boolean,
     columns: number, rows: number, render = true): boolean {
 
     // select the containing block. note that we do not handle
@@ -6422,7 +6422,7 @@ export class Grid extends GridBase {
   /** 
    * if the address is outside of current extent, expand 
    */
-  private EnsureAddress(address: ICellAddress, step = 8, toll_layout = false): boolean {
+  protected EnsureAddress(address: ICellAddress, step = 8, toll_layout = false): boolean {
 
     let expanded = false;
 
@@ -6467,7 +6467,7 @@ export class Grid extends GridBase {
    * behavior, at least for now, we'll make a parameter to disable. but it
    * should probably not render.
    */
-  private AdvanceSelection(
+  protected AdvanceSelection(
     delta: Extent,
     selection: GridSelection,
     within_selection = false,
@@ -7078,7 +7078,7 @@ export class Grid extends GridBase {
    * default will show count/sum/average of numbers, either real 
    * or complex.
    */
-  private RenderStats(values: CellValue|CellValue[][]): StatsEntry[] {
+  protected RenderStats(values: CellValue|CellValue[][]): StatsEntry[] {
 
     // we don't handle single values
 
@@ -7186,7 +7186,7 @@ export class Grid extends GridBase {
     }
   }
 
-  private UpdateAddressLabelArea(selection: GridSelection) {
+  protected UpdateAddressLabelArea(selection: GridSelection) {
     if (!selection.empty && !selection.area.entire_sheet) {
       if (selection.area.entire_column) {
         this.UpdateAddressLabel(undefined, selection.area.columns + 'C');
@@ -7204,7 +7204,7 @@ export class Grid extends GridBase {
     }
   }
 
-  private UpdateAddressLabel(selection = this.primary_selection, text?: string) {
+  protected UpdateAddressLabel(selection = this.primary_selection, text?: string) {
 
     if (!this.formula_bar) { return; }
 
