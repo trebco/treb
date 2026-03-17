@@ -5636,7 +5636,7 @@ export class Grid extends GridBase {
    * of commands. the former is the default for editor commits; the latter
    * is used for paste.
    */
-  private SetInferredType(selection: GridSelection, value: string|undefined, array = false, exec = true, apply_style?: CellStyle) {
+  protected SetInferredType(selection: GridSelection, value: string|undefined, array = false, exec = true, apply_style?: CellStyle) {
 
     // console.info("SIT", {apply_style});
 
@@ -5657,7 +5657,7 @@ export class Grid extends GridBase {
     else if (array) {
 
       for (const cell of this.active_sheet.cells.Iterate(selection.area, false)) {
-        if (cell.area) {
+        if (cell?.area) {
           this.Error(ErrorCode.array);
           return;
         }
@@ -6836,7 +6836,7 @@ export class Grid extends GridBase {
   /**
    * utility method, internally calls Select with an undefined area
    */
-  private ClearSelection(selection: GridSelection, reason?: GridSelectionEvent['reason']) {
+  protected ClearSelection(selection: GridSelection, reason?: GridSelectionEvent['reason']) {
     this.Select(selection, undefined, undefined, undefined, reason);
   }
 
