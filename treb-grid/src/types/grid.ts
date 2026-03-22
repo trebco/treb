@@ -476,6 +476,7 @@ export class Grid extends GridBase {
       let value = cell.value;
 
       // seems like we're using a loop function unecessarily
+      
       if (r1c1 && value && cell.type === ValueType.formula) {
         value = this.FormatR1C1(value, { row, column })[0][0];
       }
@@ -2216,6 +2217,8 @@ export class Grid extends GridBase {
                 row: source.row + r,
                 column: source.column + c,
               },
+              r1c1_force_relative: true,
+              r1c1_proper_semantics: true,
             });
           }
         }
