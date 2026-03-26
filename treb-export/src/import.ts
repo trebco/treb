@@ -247,11 +247,15 @@ export class Importer {
                   name = name.substring(5);
                 }
                 if (/^_xlfn\./.test(name)) {
-                  console.info("xlfn:", name);
+                  if (process.env.NODE_ENV !== 'production') {
+                    console.info("xlfn:", name);
+                  }
                   name = name.substring(6);
                 }
                 if (/^_xlws\./.test(name)) {
-                  console.info("xlws:", name);
+                  if (process.env.NODE_ENV !== 'production') {
+                    console.info("xlws:", name);
+                  }
                   name = name.substring(6);
                 }
 
