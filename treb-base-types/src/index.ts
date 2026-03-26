@@ -39,6 +39,7 @@ export * from './table';
 export * from './gradient';
 export * from './evaluate-options';
 export * from './dom-utilities';
+export * from './worker-proxy';
 
 export * as AreaUtils from './area-utils';
 

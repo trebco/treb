@@ -27,7 +27,7 @@ import * as Messages from './import-export-messages';
 import { Exporter } from './export';
 import { Importer } from './import';
 
-import { GetWorkerContext } from 'treb-embed/src/worker-proxy';
+import { GetWorkerContext } from 'treb-base-types';
 
 export function AttachInProcess() {
   console.info("AOP");
