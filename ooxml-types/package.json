@@ -1,0 +1,5 @@
+{
+  "name": "ooxml-types",
+  "version": "1.0.2",
+  "main": "src/types/index.ts"
+}

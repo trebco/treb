@@ -42,7 +42,6 @@ import { Area, Cells, ValueType, Style, IsHTMLColor, IsThemeColor, ThemeColorInd
 
 // import * as xmlparser from 'fast-xml-parser';
 import type { XmlBuilderOptions} from 'fast-xml-parser';
-import { XMLParser } from 'fast-xml-parser';
 
 import { SharedStrings } from './shared-strings';
 import type { XlColor, BorderEdge } from './workbook-style';
@@ -51,7 +50,7 @@ import { Theme } from './workbook-theme';
 
 import type { RelationshipMap} from './relationship';
 import { AddRel } from './relationship';
-import { type DOMContent, XMLOptions2, PatchXMLBuilder } from './xml-utils';
+import { type DOMContent, PatchXMLBuilder } from './xml-utils';
 
 import type { UnitAddress, UnitRange, ExpressionUnit} from 'treb-parser';
 import { Parser } from 'treb-parser';

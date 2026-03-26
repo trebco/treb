@@ -11,7 +11,8 @@
     "../treb-parser/**/*.ts",
     "../treb-calculator/**/*.ts",
     "../treb-data-model/**/*.ts",
-    "../treb-base-types/**/*.ts"
+    "../treb-base-types/**/*.ts",
+    "../ooxml-types/**/*.ts"
   ],
   "exclude": [
     "src/export-worker/index-legacy.ts"
