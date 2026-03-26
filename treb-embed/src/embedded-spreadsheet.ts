@@ -178,8 +178,11 @@ export interface LoadDocumentOptions {
   /** @internal */
   override_selection?: GridSelection,
 
-  /** @internal */
   source?: LoadSource,
+
+  /** opaque data for reference */
+  path?: string;
+
 }
 
 /**
@@ -3957,7 +3960,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     }
 
-    this.Publish({ type: 'load', source: options.source }); // FIXME: should not happen on undo...
+    this.Publish({ 
+      type: 'load', 
+      source: options.source,
+      path: options.path,
+    }); // FIXME: should not happen on undo...
     this.UpdateDocumentStyles();
     this.loaded = true;
    
@@ -5267,7 +5274,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   /**
    *
    */
-   protected async ImportXLSX( // data: string, source: LoadSource): Promise<Blob | void> {
+   public async ImportXLSX( // data: string, source: LoadSource): Promise<Blob | void> {
     data: ArrayBuffer, source: LoadSource, path?: string): Promise<Blob | void> {
 
     // this is inlined to ensure the code will be tree-shaken properly
