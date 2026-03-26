@@ -883,7 +883,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // else? (A: it was)
 
     if (options.custom_grid) {
-      this.grid = options.custom_grid(
+      this.grid = options.custom_grid.call(this,
           grid_options, 
           this.model, 
           undefined, 
