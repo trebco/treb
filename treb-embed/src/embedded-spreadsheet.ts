@@ -4304,8 +4304,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * Revert state one level from the undo stack.
    * 
    * @public
+   * @returns true if undo succeeded, false if the undo stack was empty
    */
-  public Undo(): void {
+  public Undo(): boolean {
 
     // this is half of the problem, we also need to manage views when
     // we set undo states
@@ -4318,7 +4319,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     if (this.undo_pointer <= 1) {
       console.warn('nothing to undo');
-      return;
+      return false;
     }
 
     const undo_entry = this.undo_stack[(--this.undo_pointer) - 1];
@@ -4347,6 +4348,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // number in the file (this is new)
 
     // this.file_version--; // decrement
+
+    return true;
 
   }
 
