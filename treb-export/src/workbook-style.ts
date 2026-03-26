@@ -1121,6 +1121,8 @@ export class StyleCache {
 
   public FromXML(stylesheet: OOXML.StyleSheet, theme: Theme): void {
 
+    console.info("SS", stylesheet);
+
     // const FindAll = XMLUtils.FindAll.bind(XMLUtils, xml);
 
     this.theme = theme;

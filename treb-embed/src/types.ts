@@ -160,6 +160,10 @@ export interface DocumentLoadEvent {
   type: 'load';
   source?: LoadSource;
   file_type?: LoadType;
+
+  /** adding a path for tui; consider this opaque data */
+  path?: string;
+
 }
 
 /**

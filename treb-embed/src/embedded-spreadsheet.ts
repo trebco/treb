@@ -104,6 +104,7 @@ import type { SetRangeOptions, ClipboardData, PasteOptions } from 'treb-grid';
 
 import type { StateLeafVertex } from 'treb-calculator';
 
+import * as ImportExportMessages from 'treb-export/src/import-export-messages';
 
 // --- worker ------------------------------------------------------------------
 
@@ -491,7 +492,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * FIXME: type
    */
-  protected export_worker?: WorkerProxy<any>;
+  protected export_worker?: WorkerProxy<ImportExportMessages.RXMessages, ImportExportMessages.TXMessages>;
 
   /**
    * undo pointer points to the next insert spot. that means that when
@@ -3289,7 +3290,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       if (this.export_worker) {
         this.export_worker.OnMessage((event) => {
-          resolve(event.data ? event.data.blob : undefined);
+          if (event.data.type === 'export-complete') {
+            resolve(event.data.blob);
+          }
         });
         this.export_worker.OnError((event) => {
           console.error('export worker error');
@@ -3314,7 +3317,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         serialized.decimal_mark = Localization.decimal_separator;
 
         this.export_worker.PostMessage({
-          command: 'export', 
+          type: 'export', 
           sheet: serialized, 
           decorated: this.calculator.DecoratedFunctionList(),
         });
@@ -5265,7 +5268,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    *
    */
    protected async ImportXLSX( // data: string, source: LoadSource): Promise<Blob | void> {
-    data: ArrayBuffer, source: LoadSource): Promise<Blob | void> {
+    data: ArrayBuffer, source: LoadSource, path?: string): Promise<Blob | void> {
 
     // this is inlined to ensure the code will be tree-shaken properly
     if (!process.env.XLSX_SUPPORT) {
@@ -5296,8 +5299,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         this.export_worker.OnMessage((event) => {
           if (event.data) {
 
-            if (event.data.status === 'error') {
+            if (event.data.type === 'import-error') {
               return reject(event.data.error || 'unknown error');
+            }
+            if (event.data.type !== 'import-complete') {
+              return reject('unknown error (invalid message)');
             }
 
             if (this.parser.decimal_mark !== DecimalMarkType.Period) {
@@ -5322,15 +5328,15 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
                   });
               };
 
-              for (const named of event.data.results) {
-                named.expression = translate(named.expression);                
+              for (const named of event.data.results.named || []) {
+                named.expression = translate(named.expression) || '';                
               }
 
               for (const sheet of event.data.results.sheets || []) {
 
                 for (const cell of sheet.cells || []) {
                   if (cell.type === 'formula' && cell.value) {
-                    cell.value = translate(cell.value);
+                    cell.value = translate(cell.value as string);
                   }
                 }
 
@@ -5356,7 +5362,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             // this one _is_ the grid cells
 
             // this.calculator.AttachModel();
-            this.Publish({ type: 'load', source, });
+            this.Publish({ type: 'load', source, path });
             this.UpdateDocumentStyles();
 
             // add to support import charts
@@ -5384,7 +5390,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         });
 
         this.export_worker.PostMessage({
-          command: 'import', data,
+          type: 'import', data,
         });
 
       }
@@ -6771,15 +6777,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * switching to worker proxy so we can support node
    * FIXME: type
    */
-  protected async LoadWorker(): Promise<WorkerProxy<any>> {
-    const worker = CreateWorker<any>(!!this.options.in_process_workers);
+  protected async LoadWorker(): Promise<WorkerProxy<ImportExportMessages.RXMessages, ImportExportMessages.TXMessages>> {
+    const worker = CreateWorker<ImportExportMessages.RXMessages, ImportExportMessages.TXMessages>(!!this.options.in_process_workers);
     await worker.Init('./treb-export-worker.mjs', () => {
       return new Worker(new URL('./treb-export-worker.mjs', import.meta.url), { 
-        type: 'module' 
-    }) as Worker;
+          type: 'module' 
+      }) as Worker;
     });
     return worker;
-
   }
 
   /**

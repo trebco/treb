@@ -334,7 +334,7 @@ export class Grid extends GridBase {
   /**
    * active selection when selecting arguments (while editing)
    */
-  private readonly active_selection: GridSelection = {
+  protected readonly active_selection: GridSelection = {
     target: { row: 0, column: 0 },
     area: new Area({ row: 0, column: 0 }),
     empty: true,
@@ -5025,7 +5025,7 @@ export class Grid extends GridBase {
    *
    * FIXME: why is this not an accessor?
    */
-  private SelectingArgument(): boolean {
+  protected SelectingArgument(): boolean {
     return (this.overlay_editor?.editing && this.overlay_editor?.selecting)
       || (this.formula_bar && this.formula_bar.selecting)
       || (!!this.external_editor_config);

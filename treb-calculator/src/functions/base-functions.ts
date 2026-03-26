@@ -2707,7 +2707,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         return { handled: true }; // painted
       },
       fn: (...args: unknown[]): UnionValue => {
-        return { type: ValueType.object, value: args, key: 'sparkline-data' };
+        return { type: ValueType.object, value: args, key: 'sparkline-data', source: 'sparkline.column' };
       },
     },
 
@@ -2722,7 +2722,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         return { handled: true }; // painted
       },
       fn: (...args: unknown[]): UnionValue => {
-        return { type: ValueType.object, value: args, key: 'sparkline-data' };
+        return { type: ValueType.object, value: args, key: 'sparkline-data', source: 'sparkline.line' };
       },
     },
 

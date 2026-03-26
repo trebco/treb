@@ -65,6 +65,7 @@ import { Drawing } from './drawing/drawing';
 import { ConditionalFormatOperators, type TableDescription, type TableFooterType } from './workbook';
 import type { AnnotationData } from 'treb-data-model/src/annotation';
 import { ZipWrapper } from './zip-wrapper';
+import { ooxml_parser } from './ooxml';
 
 /*
 interface NestedDOMType {
@@ -153,7 +154,7 @@ export class Exporter {
 
   // public xmlparser = new xmlparser.j2xParser(this.xmloptions);
   public xmlbuilder1 = PatchXMLBuilder(this.xmloptions);
-  public xmlparser2 = new XMLParser(XMLOptions2);
+  // public xmlparser2 = new XMLParser(XMLOptions2);
 
   // FIXME: need a way to share/pass parser flags
   public parser = new Parser();
@@ -1214,11 +1215,15 @@ export class Exporter {
     const theme = new Theme();
 
     let data = this.zip?.Get('xl/theme/theme1.xml');
-    theme.FromXML(this.xmlparser2.parse(data || ''));
+    theme.FromXML(ooxml_parser.parse(data || '')?.theme);
+
+    // theme.FromXML(this.xmlparser2.parse(data || ''));
     // console.info({data, xml: this.xmlparser2.parse(data)})
 
     data = this.zip?.Get('xl/styles.xml');
-    style_cache.FromXML(this.xmlparser2.parse(data || ''), theme);
+    
+    //style_cache.FromXML(this.xmlparser2.parse(data || ''), theme);
+    style_cache.FromXML(ooxml_parser.parse(data || '')?.styleSheet, theme);
 
     // new flag: we need metadata for dynamic arrays
 

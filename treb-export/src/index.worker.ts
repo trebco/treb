@@ -22,6 +22,8 @@
 import type { ImportedSheetData } from 'treb-base-types';
 import type { SerializedModel } from 'treb-data-model';
 
+import * as Messages from './import-export-messages';
+
 import { Exporter } from './export';
 import { Importer } from './import';
 
@@ -45,7 +47,14 @@ GetWorkerContext().then(ctx => {
     if (data.sheet) {
       exporter.Init(data.decorated || []);
       exporter.Export(data.sheet);
-      ctx.postMessage({ status: 'complete', blob: exporter.Blob() });
+
+      const message: Messages.ExportCompleteMessage = {
+        type: 'export-complete',
+        blob: exporter.Blob(),
+      };
+
+      ctx.postMessage(message);
+      
     }
 
   };
@@ -82,24 +91,35 @@ GetWorkerContext().then(ctx => {
         }
       }
 
-      ctx.postMessage({ status: 'complete', results });
+      const message: Messages.ImportCompleteMessage = {
+        type: 'import-complete',
+        results,
+      }
+
+      ctx.postMessage(message);
 
     }
     catch (err) {
       console.warn('error importing xlsx file');
       console.info(err);
-      ctx.postMessage({ status: 'error', data: err });
+
+      const message: Messages.ImportErrorMessage = {
+        type: 'import-error',
+        error: err,
+      };
+
+      ctx.postMessage(message);
     }
 
   };
 
   // initialize message handler
-  ctx.addEventListener('message', (event) => {
-    if (event.data && event.data.command === 'export'){
-      ExportSheets(event.data as { sheet: SerializedModel, decorated: Record<string, string>});
+  ctx.addEventListener('message', (event: MessageEvent<Messages.ImportMessage|Messages.ExportMessage>) => {
+    if (event.data && event.data.type === 'export'){
+      ExportSheets(event.data as Messages.ExportMessage);
     }
-    else if (event.data && event.data.command === 'import'){
-      ImportSheet(event.data as { data: ArrayBuffer });
+    else if (event.data && event.data.type === 'import'){
+      ImportSheet(event.data as Messages.ImportMessage);
     }
   });
 

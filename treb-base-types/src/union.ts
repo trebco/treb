@@ -83,6 +83,9 @@ export interface ExtendedUnion {
 
   value: unknown; // any;
   key?: string;
+
+  /** adding a source field so we can track */
+  source?: string; 
 }
 
 export interface FunctionUnion {

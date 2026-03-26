@@ -60,8 +60,8 @@ export class WorkerProxyBrowser<TX, RX=TX> implements WorkerProxy<TX, RX> {
   }
 
   /**
-   * OK this changed to support svelte/vite/I guess it's rollup under 
-   * the hood. whatever the tool is to does static analysis and it has
+   * OK this changed to support svelte/vite/I guess it's all rollup under 
+   * the hood. whatever the tool is, it does static analysis and it has
    * to see the pattern loaded in order to bundle the worker module. so
    * we play ball. this is not a good situation.
    * 
@@ -80,13 +80,6 @@ export class WorkerProxyBrowser<TX, RX=TX> implements WorkerProxy<TX, RX> {
    */
   public async Init(url: string, browser_init_method: () => Worker) {
     this.worker = browser_init_method();
-
-    /*
-    this.worker = new Worker(new URL(url, import.meta.url), { 
-      type: 'module' 
-    }) as Worker;
-    */
-
   }
 
   public PostMessage(message: TX) {
