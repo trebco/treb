@@ -111,7 +111,7 @@ import * as ImportExportMessages from 'treb-export/src/import-export-messages';
 /**
  * import type for our worker, plus markup files
  */
-import './content-types.d.ts';
+// import './content-types.d.ts';
 import { CreateWorker, type WorkerProxy } from 'treb-base-types';
 
 // --- types -------------------------------------------------------------------

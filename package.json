@@ -12,9 +12,64 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/treb-spreadsheet.mjs",
       "types": "./dist/treb.d.ts",
+      "import": "./dist/treb-spreadsheet.mjs",
       "browser": "./dist/treb-spreadsheet.mjs"
+    },
+    "./treb-grid": {
+      "types": "./build/treb-grid/src/index.d.ts",
+      "import": "./build/treb-grid/src/index.js"
+    },
+    "./treb-grid/*": {
+      "types": "./build/treb-grid/*.d.ts",
+      "import": "./build/treb-grid/*.js"
+    },
+    "./treb-charts": {
+      "types": "./build/treb-charts/src/index.d.ts",
+      "import": "./build/treb-charts/src/index.js"
+    },
+    "./treb-charts/*": {
+      "types": "./build/treb-charts/*.d.ts",
+      "import": "./build/treb-charts/*.js"
+    },
+    "./treb-embed": {
+      "types": "./build/treb-embed/src/index.d.ts",
+      "import": "./build/treb-embed/src/index.js"
+    },
+    "./treb-embed/*": {
+      "types": "./build/treb-embed/*.d.ts",
+      "import": "./build/treb-embed/*.js"
+    },
+    "./treb-embed/*.html": {
+      "import": "./treb-embed/*.html"
+    },
+    "./treb-calculator": {
+      "types": "./build/treb-calculator/src/index.d.ts",
+      "import": "./build/treb-calculator/src/index.js"
+    },
+    "./treb-calculator/*": {
+      "types": "./build/treb-calculator/*.d.ts",
+      "import": "./build/treb-calculator/*.js"
+    },
+    "./treb-format": {
+      "types": "./build/treb-format/src/index.d.ts",
+      "import": "./build/treb-format/src/index.js"
+    },
+    "./treb-parser": {
+      "import": "./build/treb-parser/src/index.js",
+      "types": "./build/treb-parser/src/index.d.ts"
+    },
+    "./treb-utils": {
+      "import": "./build/treb-utils/src/index.js",
+      "types": "./build/treb-utils/src/index.d.ts"
+    },
+    "./treb-data-model": {
+      "import": "./build/treb-data-model/src/index.js",
+      "types": "./build/treb-data-model/src/index.d.ts"
+    },
+    "./treb-base-types": {
+      "import": "./build/treb-base-types/src/index.js",
+      "types": "./build/treb-base-types/src/index.d.ts"
     },
     "./esbuild-utils.mjs": "./esbuild-utils.mjs",
     "./package.json": "./package.json"

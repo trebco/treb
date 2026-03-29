@@ -32,7 +32,7 @@ export type StatsFunction = (data: CellValue|CellValue[][]|undefined) => StatsEn
  * the embedded spreadsheet options? they are never (AFAICT) used 
  * independently. maybe that's recent.
  */
-export interface GridOptions {
+export type GridOptions = {
 
   /** can expand rows/columns */
   expand?: boolean;

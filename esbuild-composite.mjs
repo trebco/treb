@@ -81,6 +81,11 @@ const build_options = {
   metafile: true,
   format: 'esm',
   external: ['*.wasm', 'node:*'],
+  alias: {
+    "treb-embed/style/treb-spreadsheet-element.scss": "./treb-embed/style/treb-spreadsheet-element.scss",
+    "treb-embed/markup/layout.html": "./treb-embed/markup/layout.html",
+    "treb-embed/markup/toolbar.html": "./treb-embed/markup/toolbar.html"
+  },
   define: {
     'process.env.XLSX_SUPPORT': `${options.xlsx_support}`,
     'process.env.NODE_ENV': `"${options.version}"`,

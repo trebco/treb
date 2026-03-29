@@ -23,9 +23,13 @@
 import { EmbeddedSpreadsheet } from '../embedded-spreadsheet';
 import type { EmbeddedSpreadsheetOptions } from '../options';
 
-import css from '../../style/treb-spreadsheet-element.scss';
-import html from '../../markup/layout.html';
-import toolbar_html from '../../markup/toolbar.html';
+import css from 'treb-embed/style/treb-spreadsheet-element.scss';
+import html from 'treb-embed/markup/layout.html';
+import toolbar_html from 'treb-embed/markup/toolbar.html';
+
+// import css from '../../style/treb-spreadsheet-element.scss';
+// import html from '../../markup/layout.html';
+// import toolbar_html from '../../markup/toolbar.html';
 
 import { NumberFormatCache } from 'treb-format';
 import { ColorFunctions, type Color, IsThemeColor } from 'treb-base-types';
