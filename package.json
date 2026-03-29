@@ -1,6 +1,6 @@
 {
   "name": "@trebco/treb",
-  "version": "36.1.4",
+  "version": "37.0.0",
   "license": "LGPL-3.0-or-later",
   "homepage": "https://treb.app",
   "repository": {
@@ -10,6 +10,15 @@
   "main": "dist/treb-spreadsheet.mjs",
   "types": "dist/treb.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/treb-spreadsheet.mjs",
+      "types": "./dist/treb.d.ts",
+      "browser": "./dist/treb-spreadsheet.mjs"
+    },
+    "./esbuild-utils.mjs": "./esbuild-utils.mjs",
+    "./package.json": "./package.json"
+  },
   "devDependencies": {
     "@types/html-minifier": "^4.0.6",
     "@types/node": "^25.5.0",
@@ -42,7 +51,7 @@
   "scripts": {
     "build": "node esbuild-composite.mjs",
     "dev": "node esbuild-composite.mjs --dev",
-    "clean": "rm -fr build dist declaration",
+    "clean": "rm -fr build dist",
     "watch": "node --watch esbuild-composite.mjs --watch --dev",
     "watch-production": "node --watch esbuild-composite.mjs --watch",
     "tsc": "tsc -b treb-embed/tsconfig.json",
@@ -50,6 +59,6 @@
     "watch-tsc": "tsc -b treb-embed/tsconfig.json -w",
     "watch-api": "tsx --watch api-generator/api-generator.ts --config api-config.json",
     "generate-api": "tsx api-generator/api-generator.ts --config api-config.json",
-    "release": "npm run rebuild-tsc && npm run build && npm run generate-api"
+    "release": "npm run clean && npm run rebuild-tsc && npm run build && npm run generate-api"
   }
 }

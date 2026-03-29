@@ -4,7 +4,7 @@
 
   "output": "./dist/treb.d.ts",
 
-  "root": "./declaration",
+  "root": "./build",
 
   "index": "treb-embed/src/index.d.ts",
 
