@@ -1,5 +1,18 @@
 /**
- * postprocess the generated build/ dir and clean up imports
+ * postprocess the generated build/ dir and clean up imports. this 
+ * makes local package imports (e.g. import from 'treb-base-types') 
+ * relative, and adds index to package names (from '../../treb-base-types/src/index').
+ * 
+ * this tool modifies build artifacts in place, which means it's destructive.
+ * but those are all build artifacts so they can be recreated if necessary.
+ * 
+ * we're making some assumptions here that are specific to this project,
+ * so this is fragile, but it works and it's simple.
+ * 
+ * TODO: look up the proper index file and use that for naked lib imports
+ * TODO: create a list of package names, so we stop ignoring ooxml-types
+ * TODO: parameterize all this with a config file
+ * 
  */
 
 import fs from 'node:fs/promises';
