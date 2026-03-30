@@ -17,7 +17,7 @@ async function ProcessFile(file: string, depth: number) {
   const prepend = offset.join('/') + '/';
 
   let contents = await fs.readFile(file, { encoding: 'utf8' });
-  const matches = Array.from(contents.matchAll(/import.*?from\s+?['"](treb-.*?)['"]/g));
+  const matches = Array.from(contents.matchAll(/(?:import|export).*?from\s+?['"](treb-.*?)['"]/g));
 
   if (matches.length) {
     // console.info(file);
