@@ -20,7 +20,7 @@
  */
 
 import type { ICellAddress, AnnotationLayout, IRectangle, CellStyle } from 'treb-base-types';
-import { Rectangle } from 'treb-base-types';
+import { Rectangle } from '../../treb-base-types/src/index';
 
 /**
  * new annotation class. annotations are arbitrary content
