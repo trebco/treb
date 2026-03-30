@@ -64,6 +64,49 @@ export class Measurement {
       return cached;
     }
 
+    // document not available. we can't handle symbolic colors 
+    // but we can handle rgb
+
+    if (typeof document === 'undefined') {
+
+      let parsed = [0, 0, 0];
+
+      let match = color.match(/^#{0,1}([A-Za-z0-9]{2})([A-Za-z0-9]{2})([A-Za-z0-9]{2})/);
+      if (match) {
+        parsed = [
+          Number.parseInt(match[1], 16),
+          Number.parseInt(match[2], 16),
+          Number.parseInt(match[3], 16),
+        ];
+      }
+
+      if (!match) {
+        match = color.match(/^#{0,1}([A-Za-z0-9]{1})([A-Za-z0-9]{1})([A-Za-z0-9]{1})/);
+        if (match) {
+          parsed = [
+            Number.parseInt(match[1], 16),
+            Number.parseInt(match[2], 16),
+            Number.parseInt(match[3], 16),
+          ];
+        }
+      }      
+
+      if (!match) {
+        match = color.match(/^rgb\((\d+),\s*(\d+)\s*(\d+)\)/);
+        if (match) {
+          parsed = [
+            Number.parseInt(match[1]),
+            Number.parseInt(match[2]),
+            Number.parseInt(match[3]),
+          ];
+        }
+      }      
+      
+      cached = new Uint8ClampedArray(parsed);
+      this.color_cache[color] = cached;
+      return cached;
+    }
+
     if (!this.color_measurement_canvas) {
       this.color_measurement_canvas = document.createElement('canvas');
       this.color_measurement_canvas.width = 1;
