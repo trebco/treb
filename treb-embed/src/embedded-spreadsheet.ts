@@ -116,15 +116,7 @@ import { CreateWorker, type WorkerProxy } from 'treb-base-types';
 
 // --- types -------------------------------------------------------------------
 
-/** new, intended for tui support but keeping it as generic as possible */
-export type CustomGridFactory = (
-        options: GridOptions, 
-        model: DataModel,
-        theme: Theme|undefined,
-        initialze_dom: boolean,
-        DOM: DOMContext,
-      ) => Grid;
-
+import type { CustomGridFactory } from './custom-grid-factory';
 
 /**
  * options for saving files. we add the option for JSON formatting.
