@@ -4,6 +4,7 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import test from 'node:test';
 
 const root = './build';
 
@@ -19,22 +20,25 @@ async function ProcessFile(file: string, depth: number) {
   const matches = Array.from(contents.matchAll(/import.*?from\s+?['"](treb-.*?)['"]/g));
 
   if (matches.length) {
-    console.info(file);
+    // console.info(file);
     for (const match of matches) {
 
       let replacement = match[0];
       let import_text = match[1];
 
+      // watch out for magic esbuild imports
+
+      if (/(html|scss|css)$/i.test(import_text)) {
+        continue;
+      }
+
       if (/\//.test(import_text)) {
-        console.info("Q path", file);
         replacement = replacement.replace(/from (['"'])treb-/, `from $1${prepend}treb-`);
       }
       else {
         replacement = replacement.replace(new RegExp(import_text), prepend + import_text + '/src/index');
       }
-      
-      // replacement = replacement.replace(/from (['"'])treb-/, `from $1${prepend}treb-`);
-      
+     
       contents = contents.replace(match[0], replacement);
     }
     await fs.writeFile(file, contents, { encoding: 'utf-8'});
