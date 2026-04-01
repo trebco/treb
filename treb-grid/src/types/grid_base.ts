@@ -806,7 +806,7 @@ export class GridBase {
     }
     if (typeof column === 'number') column = [column];
 
-    if (command.width) {
+    if (typeof command.width === 'number') {
       for (const entry of column) {
         sheet.SetColumnWidth(entry, command.width);
       }
@@ -867,7 +867,7 @@ export class GridBase {
 
     // I guess this was intended to prevent auto-size, but what about 0? 
 
-    if (command.height) {
+    if (typeof command.height === 'number') {
       for (const entry of row) {
         sheet.SetRowHeight(entry, command.height);
       }

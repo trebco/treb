@@ -8089,6 +8089,10 @@ export class Grid extends GridBase {
    */
   protected ResizeRowsInternal(command: ResizeRowsCommand): IArea|undefined {
 
+    if (this.headless) {
+      return super.ResizeRowsInternal(command);
+    }
+
     let updated: Area|undefined;
 
     // this method is inconsistent for active sheet vs other sheets.
