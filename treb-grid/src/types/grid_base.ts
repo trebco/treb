@@ -278,7 +278,12 @@ export class GridBase {
     });
   }
 
-  public Screenshot(type: 'png'|'webp'|'jpeg'|undefined, quality: number|undefined = undefined, download = false): string|undefined {
+  public Screenshot({ type, quality, download }: {
+        type?: 'png'|'webp'|'jpeg', 
+        quality?: number, 
+        download?: boolean,
+    }): string|undefined {
+      
     return undefined;
   }
 

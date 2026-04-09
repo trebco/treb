@@ -3263,7 +3263,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   public Screenshot(type: 'png'|'webp'|'jpeg'|undefined, quality: number|undefined = undefined, download = false): string|undefined {
-    return this.grid.Screenshot(type, quality, download);
+    return this.grid.Screenshot({type, quality, download});
   }
 
   /** 

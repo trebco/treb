@@ -20,7 +20,7 @@
  */
 
 import { DOMContext } from 'treb-base-types';
-import type { DataModel, ViewModel, Annotation } from 'treb-data-model';
+import type { DataModel, ViewModel, Annotation, GridSelection } from 'treb-data-model';
 
 import type { Tile } from '../types/tile';
 import type { Theme, Point, Extent, Size, Position, ICellAddress, Table, IArea } from 'treb-base-types';
@@ -476,8 +476,23 @@ export abstract class BaseLayout {
     this.sort_button.setAttribute('tabindex', '-1');
   }
 
-  public Screenshot(type: 'png'|'jpeg'|'webp' = 'png', quality: number|undefined = undefined, download = false) {
+  public AreaToRect(area: IArea, offset?: {x: number, y: number}) {
+    const start = this.OffsetCellAddressToRectangle(area.start);
+    const end = this.OffsetCellAddressToRectangle(area.end);
+    return new Rectangle(start.left + (offset?.x || 0), start.top + (offset?.y || 0), end.right - start.left, end.bottom - start.top);
+  }
 
+  public Screenshot({
+      type = 'png', quality, download, selection, target, nub,
+    }:
+    {
+      type?: 'png'|'jpeg'|'webp', 
+      quality?: number, 
+      download?: boolean,
+      selection?: Area,
+      target?: Area,
+      nub?: boolean,
+    }){
 
     const left = this.scroll_reference_node.scrollLeft;
     const width = this.scroll_reference_node.offsetWidth;
@@ -487,7 +502,7 @@ export abstract class BaseLayout {
     const height = this.scroll_reference_node.offsetHeight;
     const bottom= top + height;
 
-    console.info({left, width, top, height});
+    // console.info({left, width, top, height});
 
     // create a temporary canvas
 
@@ -589,6 +604,62 @@ export abstract class BaseLayout {
           paint_width, paint_height,
         );
 
+      }
+
+      if (selection) {
+
+        /////
+
+        const styles = getComputedStyle(this.grid_selection);
+        const selection_color = styles.getPropertyValue('--treb-selection-color');
+        const selection_opacity = styles.getPropertyValue('--treb-selection-fill-opacity');
+
+        const default_color = '#4caaf1';
+        const default_opacity = 0.1;
+
+        //////
+
+        context.save();
+        context.beginPath();
+        context.rect(this.header_size.width, this.header_size.height, width, height);
+        context.clip();
+
+        const offset = {
+          x: this.header_size.width - left,  
+          y: this.header_size.height - top,
+        };
+
+        context.fillStyle = context.strokeStyle = selection_color || default_color;
+        context.lineWidth = 2;
+
+        context.globalAlpha = selection_opacity ? Number(selection_opacity) : default_opacity;
+        for (const cell of selection) {
+          if (target?.Contains(cell)) {
+            continue;
+          }
+          const rect = this.AreaToRect(new Area(cell), offset);
+          context.fillRect(rect.left, rect.top, rect.width, rect.height);
+        }
+
+        const rect = this.AreaToRect(selection, offset);
+        context.globalAlpha = 1;
+
+        context.strokeRect(
+          rect.left, rect.top, rect.width, rect.height
+        );
+
+        if (nub) {
+          context.fillRect(
+            rect.right - 3, rect.bottom - 3, 6, 6,
+          );
+        }
+
+        context.restore();
+
+
+      }
+      else {
+        console.info("No selection?", selection);
       }
 
       const dataurl = canvas.toDataURL('image/' + type, quality);

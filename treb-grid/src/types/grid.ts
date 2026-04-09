@@ -8083,8 +8083,24 @@ export class Grid extends GridBase {
     }
   }
 
-  public override Screenshot(type: 'png'|'webp'|'jpeg'|undefined, quality: number|undefined = undefined, download = false): string|undefined {
-    return this.layout.Screenshot(type, quality, download);
+  public override Screenshot({ type, quality, download}: {
+      type?: 'png'|'webp'|'jpeg', 
+      quality?: number, 
+      download?: boolean,
+    }): string|undefined {
+
+    const selection: Area|undefined = this.primary_selection.empty ? undefined : this.primary_selection.area;
+    let target: Area|undefined = this.primary_selection.empty ? undefined : new Area(this.primary_selection.target);
+    if (target) {
+      const cell_data = this.active_sheet.CellData(target.start);
+      if (cell_data.merge_area) {
+        target = new Area(cell_data.merge_area.start, cell_data.merge_area.end);
+      }
+    }
+
+    return this.layout.Screenshot({
+      type, quality, download, selection, target, nub: true
+    });
   }
 
   /**
