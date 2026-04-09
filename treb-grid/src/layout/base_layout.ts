@@ -495,11 +495,11 @@ export abstract class BaseLayout {
     }){
 
     const left = this.scroll_reference_node.scrollLeft;
-    const width = this.scroll_reference_node.offsetWidth;
+    const width = this.scroll_reference_node.clientWidth; // this.scroll_reference_node.offsetWidth;
     const right = left + width;
 
     const top = this.scroll_reference_node.scrollTop;
-    const height = this.scroll_reference_node.offsetHeight;
+    const height = this.scroll_reference_node.clientHeight; // this.scroll_reference_node.offsetHeight
     const bottom= top + height;
 
     // console.info({left, width, top, height});
@@ -519,7 +519,7 @@ export abstract class BaseLayout {
       for (const column of this.grid_tiles) {
         for (const cell of column) {
 
-          if (cell.pixel_end.x < left || cell.pixel_start.y > right) {
+          if (cell.pixel_end.x < left || cell.pixel_start.x > right) {
             continue;
           }
           if (cell.pixel_end.y < top || cell.pixel_start.y > bottom) {
