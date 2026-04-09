@@ -3262,6 +3262,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     this.grid.UnmergeCells(range ? this.model.ResolveArea(range, this.grid.active_sheet) : undefined);
   }
 
+  public Screenshot(type: 'png'|'webp'|'jpeg'|undefined, quality: number|undefined = undefined, download = false): string|undefined {
+    return this.grid.Screenshot(type, quality, download);
+  }
+
   /** 
    * Export XLSX as a blob. This is intended for electron clients, who may
    * implement their own file save routines (because they have access to the

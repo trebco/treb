@@ -278,6 +278,10 @@ export class GridBase {
     });
   }
 
+  public Screenshot(type: 'png'|'webp'|'jpeg'|undefined, quality: number|undefined = undefined, download = false): string|undefined {
+    return undefined;
+  }
+
   /**
    * duplicate sheet by index or (omitting index) the current active sheet
    */

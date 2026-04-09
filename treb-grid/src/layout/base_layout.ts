@@ -476,6 +476,139 @@ export abstract class BaseLayout {
     this.sort_button.setAttribute('tabindex', '-1');
   }
 
+  public Screenshot(type: 'png'|'jpeg'|'webp' = 'png', quality: number|undefined = undefined, download = false) {
+
+
+    const left = this.scroll_reference_node.scrollLeft;
+    const width = this.scroll_reference_node.offsetWidth;
+    const right = left + width;
+
+    const top = this.scroll_reference_node.scrollTop;
+    const height = this.scroll_reference_node.offsetHeight;
+    const bottom= top + height;
+
+    console.info({left, width, top, height});
+
+    // create a temporary canvas
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d', { alpha: false });
+
+    if (context) {
+
+      context.fillStyle = 'yellow';
+      context.fillRect(0, 0, width, height);
+
+      for (const column of this.grid_tiles) {
+        for (const cell of column) {
+
+          if (cell.pixel_end.x < left || cell.pixel_start.y > right) {
+            continue;
+          }
+          if (cell.pixel_end.y < top || cell.pixel_start.y > bottom) {
+            continue;
+          }
+
+          const paint_left = 
+            this.header_size.width + cell.pixel_start.x - left;
+          const paint_top = 
+            this.header_size.height + cell.pixel_start.y - top;
+          const paint_width = cell.pixel_end.x - cell.pixel_start.x;
+          const paint_height = cell.pixel_end.y - cell.pixel_start.y;
+
+          // console.info("DRAWING CELL", cell, 0, 0, paint_left, paint_top);
+
+          context.drawImage(
+            cell, 
+            0, 0,
+            paint_width, paint_height,
+            paint_left, 
+            paint_top,
+            paint_width, paint_height,
+          );
+
+        }
+      }
+
+
+      for (const cell of this.row_header_tiles) {
+
+        if (cell.pixel_end.y < top || cell.pixel_start.y > bottom) {
+          continue;
+        }
+
+        const paint_left = 0;
+        const paint_top = this.header_size.height + cell.pixel_start.y - top;
+        const paint_width = cell.pixel_end.x - cell.pixel_start.x;
+        const paint_height = cell.pixel_end.y - cell.pixel_start.y;
+        context.drawImage(
+          cell, 
+          0, 0,
+          paint_width, paint_height,
+          paint_left, 
+          paint_top,
+          paint_width, paint_height,
+        );
+
+      }
+
+      for (const cell of this.column_header_tiles) {
+
+        if (cell.pixel_end.x < left || cell.pixel_start.y > right) {
+          continue;
+        }
+
+        const paint_left = this.header_size.width + cell.pixel_start.x - left;
+        const paint_top = 0;
+        const paint_width = cell.pixel_end.x - cell.pixel_start.x;
+        const paint_height = cell.pixel_end.y - cell.pixel_start.y;
+        context.drawImage(
+          cell, 
+          0, 0,
+          paint_width, paint_height,
+          paint_left, 
+          paint_top,
+          paint_width, paint_height,
+        );
+      }
+
+      {
+        let paint_left = 0;
+        let paint_top = 0;
+        let paint_width = this.header_size.width;
+        let paint_height = this.header_size.height;
+
+        context.drawImage(
+          this.corner_canvas, 
+          0, 0,
+          paint_width, paint_height,
+          paint_left, 
+          paint_top,
+          paint_width, paint_height,
+        );
+
+      }
+
+      const dataurl = canvas.toDataURL('image/' + type, quality);
+
+      if (download) {
+        const link = document.createElement('a');
+        link.href = dataurl;
+        link.download = 'screenshot.' + type; // This attribute forces the download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      return dataurl;
+
+    }
+
+    return undefined;
+  }
+  
   public ShowTableSortButton(table: Table, column: number, address: ICellAddress): void {
 
     if (!this.sort_button.parentElement) {

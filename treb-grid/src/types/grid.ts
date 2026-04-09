@@ -8083,6 +8083,10 @@ export class Grid extends GridBase {
     }
   }
 
+  public override Screenshot(type: 'png'|'webp'|'jpeg'|undefined, quality: number|undefined = undefined, download = false): string|undefined {
+    return this.layout.Screenshot(type, quality, download);
+  }
+
   /**
    * UI grid supports scale and auto-size, so we're overloading.
    * @param command 
