@@ -3262,7 +3262,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     this.grid.UnmergeCells(range ? this.model.ResolveArea(range, this.grid.active_sheet) : undefined);
   }
 
-  public Screenshot(type: 'png'|'webp'|'jpeg'|undefined, quality: number|undefined = undefined, download = false): string|undefined {
+  public async Screenshot(type: 'png'|'webp'|'jpeg'|undefined, quality: number|undefined = undefined, download = false): Promise<string|undefined> {
     return this.grid.Screenshot({type, quality, download});
   }
 

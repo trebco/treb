@@ -42,6 +42,7 @@ import type { GridEvent } from '../types/grid_events';
 
 import type { CellValue, AnnotationLayout, Corner } from 'treb-base-types';
 import { Area as TileRange } from 'treb-base-types';
+import { SerializeHTML } from 'treb-utils';
 
 export { Area as TileRange } from 'treb-base-types';
 
@@ -482,7 +483,7 @@ export abstract class BaseLayout {
     return new Rectangle(start.left + (offset?.x || 0), start.top + (offset?.y || 0), end.right - start.left, end.bottom - start.top);
   }
 
-  public Screenshot({
+  public async Screenshot({
       type = 'png', quality, download, selection, target, nub,
     }:
     {
@@ -606,6 +607,13 @@ export abstract class BaseLayout {
 
       }
 
+      // set clip before rendering selections, annotations
+
+      context.save();
+      context.beginPath();
+      context.rect(this.header_size.width, this.header_size.height, width, height);
+      context.clip();
+
       if (selection) {
 
         /////
@@ -618,11 +626,6 @@ export abstract class BaseLayout {
         const default_opacity = 0.1;
 
         //////
-
-        context.save();
-        context.beginPath();
-        context.rect(this.header_size.width, this.header_size.height, width, height);
-        context.clip();
 
         const offset = {
           x: this.header_size.width - left,  
@@ -654,12 +657,64 @@ export abstract class BaseLayout {
           );
         }
 
-        context.restore();
-
-
       }
       else {
-        console.info("No selection?", selection);
+        // console.info("No selection?", selection);
+      }
+
+      const annotation_elements = Array.from(this.annotation_container.children);
+      if (annotation_elements.length) {
+        for (const element of annotation_elements) {
+          if (!(element instanceof HTMLElement)) {
+            continue;
+          }
+
+          const rect = element.getBoundingClientRect();
+
+          const position = {
+            top: element.offsetTop + this.header_size.height - top,
+            left: element.offsetLeft + this.header_size.width - left,
+            width: rect.width,
+            height: rect.height,
+          };
+
+          const svg_child = element.querySelector('.annotation-content svg');
+          if (svg_child) {
+
+            const clone = (SerializeHTML(svg_child as Element) as HTMLElement).outerHTML;
+            // console.info({clone});
+
+            // const svg = serializer.serializeToString(svg_child);
+            // const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+            const blob = new Blob([clone], { type: "image/svg+xml;charset=utf-8" });
+
+            await new Promise<void>((resolve, reject) => {
+              const url = URL.createObjectURL(blob);
+              const img = new Image();
+              img.onload = () => {
+                context.drawImage(img, position.left, position.top);
+                context.strokeStyle = '#999';
+                context.lineWidth = 1;
+                context.strokeRect(position.left, position.top, position.width, position.height);
+                URL.revokeObjectURL(url);
+                resolve();
+              };
+              img.onerror = reject;
+              img.src = url;
+            });
+          }
+          else {
+            const image_child = element.querySelector('.annotation-content img');
+            if (image_child instanceof HTMLImageElement) {
+              context.drawImage(image_child, position.left, position.top, position.width, position.height);
+              context.strokeStyle = '#999';
+              context.lineWidth = 1;
+              context.strokeRect(position.left, position.top, position.width, position.height);
+            }
+          }
+
+
+        }
       }
 
       const dataurl = canvas.toDataURL('image/' + type, quality);

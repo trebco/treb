@@ -78,6 +78,7 @@ const GetAppliedStyle = (node: Element, computed: CSSStyleDeclaration, defaults:
 const RenderNode = (node: Element, defaults: StringMap) => {
 
   const clone = node.cloneNode(false);
+
   const computed = getComputedStyle(node);
   const style = GetAppliedStyle(node, computed, defaults);
 

@@ -278,11 +278,11 @@ export class GridBase {
     });
   }
 
-  public Screenshot({ type, quality, download }: {
+  public async Screenshot({ type, quality, download }: {
         type?: 'png'|'webp'|'jpeg', 
         quality?: number, 
         download?: boolean,
-    }): string|undefined {
+    }): Promise<string|undefined> {
       
     return undefined;
   }

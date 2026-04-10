@@ -8083,11 +8083,11 @@ export class Grid extends GridBase {
     }
   }
 
-  public override Screenshot({ type, quality, download}: {
+  public override async Screenshot({ type, quality, download}: {
       type?: 'png'|'webp'|'jpeg', 
       quality?: number, 
       download?: boolean,
-    }): string|undefined {
+    }): Promise<string|undefined> {
 
     const selection: Area|undefined = this.primary_selection.empty ? undefined : this.primary_selection.area;
     let target: Area|undefined = this.primary_selection.empty ? undefined : new Area(this.primary_selection.target);
@@ -8101,6 +8101,7 @@ export class Grid extends GridBase {
     return this.layout.Screenshot({
       type, quality, download, selection, target, nub: true
     });
+    
   }
 
   /**
