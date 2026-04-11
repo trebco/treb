@@ -612,7 +612,7 @@ export abstract class BaseLayout {
       context.save();
       context.beginPath();
       context.rect(this.header_size.width, this.header_size.height, width, height);
-      context.clip();
+//      context.clip();
 
       if (selection) {
 
@@ -662,6 +662,69 @@ export abstract class BaseLayout {
         // console.info("No selection?", selection);
       }
 
+      const PaintBorder = (position: {top: number, left: number, width: number, height: number}) => {
+        context.strokeStyle = '#999';
+        context.lineWidth = 1;
+        context.strokeRect(position.left, position.top, position.width, position.height);
+      };
+
+      const PaintSVG = async (
+            position: {top: number, left: number, width: number, height: number},
+            svg: SVGElement,
+            border = true,
+          ) => {
+
+        let clone = (SerializeHTML(svg as Element) as HTMLElement).outerHTML;
+
+        /*
+        if (add_view_box) {
+          console.info("AVB");
+          clone = clone.replace(/<svg/, `<svg ${add_view_box}`);
+          console.info(clone);
+        }
+        */
+
+        const blob = new Blob([clone], { type: "image/svg+xml;charset=utf-8" });
+
+        await new Promise<void>((resolve, reject) => {
+          const url = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = () => {
+            context.drawImage(img, position.left, position.top);
+            if (border) {
+              PaintBorder(position);
+            }
+            URL.revokeObjectURL(url);
+            resolve();
+          };
+          img.onerror = reject;
+          img.src = url;
+        });
+        
+      };
+
+      /*
+      if (this.grid_selection) {
+
+          const rect = this.grid_selection.getBoundingClientRect();
+
+          const position = {
+            top: -top, // this.grid_selection.offsetTop + this.header_size.height - top,
+            left: -left, // element.offsetLeft + this.header_size.width - left,
+            width: rect.width,
+            height: rect.height,
+          };
+
+          // our selections don't have a viewbox, which
+          // breaks painting
+
+          const viewbox = `viewBox="0 0 ${rect.width} ${rect.height}" `;
+
+          await PaintSVG(position, this.grid_selection, false, viewbox);
+
+      }
+      */
+
       const annotation_elements = Array.from(this.annotation_container.children);
       if (annotation_elements.length) {
         for (const element of annotation_elements) {
@@ -680,36 +743,13 @@ export abstract class BaseLayout {
 
           const svg_child = element.querySelector('.annotation-content svg');
           if (svg_child) {
-
-            const clone = (SerializeHTML(svg_child as Element) as HTMLElement).outerHTML;
-            // console.info({clone});
-
-            // const svg = serializer.serializeToString(svg_child);
-            // const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-            const blob = new Blob([clone], { type: "image/svg+xml;charset=utf-8" });
-
-            await new Promise<void>((resolve, reject) => {
-              const url = URL.createObjectURL(blob);
-              const img = new Image();
-              img.onload = () => {
-                context.drawImage(img, position.left, position.top);
-                context.strokeStyle = '#999';
-                context.lineWidth = 1;
-                context.strokeRect(position.left, position.top, position.width, position.height);
-                URL.revokeObjectURL(url);
-                resolve();
-              };
-              img.onerror = reject;
-              img.src = url;
-            });
+            await PaintSVG(position, svg_child as SVGElement);
           }
           else {
             const image_child = element.querySelector('.annotation-content img');
             if (image_child instanceof HTMLImageElement) {
               context.drawImage(image_child, position.left, position.top, position.width, position.height);
-              context.strokeStyle = '#999';
-              context.lineWidth = 1;
-              context.strokeRect(position.left, position.top, position.width, position.height);
+              PaintBorder(position);
             }
           }
 
