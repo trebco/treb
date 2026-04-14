@@ -1734,8 +1734,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   /**
    * list conditional formats. uses the active sheet by default, or pass a 
    * sheet name or id.
-   * 
-   * @internal
    */
   public ListConditionalFormats(sheet?: number|string) {
 
@@ -1743,7 +1741,17 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       this.grid.active_sheet :
       this.model.sheets.Find(sheet);
 
-    return target?.conditional_formats || [];
+    // copy and remove internal field
+
+    const formats = (target?.conditional_formats || []).map(format => {
+      const clone = JSON.parse(JSON.stringify(format));
+      const { internal, ...data } = clone;
+      return data;
+    });
+
+    return formats;
+
+    // return target?.conditional_formats || [];
       
   }
 
