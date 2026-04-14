@@ -55,6 +55,8 @@ import type {
     SerializedNamed,
     ConditionalFormatDataBarOptions,
     ConditionalFormatDataBar,
+    ConditionalFormatList,
+    ConditionalFormatType,
 
    } from 'treb-data-model';
 
@@ -1735,7 +1737,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * list conditional formats. uses the active sheet by default, or pass a 
    * sheet name or id.
    */
-  public ListConditionalFormats(sheet?: number|string) {
+  public ListConditionalFormats(sheet?: number|string): ConditionalFormatType[] {
 
     const target = (typeof sheet === 'undefined') ? 
       this.grid.active_sheet :

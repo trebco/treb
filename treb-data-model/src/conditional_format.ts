@@ -207,6 +207,14 @@ export interface ConditionalFormatDuplicateValues extends ConditionalFormatDupli
 
 }
 
+/** composite conditional format type */
+export type ConditionalFormatType = 
+    ConditionalFormatDuplicateValues |
+    ConditionalFormatExpression |
+    ConditionalFormatCellMatch |
+    ConditionalFormatGradient | 
+    ConditionalFormatDataBar ;
+
 /** 
  * union, plus we're adding a state used to track application.
  * that state is serialized if it's true. 
@@ -217,13 +225,7 @@ export interface ConditionalFormatDuplicateValues extends ConditionalFormatDupli
  * update: adding a priority field, optional
  * 
  */
-export type ConditionalFormat = { internal?: unknown, priority?: number } & (
-    ConditionalFormatDuplicateValues |
-    ConditionalFormatExpression |
-    ConditionalFormatCellMatch |
-    ConditionalFormatGradient | 
-    ConditionalFormatDataBar
-  );
+export type ConditionalFormat = { internal?: unknown, priority?: number } & ConditionalFormatType;
 
 /**
  * the list of formats, in reverse order of precedence. as a starting
