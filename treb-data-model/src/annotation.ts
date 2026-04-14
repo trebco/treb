@@ -51,6 +51,10 @@ import { Rectangle } from 'treb-base-types';
  *  
  */
 
+/** 
+ * key is used to match annotations for freeze panes. we're repurposing
+ * it as a general (ephemeral, per-session) id
+ */
 let key_generator = 100;
 
 /**
@@ -264,6 +268,7 @@ export class Annotation {
     if (opts.rect) {
       this.rect = Rectangle.Create(opts.rect);
     }
+
   }
 
   /**

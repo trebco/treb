@@ -57,6 +57,7 @@ import type {
     ConditionalFormatDataBar,
     ConditionalFormatList,
     ConditionalFormatType,
+    AnnotationData,
 
    } from 'treb-data-model';
 
@@ -1728,6 +1729,25 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   }
 
+  /**
+   * method to list annotations in the spreadsheet, including internal id
+   * (handle). the id is per-session, so it will be consistent as long as the 
+   * spreadsheet is open (and the annotation exists).
+   * 
+   * @param sheet - sheet name or ID. omit to use the active sheet
+   */
+  public ListAnnotations(sheet?: number|string): (Partial<AnnotationData> & { id: string })[]  {
+
+    const target = (typeof sheet === 'undefined') ? 
+      this.grid.active_sheet :
+      this.model.sheets.Find(sheet);
+
+    return (target?.annotations || []).map(annotation => {
+      return { ...annotation.data, id: annotation.key.toString() };
+    });
+
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   //
   // conditional formatting API (WIP)
@@ -2948,7 +2968,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * is selected) insert the image into the document.
    */
   public InsertImage(): void {
-    this.SelectFile2('.png, .jpg, .jpeg, .gif, .svg', FileChooserOperation.InsertImage);
+    this.SelectFile2('.png, .jpg, .jpeg, .gif, .svg, .webp', FileChooserOperation.InsertImage);
   }
 
   /** 
@@ -5651,36 +5671,28 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
               }
             }
 
-            const img = this.DOM.Create('img');
-            img.src = contents;
+            const image = new Image();
+            
+            await new Promise<void>(resolve => {
+              image.onload = () => resolve();
+              image.onerror = () => resolve();
+              image.src = contents;
+            });
 
-            // this is to let the browser figure out the image size.
-            // we should maybe use requestAnimationFrame? 
-
-            await Promise.resolve();
-
-            // note: this works, somewhat contrary to expectations,
-            // probably because there are some async calls; hence the
-            // src attribute is set before it's inflated. 
-
-            // const annotation = 
             this.grid.CreateAnnotation({
               type: 'image',
               formula: '',
               data: {
                 scale: '',
                 src: contents,
-                original_size: { width: img.width || 300, height: img.height || 300 },
+                original_size: { width: image.width || 300, height: image.height || 300 },
               },
             }, undefined, undefined, undefined, {
               top: 30,
               left: 30,
-              width: img.width || 300,
-              height: img.height || 300,
+              width: image.width || 300,
+              height: image.height || 300,
             });
-
-            // annotation.data.src = contents;
-            // annotation.data.original_size = { width: img.width || 300, height: img.height || 300 };
 
           }
 
