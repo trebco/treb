@@ -2393,10 +2393,25 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   }
 
+  public AnnotationZOrder(id: string|number, operation: number|'top'|'bottom', sheet?: number|string) {
+    const result = this.FindAnnotation(id, sheet);
+    if (result) {
+      const { annotation, target } = result;
+
+      // FIXME: needs to run through command queue
+
+      this.grid.AnnotationZOrder(annotation, operation);
+      
+    }
+  }
+
   public DeleteAnnotation(id: string|number, sheet?: number|string) {
     const result = this.FindAnnotation(id, sheet);
     if (result) {
       const { annotation, target } = result;
+
+      // FIXME: needs to run through command queue
+
       this.grid.RemoveAnnotation(annotation, target);
     }
   }
@@ -2428,6 +2443,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           offset: { x: 0, y: 0 },
         },
       };
+
+      // FIXME: needs to run through command queue
 
       this.grid.UpdateAnnotations();
       this.RebuildAllAnnotations();

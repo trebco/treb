@@ -816,6 +816,19 @@ export class Grid extends GridBase {
     // ...
   }
 
+  public AnnotationZOrder(annotation: Annotation, operation: number|'top'|'bottom') {
+
+    if (operation === 'top') {
+      operation = 9999;
+    }
+    if (operation === 'bottom') {
+      operation = -9999;
+    }
+
+    this.layout.AnnotationLayoutOrder(annotation, operation);
+
+  }
+
   /** add an annotation. it will be returned with a usable node. */
   public AddAnnotation(annotation: Annotation, toll_events = false, add_to_layout = true): void {
 
