@@ -79,6 +79,7 @@ import type {
   Complex, ExtendedUnion, IRectangle,
   AddressReference, RangeReference, TableSortOptions, Table, TableTheme,
   Theme,
+  AnnotationLayout,
 } from 'treb-base-types';
 
 import {
@@ -2371,6 +2372,68 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     return this.toolbar;
   }
   */
+
+  protected FindAnnotation(id: string|number, sheet?: number|string) {
+
+    const target = (typeof sheet === 'undefined') ? 
+      this.grid.active_sheet :
+      this.model.sheets.Find(sheet);
+
+    if (target) {
+      for (const annotation of target.annotations) {
+        if (annotation.key) {
+          if (annotation.key === id || (annotation.key.toString() === id.toString())) {
+            return { annotation, target };
+          }
+        }
+      }
+    }
+
+    return undefined;
+
+  }
+
+  public DeleteAnnotation(id: string|number, sheet?: number|string) {
+    const result = this.FindAnnotation(id, sheet);
+    if (result) {
+      const { annotation, target } = result;
+      this.grid.RemoveAnnotation(annotation, target);
+    }
+  }
+
+  public MoveAnnotation(id: string|number, layout: RangeReference, sheet?: number|string) {
+    const result = this.FindAnnotation(id, sheet);
+    if (result) {
+      const { annotation, target } = result;
+      if (typeof layout === 'string') {
+        const resolved = this.Resolve(layout);
+        if (resolved) {
+          layout = resolved;
+        }
+        else {
+          return;
+        }
+      }
+
+      const area: Area = IsCellAddress(layout) ? new Area(layout) : new Area(layout.start, layout.end);
+      console.info({area, annotation});
+
+      annotation.data.layout = {
+        tl: {
+          address: area.start,
+          offset: { x: 0, y: 0 },
+        },
+        br: {
+          address: area.end,
+          offset: { x: 0, y: 0 },
+        },
+      };
+
+      this.grid.UpdateAnnotations();
+      this.RebuildAllAnnotations();
+      
+    }
+  }
 
   /** 
    * Create (and return) a Chart object.
