@@ -12,6 +12,7 @@
     "../treb-parser/**/*.ts",
     "../treb-calculator/**/*.ts",
     "../treb-base-types/**/*.ts",
+    "../ooxml-types/**/*.ts",
     "src/content-types.d.ts"
   ],
   "exclude": [

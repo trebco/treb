@@ -1,6 +1,6 @@
 {
   "name": "@trebco/treb",
-  "version": "37.6.0",
+  "version": "37.6.2",
   "license": "LGPL-3.0-or-later",
   "homepage": "https://treb.app",
   "repository": {
@@ -70,6 +70,10 @@
     "./treb-base-types": {
       "import": "./build/treb-base-types/src/index.js",
       "types": "./build/treb-base-types/src/index.d.ts"
+    },
+    "./ooxml-types": {
+      "import": "./build/ooxml-types/src/types/index.js",
+      "types": "./build/ooxml-types/src/types/index.d.ts"
     },
     "./esbuild-utils.mjs": "./esbuild-utils.mjs",
     "./package.json": "./package.json"
