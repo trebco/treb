@@ -725,7 +725,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
   IfError: {
     description: 'Returns the original value, or the alternate value if the original value contains an error',
-    arguments: [{ name: 'original value', allow_error: true, boxed: true }, { name: 'alternate value' }],
+    arguments: [{ name: 'original value', allow_error: true, boxed: true, unroll: true }, { name: 'alternate value' }],
     fn: (ref: UnionValue, value_if_error: unknown = 0): UnionValue => {
       if (ref && ref.type === ValueType.error) {
         return { value: value_if_error, type: GetValueType(value_if_error) } as UnionValue;
@@ -2939,6 +2939,141 @@ export const BaseFunctionLibrary: FunctionMap = {
           return ArgumentError();
         }
   
+      },
+    },
+
+    VStack: {
+      description: 'Combines arrays by row',
+      arguments: [
+        {
+          name: 'array',
+          boxed: true,
+          repeat: true,
+        }
+      ],
+      fn: (...args: UnionValue[]) => {
+
+        let columns = 0;
+        let rows = 0;
+
+        for (const arg of args) {
+          if (arg.type === ValueType.array) {
+            columns = Math.max(columns, arg.value.length);
+            rows += arg.value[0].length;
+          }
+          else {
+            // just a scalar, so add 1 row
+            rows++;
+
+            // whoops
+            columns = Math.max(columns, 1);
+          }
+        }
+
+        const data: UnionValue[][] = [];
+        for (let i = 0; i < columns; i++) {
+          /*
+          const column: UnionValue[] = [];
+          for (let j = 0; j < rows; j++) {
+            column.push({ type: ValueType.undefined });
+          }
+          data[i] = column;
+          */
+          data[i] = [];
+        }
+
+        let row = 0;
+        for (const arg of args) {
+          if (arg.type === ValueType.array) {
+            for (let i = 0; i < arg.value.length; i++) {
+              for (let j = 0; j < arg.value[0].length; j++) {
+                data[i][row + j] = arg.value[i][j];
+              }
+            }
+            for (let i = arg.value.length; i < columns; i++) {
+              for (let j = 0; j < arg.value[0].length; j++) {
+                data[i][row + j] = NAError();
+              }
+            }
+
+            row += arg.value[0].length;
+          }
+          else {
+            data[0][row] = arg;
+            for (let i = 1; i < columns; i++) {
+              data[i][row] = NAError();
+            }
+            row++;
+          }
+        }
+
+        return {
+          type: ValueType.array, 
+          value: data,
+        };
+
+      },
+    },
+
+    HStack: {
+      description: 'Combines arrays by column',
+      arguments: [
+        {
+          name: 'array',
+          boxed: true,
+          repeat: true,
+        }
+      ],
+      fn: (...args: UnionValue[]) => {
+
+        let columns = 0;
+        let rows = 0;
+
+        for (const arg of args) {
+          if (arg.type === ValueType.array) {
+            columns += arg.value.length;
+            rows = Math.max(rows, arg.value[0].length);
+          }
+          else {
+            // just a scalar, so add 1 column
+            columns++;
+            rows = Math.max(rows, 1);
+          }
+        }
+
+        const data: UnionValue[][] = [];
+        for (let i = 0; i < columns; i++) {
+          data[i] = [];
+        }
+
+        let column = 0;
+        for (const arg of args) {
+          if (arg.type === ValueType.array) {
+            for (let i = 0; i < arg.value.length; i++) {
+              for (let j = 0; j < arg.value[i].length; j++) {
+                data[column + i][j] = arg.value[i][j];
+              }
+              for (let j = arg.value[i].length; j < rows; j++) {
+                data[column + i][j] = NAError();
+              }
+            }
+
+            column += arg.value.length;
+          }
+          else {
+            data[column][0] = arg;
+            for (let i = 1; i < rows; i++) {
+              data[column][i] = NAError();
+            }
+
+            column++;
+          }
+        }
+
+        return {
+          type: ValueType.array, 
+          value: data,
+        };
       },
     },
 
