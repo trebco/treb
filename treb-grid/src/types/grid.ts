@@ -8025,6 +8025,10 @@ export class Grid extends GridBase {
     // inherit non-UI reset stuff
     super.ResetInternal();
 
+    if (this.headless) {
+      return;
+    }
+
     // now do the UI bits
     this.RemoveAnnotationNodes();
     this.ClearSelection(this.primary_selection);
