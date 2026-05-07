@@ -154,6 +154,372 @@
     }
   },
   {
+    "key": "SINH",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "COSH",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "TANH",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ASINH",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ACOSH",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ATANH",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "COT",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COTH",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "CSC",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "CSCH",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SEC",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SECH",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "LN",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "LOG",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "LOG10",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "EXP",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "SQRTPI",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "CEILING.MATH",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "CEILING.PRECISE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ISO.CEILING",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "FLOOR.MATH",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "FLOOR.PRECISE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COMBIN",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COMBINA",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "FACT",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "FACTDOUBLE",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "MULTINOMIAL",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "EVEN",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ODD",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ARABIC",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ROMAN",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BASE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DECIMAL",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SUM",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "SUMSQ",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "PRODUCT",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "SUMPRODUCT",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "SUBTOTAL",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "AGGREGATE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SUMIF",
+    "results": {
+      "succeeded": 3,
+      "failed": 1,
+      "failed_tests": [
+        "=SUMIF(B1:B5,\"Sales\",A1:A5)"
+      ]
+    }
+  },
+  {
+    "key": "SUMIFS",
+    "results": {
+      "succeeded": 2,
+      "failed": 2,
+      "failed_tests": [
+        "=SUMIFS(C1:C5,B1:B5,\">30\")",
+        "=SUMIFS(C1:C5,A1:A5,\"Sales\",B1:B5,\"<50\")"
+      ]
+    }
+  },
+  {
+    "key": "SUMX2MY2",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SUMX2PY2",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SUMXMY2",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "RAND",
+    "results": {
+      "succeeded": 1,
+      "failed": 0
+    }
+  },
+  {
+    "key": "RANDBETWEEN",
+    "results": {
+      "succeeded": 2,
+      "failed": 0
+    }
+  },
+  {
+    "key": "RANDARRAY",
+    "results": {
+      "succeeded": 2,
+      "failed": 0
+    }
+  },
+  {
+    "key": "SEQUENCE",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
     "key": "UPPER",
     "results": {
       "succeeded": 4,
@@ -209,6 +575,283 @@
     "results": {
       "succeeded": 4,
       "failed": 0
+    }
+  },
+  {
+    "key": "FIND",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "FINDB",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SEARCH",
+    "results": {
+      "succeeded": 3,
+      "failed": 1,
+      "failed_tests": [
+        "=SEARCH(\"?\",\"what?\")"
+      ]
+    }
+  },
+  {
+    "key": "SEARCHB",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "REPLACE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "REPLACEB",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SUBSTITUTE",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "TEXT",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "DOLLAR",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "FIXED",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "NUMBERVALUE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "VALUE",
+    "results": {
+      "succeeded": 3,
+      "failed": 1,
+      "failed_tests": [
+        "=VALUE(\"16:48:00\")"
+      ]
+    }
+  },
+  {
+    "key": "CONCAT",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "TEXTJOIN",
+    "results": {
+      "succeeded": 0,
+      "failed": 5,
+      "error": "name"
+    }
+  },
+  {
+    "key": "REPT",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "TEXTAFTER",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "TEXTBEFORE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "TEXTSPLIT",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "failed_tests": [
+        "=INDEX(TEXTSPLIT(\"Jan,Feb,Mar\",\",\"),1,1)",
+        "=INDEX(TEXTSPLIT(\"Jan,Feb,Mar\",\",\"),1,2)",
+        "=INDEX(TEXTSPLIT(\"Jan,Feb,Mar\",\",\"),1,3)",
+        "=INDEX(TEXTSPLIT(\"a.b.c\",\".\"),1,1)"
+      ]
+    }
+  },
+  {
+    "key": "CHAR",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "CODE",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "UNICHAR",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "UNICODE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "EXACT",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "CLEAN",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "T",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "REGEXEXTRACT",
+    "results": {
+      "succeeded": 3,
+      "failed": 1,
+      "failed_tests": [
+        "=REGEXEXTRACT(\"test@email.com\",\"@(.+)\")"
+      ]
+    }
+  },
+  {
+    "key": "REGEXREPLACE",
+    "results": {
+      "succeeded": 3,
+      "failed": 1,
+      "failed_tests": [
+        "=REGEXREPLACE(\"test\",\".*\",\"replaced\")"
+      ]
+    }
+  },
+  {
+    "key": "REGEXTEST",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ARRAYTOTEXT",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "VALUETOTEXT",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "LEFTB",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "LENB",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "MIDB",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "RIGHTB",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
     }
   },
   {
@@ -282,6 +925,21 @@
       "succeeded": 0,
       "failed": 3,
       "error": "name"
+    }
+  },
+  {
+    "key": "SWITCH",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "LET",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -362,6 +1020,2293 @@
     "results": {
       "succeeded": 4,
       "failed": 0
+    }
+  },
+  {
+    "key": "ADDRESS",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "INDIRECT",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "failed_tests": [
+        "=INDIRECT(\"A1\")",
+        "=INDIRECT(\"B2\")",
+        "=INDIRECT(\"A\"&\"2\")"
+      ]
+    }
+  },
+  {
+    "key": "OFFSET",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "FORMULATEXT",
+    "results": {
+      "succeeded": 1,
+      "failed": 0
+    }
+  },
+  {
+    "key": "LOOKUP",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "XMATCH",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "AREAS",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "AVERAGE",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "AVERAGEA",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "MEDIAN",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "MODE.SNGL",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "MODE.MULT",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=INDEX(MODE.MULT(A1:A8),1,1)"
+      ]
+    }
+  },
+  {
+    "key": "GEOMEAN",
+    "results": {
+      "succeeded": 3,
+      "failed": 1,
+      "failed_tests": [
+        "=GEOMEAN(5,5,5)"
+      ]
+    }
+  },
+  {
+    "key": "HARMEAN",
+    "results": {
+      "succeeded": 3,
+      "failed": 1,
+      "failed_tests": [
+        "=HARMEAN(5,5,5)"
+      ]
+    }
+  },
+  {
+    "key": "AVERAGEIF",
+    "results": {
+      "succeeded": 2,
+      "failed": 1,
+      "failed_tests": [
+        "=AVERAGEIF(B1:B5,\"Sales\",A1:A5)"
+      ]
+    }
+  },
+  {
+    "key": "AVERAGEIFS",
+    "results": {
+      "succeeded": 2,
+      "failed": 0
+    }
+  },
+  {
+    "key": "COUNTIF",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "COUNTIFS",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "MAXIFS",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "MINIFS",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COUNT",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "COUNTA",
+    "results": {
+      "succeeded": 2,
+      "failed": 0
+    }
+  },
+  {
+    "key": "COUNTBLANK",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "MIN",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "MINA",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "MAX",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "MAXA",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "LARGE",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "SMALL",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "VAR.P",
+    "results": {
+      "succeeded": 1,
+      "failed": 0
+    }
+  },
+  {
+    "key": "VAR.S",
+    "results": {
+      "succeeded": 1,
+      "failed": 0
+    }
+  },
+  {
+    "key": "VARA",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "VARPA",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "STDEV.P",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=STDEV.P(A1:A5)"
+      ]
+    }
+  },
+  {
+    "key": "STDEV.S",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=STDEV.S(A1:A5)"
+      ]
+    }
+  },
+  {
+    "key": "STDEVA",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=STDEVA(A1:A5)"
+      ]
+    }
+  },
+  {
+    "key": "STDEVPA",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=STDEVPA(A1:A5)"
+      ]
+    }
+  },
+  {
+    "key": "AVEDEV",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DEVSQ",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "KURT",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SKEW",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SKEW.P",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PERCENTILE.INC",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PERCENTILE.EXC",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "QUARTILE.INC",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "QUARTILE.EXC",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "TRIMMEAN",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "RANK.EQ",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "RANK.AVG",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PERCENTRANK.INC",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PERCENTRANK.EXC",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PROB",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "CORREL",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=CORREL(A1:A5,B1:B5)"
+      ]
+    }
+  },
+  {
+    "key": "PEARSON",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "RSQ",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COVARIANCE.P",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COVARIANCE.S",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SLOPE",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=SLOPE(B1:B5,A1:A5)"
+      ]
+    }
+  },
+  {
+    "key": "INTERCEPT",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=INTERCEPT(B1:B5,A1:A5)"
+      ]
+    }
+  },
+  {
+    "key": "STEYX",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "FORECAST.LINEAR",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "LINEST",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "failed_tests": [
+        "=INDEX(LINEST(B1:B5,A1:A5),1,1)",
+        "=INDEX(LINEST(B1:B5,A1:A5),1,2)"
+      ]
+    }
+  },
+  {
+    "key": "LOGEST",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=INDEX(LOGEST(B1:B4,A1:A4),1,1)"
+      ]
+    }
+  },
+  {
+    "key": "FORECAST.ETS",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "FORECAST.ETS.CONFINT",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "FORECAST.ETS.SEASONALITY",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "TREND",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=INDEX(TREND(B1:B5,A1:A5,{6}),1,1)"
+      ]
+    }
+  },
+  {
+    "key": "GROWTH",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=INDEX(GROWTH(B1:B4,A1:A4,{5}),1,1)"
+      ]
+    }
+  },
+  {
+    "key": "FREQUENCY",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "failed_tests": [
+        "=INDEX(FREQUENCY(A1:A10,B1:B3),1,1)",
+        "=INDEX(FREQUENCY(A1:A10,B1:B3),2,1)",
+        "=INDEX(FREQUENCY(A1:A10,B1:B3),3,1)"
+      ]
+    }
+  },
+  {
+    "key": "NORM.DIST",
+    "results": {
+      "succeeded": 1,
+      "failed": 3,
+      "failed_tests": [
+        "=NORM.DIST(0,0,1,TRUE)",
+        "=NORM.DIST(1,0,1,TRUE)",
+        "=NORM.DIST(-1,0,1,TRUE)"
+      ]
+    }
+  },
+  {
+    "key": "NORM.INV",
+    "results": {
+      "succeeded": 2,
+      "failed": 2,
+      "failed_tests": [
+        "=NORM.INV(0.8413447461,0,1)",
+        "=NORM.INV(0.975,0,1)"
+      ]
+    }
+  },
+  {
+    "key": "NORM.S.DIST",
+    "results": {
+      "succeeded": 2,
+      "failed": 2,
+      "failed_tests": [
+        "=NORM.S.DIST(0,TRUE)",
+        "=NORM.S.DIST(1,TRUE)"
+      ]
+    }
+  },
+  {
+    "key": "NORM.S.INV",
+    "results": {
+      "succeeded": 1,
+      "failed": 3,
+      "failed_tests": [
+        "=NORM.S.INV(0.975)",
+        "=NORM.S.INV(0.025)",
+        "=NORM.S.INV(0.8413447461)"
+      ]
+    }
+  },
+  {
+    "key": "STANDARDIZE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PHI",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "GAUSS",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "T.DIST",
+    "results": {
+      "succeeded": 3,
+      "failed": 1,
+      "failed_tests": [
+        "=T.DIST(2,5,TRUE)"
+      ]
+    }
+  },
+  {
+    "key": "T.DIST.2T",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "T.DIST.RT",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "T.INV",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "T.INV.2T",
+    "results": {
+      "succeeded": 2,
+      "failed": 1,
+      "failed_tests": [
+        "=T.INV.2T(0.01,30)"
+      ]
+    }
+  },
+  {
+    "key": "T.TEST",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "CHISQ.DIST",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "CHISQ.DIST.RT",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "CHISQ.INV",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "CHISQ.INV.RT",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "CHISQ.TEST",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "F.DIST",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "F.DIST.RT",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "F.INV",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "F.INV.RT",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "F.TEST",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "Z.TEST",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=Z.TEST(A1:A5,4)"
+      ]
+    }
+  },
+  {
+    "key": "BINOM.DIST",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BINOM.DIST.RANGE",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BINOM.INV",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "POISSON.DIST",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "NEGBINOM.DIST",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "HYPGEOM.DIST",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "EXPON.DIST",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "GAMMA",
+    "results": {
+      "succeeded": 2,
+      "failed": 2,
+      "failed_tests": [
+        "=GAMMA(5)",
+        "=GAMMA(1)"
+      ]
+    }
+  },
+  {
+    "key": "GAMMA.DIST",
+    "results": {
+      "succeeded": 2,
+      "failed": 1,
+      "failed_tests": [
+        "=GAMMA.DIST(2,3,2,FALSE)"
+      ]
+    }
+  },
+  {
+    "key": "GAMMA.INV",
+    "results": {
+      "succeeded": 1,
+      "failed": 1,
+      "failed_tests": [
+        "=GAMMA.INV(0.5,3,2)"
+      ]
+    }
+  },
+  {
+    "key": "GAMMALN",
+    "results": {
+      "succeeded": 2,
+      "failed": 2,
+      "failed_tests": [
+        "=GAMMALN(4)",
+        "=GAMMALN(1)"
+      ]
+    }
+  },
+  {
+    "key": "GAMMALN.PRECISE",
+    "results": {
+      "succeeded": 2,
+      "failed": 1,
+      "failed_tests": [
+        "=GAMMALN.PRECISE(1)"
+      ]
+    }
+  },
+  {
+    "key": "WEIBULL.DIST",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "LOGNORM.DIST",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "LOGNORM.INV",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BETA.DIST",
+    "results": {
+      "succeeded": 1,
+      "failed": 2,
+      "failed_tests": [
+        "=BETA.DIST(2,8,10,TRUE,1,3)",
+        "=BETA.DIST(0.5,2,5,FALSE)"
+      ]
+    }
+  },
+  {
+    "key": "BETA.INV",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "failed_tests": [
+        "=BETA.INV(0.6854706,8,10,1,3)",
+        "=BETA.INV(0.5,2,5)"
+      ]
+    }
+  },
+  {
+    "key": "CONFIDENCE.NORM",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "CONFIDENCE.T",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "FISHER",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "FISHERINV",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PERMUT",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PERMUTATIONA",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PV",
+    "results": {
+      "succeeded": 1,
+      "failed": 2,
+      "failed_tests": [
+        "=PV(0.1,5,0,-10000)",
+        "=PV(0,10,-100)"
+      ]
+    }
+  },
+  {
+    "key": "FV",
+    "results": {
+      "succeeded": 2,
+      "failed": 1,
+      "failed_tests": [
+        "=FV(0,10,-100)"
+      ]
+    }
+  },
+  {
+    "key": "PMT",
+    "results": {
+      "succeeded": 2,
+      "failed": 1,
+      "failed_tests": [
+        "=PMT(0,10,-1000)"
+      ]
+    }
+  },
+  {
+    "key": "NPER",
+    "results": {
+      "succeeded": 1,
+      "failed": 1,
+      "failed_tests": [
+        "=NPER(0.1,-100,0,10000)"
+      ]
+    }
+  },
+  {
+    "key": "RATE",
+    "results": {
+      "succeeded": 1,
+      "failed": 1,
+      "failed_tests": [
+        "=RATE(60,-1000,50000)"
+      ]
+    }
+  },
+  {
+    "key": "FVSCHEDULE",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IPMT",
+    "results": {
+      "succeeded": 2,
+      "failed": 0
+    }
+  },
+  {
+    "key": "PPMT",
+    "results": {
+      "succeeded": 1,
+      "failed": 1,
+      "failed_tests": [
+        "=PPMT(0.1/12,1,60,-2000)"
+      ]
+    }
+  },
+  {
+    "key": "CUMIPMT",
+    "results": {
+      "succeeded": 1,
+      "failed": 1,
+      "failed_tests": [
+        "=CUMIPMT(0.09/12,360,125000,13,24,0)"
+      ]
+    }
+  },
+  {
+    "key": "CUMPRINC",
+    "results": {
+      "succeeded": 1,
+      "failed": 1,
+      "failed_tests": [
+        "=CUMPRINC(0.09/12,360,125000,13,24,0)"
+      ]
+    }
+  },
+  {
+    "key": "ISPMT",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "NPV",
+    "results": {
+      "succeeded": 1,
+      "failed": 1,
+      "failed_tests": [
+        "=NPV(0.08,A1:A5)"
+      ]
+    }
+  },
+  {
+    "key": "IRR",
+    "results": {
+      "succeeded": 1,
+      "failed": 0
+    }
+  },
+  {
+    "key": "MIRR",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "XNPV",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=XNPV(0.09,A1:A3,B1:B3)"
+      ]
+    }
+  },
+  {
+    "key": "XIRR",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=XIRR(A1:A3,B1:B3)"
+      ]
+    }
+  },
+  {
+    "key": "SLN",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SYD",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DB",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DDB",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "VDB",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PRICE",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "YIELD",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DURATION",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "MDURATION",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PRICEMAT",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "YIELDMAT",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PRICEDISC",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "YIELDDISC",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DISC",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "RECEIVED",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "INTRATE",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ACCRINT",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ACCRINTM",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "AMORDEGRC",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "AMORLINC",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COUPDAYBS",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COUPDAYS",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COUPDAYSNC",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COUPNCD",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COUPNUM",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COUPPCD",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "EFFECT",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "NOMINAL",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DOLLARDE",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DOLLARFR",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "PDURATION",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "RRI",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "TBILLEQ",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "TBILLPRICE",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "TBILLYIELD",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ODDFPRICE",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ODDFYIELD",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ODDLPRICE",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ODDLYIELD",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DATE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "failed_tests": [
+        "=DATE(2024,1,1)",
+        "=DATE(2000,1,1)",
+        "=DATE(1900,1,1)",
+        "=DATE(2024,12,31)"
+      ]
+    }
+  },
+  {
+    "key": "YEAR",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "MONTH",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "DAY",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "DATEVALUE",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DATEDIF",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DAYS",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DAYS360",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "EDATE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "failed_tests": [
+        "=EDATE(DATE(2024,1,15),1)",
+        "=EDATE(DATE(2024,1,31),1)",
+        "=EDATE(DATE(2024,3,15),-1)",
+        "=EDATE(DATE(2024,1,15),12)"
+      ]
+    }
+  },
+  {
+    "key": "EOMONTH",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "failed_tests": [
+        "=EOMONTH(DATE(2024,1,1),0)",
+        "=EOMONTH(DATE(2024,1,1),1)",
+        "=EOMONTH(DATE(2024,1,1),-1)",
+        "=EOMONTH(DATE(2024,2,15),0)"
+      ]
+    }
+  },
+  {
+    "key": "YEARFRAC",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "failed_tests": [
+        "=YEARFRAC(DATE(2024,1,1),DATE(2024,7,1))",
+        "=YEARFRAC(DATE(2024,1,1),DATE(2025,1,1))",
+        "=YEARFRAC(DATE(2024,1,1),DATE(2024,4,1),1)"
+      ]
+    }
+  },
+  {
+    "key": "ISOWEEKNUM",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "NETWORKDAYS",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "NETWORKDAYS.INTL",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "WORKDAY",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "WORKDAY.INTL",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "WEEKDAY",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "WEEKNUM",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "TIME",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "TIMEVALUE",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "HOUR",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "MINUTE",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SECOND",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "NOW",
+    "results": {
+      "succeeded": 1,
+      "failed": 0
+    }
+  },
+  {
+    "key": "TODAY",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=TODAY()"
+      ]
+    }
+  },
+  {
+    "key": "BIN2DEC",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BIN2HEX",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BIN2OCT",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DEC2BIN",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DEC2HEX",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DEC2OCT",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "HEX2BIN",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "HEX2DEC",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "HEX2OCT",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "OCT2BIN",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "OCT2DEC",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "OCT2HEX",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "CONVERT",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BITAND",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BITOR",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BITXOR",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BITLSHIFT",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BITRSHIFT",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "DELTA",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "GESTEP",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BESSELI",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BESSELJ",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BESSELK",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "BESSELY",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ERF",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "failed_tests": [
+        "=ERF(1)",
+        "=ERF(0)",
+        "=ERF(0.5)",
+        "=ERF(0.745,1)"
+      ]
+    }
+  },
+  {
+    "key": "ERF.PRECISE",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ERFC",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ERFC.PRECISE",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "COMPLEX",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "failed_tests": [
+        "=COMPLEX(3,4)",
+        "=COMPLEX(3,-4)",
+        "=COMPLEX(0,1)",
+        "=COMPLEX(1,0)"
+      ]
+    }
+  },
+  {
+    "key": "IMREAL",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMAGINARY",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "failed_tests": [
+        "=IMAGINARY(\"3+4i\")",
+        "=IMAGINARY(\"5-2i\")",
+        "=IMAGINARY(\"i\")",
+        "=IMAGINARY(\"6\")"
+      ]
+    }
+  },
+  {
+    "key": "IMABS",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMARGUMENT",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMCONJUGATE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMSUM",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMSUB",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMDIV",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMPRODUCT",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMPOWER",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMSQRT",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMSIN",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMCOS",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMTAN",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMCOT",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMCSC",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMSEC",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMCSCH",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMSECH",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMSINH",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMCOSH",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMEXP",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMLN",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMLOG10",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IMLOG2",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ISBLANK",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ISERROR",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ISERR",
+    "results": {
+      "succeeded": 2,
+      "failed": 1,
+      "failed_tests": [
+        "=ISERR(NA())"
+      ]
+    }
+  },
+  {
+    "key": "ISNA",
+    "results": {
+      "succeeded": 2,
+      "failed": 1,
+      "failed_tests": [
+        "=ISNA(NA())"
+      ]
+    }
+  },
+  {
+    "key": "ISLOGICAL",
+    "results": {
+      "succeeded": 2,
+      "failed": 2,
+      "failed_tests": [
+        "=ISLOGICAL(TRUE)",
+        "=ISLOGICAL(FALSE)"
+      ]
+    }
+  },
+  {
+    "key": "ISNUMBER",
+    "results": {
+      "succeeded": 2,
+      "failed": 2,
+      "failed_tests": [
+        "=ISNUMBER(1)",
+        "=ISNUMBER(3.14)"
+      ]
+    }
+  },
+  {
+    "key": "ISTEXT",
+    "results": {
+      "succeeded": 2,
+      "failed": 2,
+      "failed_tests": [
+        "=ISTEXT(\"hello\")",
+        "=ISTEXT(\"\")"
+      ]
+    }
+  },
+  {
+    "key": "ISNONTEXT",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ISEVEN",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ISODD",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ISFORMULA",
+    "results": {
+      "succeeded": 2,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ISREF",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "TYPE",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "N",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "NA",
+    "results": {
+      "succeeded": 1,
+      "failed": 1,
+      "failed_tests": [
+        "=ISNA(NA())"
+      ]
+    }
+  },
+  {
+    "key": "ERROR.TYPE",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "CELL",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "failed_tests": [
+        "=CELL(\"col\",A1)",
+        "=CELL(\"col\",C1)",
+        "=CELL(\"row\",A5)"
+      ]
+    }
+  },
+  {
+    "key": "INFO",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "failed_tests": [
+        "=ISTEXT(INFO(\"osversion\"))"
+      ]
+    }
+  },
+  {
+    "key": "SHEET",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
+    }
+  },
+  {
+    "key": "SHEETS",
+    "results": {
+      "succeeded": 0,
+      "failed": 1,
+      "error": "name"
     }
   }
 ]

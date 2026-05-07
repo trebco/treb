@@ -242,6 +242,8 @@ export async function RunAllTests() {
 
   for (const [key, groups] of global_tests.entries()) {
 
+    console.info(`running tests for key ${key}`)
+
     const composite: TestResultsType = { succeeded: 0, failed: 0 };
 
     for (const group of groups) {

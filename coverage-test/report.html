@@ -1,0 +1,3253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TREB Function Coverage Report</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f9fafb; color: #111827; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 24px; margin-bottom: 16px; }
+  .summary { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .summary-card { padding: 12px 20px; border-radius: 8px; color: #fff; font-weight: 600; font-size: 14px; }
+  .summary-card .num { font-size: 28px; display: block; }
+  .summary-card.pass { background: #22c55e; }
+  .summary-card.fail { background: #ef4444; }
+  .summary-card.not-implemented { background: #6b7280; }
+  .summary-card.not-tested { background: #9ca3af; }
+  .bar { height: 12px; display: flex; border-radius: 6px; overflow: hidden; margin-bottom: 24px; }
+  .bar div { height: 100%; }
+  .category { margin-bottom: 24px; }
+  .category h2 { font-size: 18px; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 2px solid #e5e7eb; }
+  .category h2 .cat-stats { font-size: 13px; font-weight: 400; color: #6b7280; margin-left: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; padding: 6px 10px; background: #f3f4f6; border-bottom: 1px solid #e5e7eb; font-weight: 600; }
+  td { padding: 6px 10px; border-bottom: 1px solid #f3f4f6; }
+  tr:hover td { background: #f9fafb; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: #fff; }
+  .badge.pass { background: #22c55e; }
+  .badge.fail { background: #ef4444; }
+  .badge.not-implemented { background: #6b7280; }
+  .badge.not-tested { background: #d1d5db; color: #6b7280; }
+  .failed-expr { font-family: monospace; font-size: 12px; color: #991b1b; }
+  .timestamp { font-size: 12px; color: #9ca3af; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<h1>TREB Function Coverage Report</h1>
+<div class="timestamp">Generated 2026-05-07 20:11:20 UTC</div>
+<div class="summary">
+  <div class="summary-card pass"><span class="num">98</span>Pass (18.8%)</div>
+  <div class="summary-card fail"><span class="num">72</span>Fail (13.8%)</div>
+  <div class="summary-card not-implemented"><span class="num">232</span>Not Implemented (44.4%)</div>
+  <div class="summary-card not-tested"><span class="num">120</span>Not Tested (23.0%)</div>
+</div>
+<div class="bar">
+  <div style="width:18.8%;background:#22c55e"></div>
+  <div style="width:13.8%;background:#ef4444"></div>
+  <div style="width:44.4%;background:#9ca3af"></div>
+  <div style="width:23.0%;background:#d1d5db"></div>
+</div>
+<div class="category">
+<h2>Math<span class="cat-stats">79 functions &mdash; 39 pass, 6 fail, 23 not implemented, 11 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>ABS</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ACOS</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ACOSH</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ACOT</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ACOTH</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>AGGREGATE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ARABIC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ASIN</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ASINH</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ATAN</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ATAN2</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/4</td>
+  <td><span class="failed-expr">=ATAN2(1,0)</span>, <span class="failed-expr">=ATAN2(0,1)</span></td>
+</tr>
+<tr>
+  <td><strong>ATANH</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BASE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CEILING.MATH</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CEILING.PRECISE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COMBIN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COMBINA</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COS</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COSH</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COTH</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CSC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CSCH</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DECIMAL</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DEGREES</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>EVEN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>EXP</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FACT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FACTDOUBLE</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FLOOR.MATH</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FLOOR.PRECISE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>GCD</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>INT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ISO.CEILING</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LCM</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LN</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LOG</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LOG10</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MDETERM</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MINVERSE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MMULT</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MOD</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/4</td>
+  <td><span class="failed-expr">=MOD(-10,3)</span>, <span class="failed-expr">=MOD(10,-3)</span></td>
+</tr>
+<tr>
+  <td><strong>MROUND</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MULTINOMIAL</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MUNIT</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ODD</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PI</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>1/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>POWER</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PRODUCT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>QUOTIENT</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>RADIANS</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>RAND</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>1/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>RANDARRAY</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>2/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>RANDBETWEEN</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>2/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ROMAN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ROUND</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>4/5</td>
+  <td><span class="failed-expr">=ROUND(-1.475,2)</span></td>
+</tr>
+<tr>
+  <td><strong>ROUNDDOWN</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ROUNDUP</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SEC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SECH</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SEQUENCE</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SERIESSUM</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SIGN</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SIN</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SINH</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SQRT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SQRTPI</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SUBTOTAL</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SUM</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SUMIF</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>3/4</td>
+  <td><span class="failed-expr">=SUMIF(B1:B5,&quot;Sales&quot;,A1:A5)</span></td>
+</tr>
+<tr>
+  <td><strong>SUMIFS</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/4</td>
+  <td><span class="failed-expr">=SUMIFS(C1:C5,B1:B5,&quot;&gt;30&quot;)</span>, <span class="failed-expr">=SUMIFS(C1:C5,A1:A5,&quot;Sales&quot;,B1:B5,&quot;&lt;50&quot;)</span></td>
+</tr>
+<tr>
+  <td><strong>SUMPRODUCT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SUMSQ</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SUMX2MY2</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SUMX2PY2</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SUMXMY2</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TAN</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TANH</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TRUNC</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>3/4</td>
+  <td><span class="failed-expr">=TRUNC(3.14159,2)</span></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Financial<span class="cat-stats">56 functions &mdash; 2 pass, 11 fail, 42 not implemented, 1 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>ACCRINT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ACCRINTM</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>AMORDEGRC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>AMORLINC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COUPDAYBS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COUPDAYS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COUPDAYSNC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COUPNCD</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COUPNUM</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COUPPCD</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CUMIPMT</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/2</td>
+  <td><span class="failed-expr">=CUMIPMT(0.09/12,360,125000,13,24,0)</span></td>
+</tr>
+<tr>
+  <td><strong>CUMPRINC</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/2</td>
+  <td><span class="failed-expr">=CUMPRINC(0.09/12,360,125000,13,24,0)</span></td>
+</tr>
+<tr>
+  <td><strong>DB</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DDB</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DISC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DOLLARDE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DOLLARFR</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DURATION</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>EFFECT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FV</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/3</td>
+  <td><span class="failed-expr">=FV(0,10,-100)</span></td>
+</tr>
+<tr>
+  <td><strong>FVSCHEDULE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>INTRATE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IPMT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>2/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IRR</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>1/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ISPMT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MDURATION</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MIRR</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NOMINAL</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NPER</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/2</td>
+  <td><span class="failed-expr">=NPER(0.1,-100,0,10000)</span></td>
+</tr>
+<tr>
+  <td><strong>NPV</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/2</td>
+  <td><span class="failed-expr">=NPV(0.08,A1:A5)</span></td>
+</tr>
+<tr>
+  <td><strong>ODDFPRICE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ODDFYIELD</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ODDLPRICE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ODDLYIELD</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PDURATION</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PMT</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/3</td>
+  <td><span class="failed-expr">=PMT(0,10,-1000)</span></td>
+</tr>
+<tr>
+  <td><strong>PPMT</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/2</td>
+  <td><span class="failed-expr">=PPMT(0.1/12,1,60,-2000)</span></td>
+</tr>
+<tr>
+  <td><strong>PRICE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PRICEDISC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PRICEMAT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PV</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/3</td>
+  <td><span class="failed-expr">=PV(0.1,5,0,-10000)</span>, <span class="failed-expr">=PV(0,10,-100)</span></td>
+</tr>
+<tr>
+  <td><strong>RATE</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/2</td>
+  <td><span class="failed-expr">=RATE(60,-1000,50000)</span></td>
+</tr>
+<tr>
+  <td><strong>RECEIVED</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>RRI</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SLN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>STOCKHISTORY</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SYD</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TBILLEQ</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TBILLPRICE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TBILLYIELD</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>VDB</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>XIRR</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=XIRR(A1:A3,B1:B3)</span></td>
+</tr>
+<tr>
+  <td><strong>XNPV</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=XNPV(0.09,A1:A3,B1:B3)</span></td>
+</tr>
+<tr>
+  <td><strong>YIELD</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>YIELDDISC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>YIELDMAT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Lookup<span class="cat-stats">41 functions &mdash; 10 pass, 4 fail, 3 not implemented, 24 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>ADDRESS</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>AREAS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CHOOSE</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CHOOSECOLS</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CHOOSEROWS</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COLUMN</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/3</td>
+  <td><span class="failed-expr">=COLUMN(C1)</span>, <span class="failed-expr">=COLUMN(Z1)</span></td>
+</tr>
+<tr>
+  <td><strong>COLUMNS</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/3</td>
+  <td><span class="failed-expr">=COLUMNS(A1:A1)</span></td>
+</tr>
+<tr>
+  <td><strong>DROP</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>EXPAND</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FILTER</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FORMULATEXT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>1/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>GETPIVOTDATA</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>GROUPBY</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>HLOOKUP</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>HSTACK</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>HYPERLINK</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMAGE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>INDEX</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>INDIRECT</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/3</td>
+  <td><span class="failed-expr">=INDIRECT(&quot;A1&quot;)</span>, <span class="failed-expr">=INDIRECT(&quot;B2&quot;)</span>, <span class="failed-expr">=INDIRECT(&quot;A&quot;&amp;&quot;2&quot;)</span></td>
+</tr>
+<tr>
+  <td><strong>LOOKUP</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MATCH</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>OFFSET</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PERCENTOF</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PIVOTBY</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ROW</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ROWS</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/3</td>
+  <td><span class="failed-expr">=ROWS(A1:A1)</span></td>
+</tr>
+<tr>
+  <td><strong>RTD</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SORT</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SORTBY</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TAKE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TOCOL</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TOROW</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TRANSPOSE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TRIMRANGE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>UNIQUE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>VLOOKUP</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>VSTACK</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>WRAPCOLS</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>WRAPROWS</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>XLOOKUP</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>XMATCH</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Logical<span class="cat-stats">19 functions &mdash; 8 pass, 0 fail, 4 not implemented, 7 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>AND</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>5/5</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BYCOL</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BYROW</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FALSE</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>1/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IF</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>6/6</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IFERROR</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IFNA</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IFS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LAMBDA</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LET</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MAKEARRAY</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MAP</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NOT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>OR</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>5/5</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>REDUCE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SCAN</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SWITCH</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TRUE</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>1/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>XOR</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Text<span class="cat-stats">48 functions &mdash; 14 pass, 5 fail, 23 not implemented, 6 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>ARRAYTOTEXT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ASC</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BAHTTEXT</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CHAR</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CLEAN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CODE</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CONCAT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DBCS</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DETECTLANGUAGE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DOLLAR</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>EXACT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FIND</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FINDB</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FIXED</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LEFT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LEFTB</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LEN</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LENB</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LOWER</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MID</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MIDB</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NUMBERVALUE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PHONETIC</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PROPER</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>REGEXEXTRACT</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>3/4</td>
+  <td><span class="failed-expr">=REGEXEXTRACT(&quot;test@email.com&quot;,&quot;@(.+)&quot;)</span></td>
+</tr>
+<tr>
+  <td><strong>REGEXREPLACE</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>3/4</td>
+  <td><span class="failed-expr">=REGEXREPLACE(&quot;test&quot;,&quot;.*&quot;,&quot;replaced&quot;)</span></td>
+</tr>
+<tr>
+  <td><strong>REGEXTEST</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>REPLACE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>REPLACEB</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>REPT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>RIGHT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>RIGHTB</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SEARCH</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>3/4</td>
+  <td><span class="failed-expr">=SEARCH(&quot;?&quot;,&quot;what?&quot;)</span></td>
+</tr>
+<tr>
+  <td><strong>SEARCHB</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SUBSTITUTE</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>T</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TEXT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TEXTAFTER</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TEXTBEFORE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TEXTJOIN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/5</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TEXTSPLIT</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/4</td>
+  <td><span class="failed-expr">=INDEX(TEXTSPLIT(&quot;Jan,Feb,Mar&quot;,&quot;,&quot;),1,1)</span>, <span class="failed-expr">=INDEX(TEXTSPLIT(&quot;Jan,Feb,Mar&quot;,&quot;,&quot;),1,2)</span>, <span class="failed-expr">=INDEX(TEXTSPLIT(&quot;Jan,Feb,Mar&quot;,&quot;,&quot;),1,3)</span>, <span class="failed-expr">=INDEX(TEXTSPLIT(&quot;a.b.c&quot;,&quot;.&quot;),1,1)</span></td>
+</tr>
+<tr>
+  <td><strong>TRANSLATE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TRIM</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>UNICHAR</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>UNICODE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>UPPER</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>VALUE</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>3/4</td>
+  <td><span class="failed-expr">=VALUE(&quot;16:48:00&quot;)</span></td>
+</tr>
+<tr>
+  <td><strong>VALUETOTEXT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Statistical<span class="cat-stats">110 functions &mdash; 17 pass, 30 fail, 62 not implemented, 1 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>AVEDEV</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>AVERAGE</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>AVERAGEA</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>AVERAGEIF</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/3</td>
+  <td><span class="failed-expr">=AVERAGEIF(B1:B5,&quot;Sales&quot;,A1:A5)</span></td>
+</tr>
+<tr>
+  <td><strong>AVERAGEIFS</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>2/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BETA.DIST</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/3</td>
+  <td><span class="failed-expr">=BETA.DIST(2,8,10,TRUE,1,3)</span>, <span class="failed-expr">=BETA.DIST(0.5,2,5,FALSE)</span></td>
+</tr>
+<tr>
+  <td><strong>BETA.INV</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/2</td>
+  <td><span class="failed-expr">=BETA.INV(0.6854706,8,10,1,3)</span>, <span class="failed-expr">=BETA.INV(0.5,2,5)</span></td>
+</tr>
+<tr>
+  <td><strong>BINOM.DIST</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BINOM.DIST.RANGE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BINOM.INV</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CHISQ.DIST</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CHISQ.DIST.RT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CHISQ.INV</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CHISQ.INV.RT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CHISQ.TEST</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CONFIDENCE.NORM</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CONFIDENCE.T</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CORREL</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=CORREL(A1:A5,B1:B5)</span></td>
+</tr>
+<tr>
+  <td><strong>COUNT</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COUNTA</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>2/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COUNTBLANK</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COUNTIF</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COUNTIFS</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COVARIANCE.P</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COVARIANCE.S</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DEVSQ</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>EXPON.DIST</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>F.DIST</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>F.DIST.RT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>F.INV</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>F.INV.RT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>F.TEST</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FISHER</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FISHERINV</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FORECAST.ETS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FORECAST.ETS.CONFINT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FORECAST.ETS.SEASONALITY</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FORECAST.ETS.STAT</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FORECAST.LINEAR</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FREQUENCY</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/3</td>
+  <td><span class="failed-expr">=INDEX(FREQUENCY(A1:A10,B1:B3),1,1)</span>, <span class="failed-expr">=INDEX(FREQUENCY(A1:A10,B1:B3),2,1)</span>, <span class="failed-expr">=INDEX(FREQUENCY(A1:A10,B1:B3),3,1)</span></td>
+</tr>
+<tr>
+  <td><strong>GAMMA</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/4</td>
+  <td><span class="failed-expr">=GAMMA(5)</span>, <span class="failed-expr">=GAMMA(1)</span></td>
+</tr>
+<tr>
+  <td><strong>GAMMA.DIST</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/3</td>
+  <td><span class="failed-expr">=GAMMA.DIST(2,3,2,FALSE)</span></td>
+</tr>
+<tr>
+  <td><strong>GAMMA.INV</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/2</td>
+  <td><span class="failed-expr">=GAMMA.INV(0.5,3,2)</span></td>
+</tr>
+<tr>
+  <td><strong>GAMMALN</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/4</td>
+  <td><span class="failed-expr">=GAMMALN(4)</span>, <span class="failed-expr">=GAMMALN(1)</span></td>
+</tr>
+<tr>
+  <td><strong>GAMMALN.PRECISE</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/3</td>
+  <td><span class="failed-expr">=GAMMALN.PRECISE(1)</span></td>
+</tr>
+<tr>
+  <td><strong>GAUSS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>GEOMEAN</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>3/4</td>
+  <td><span class="failed-expr">=GEOMEAN(5,5,5)</span></td>
+</tr>
+<tr>
+  <td><strong>GROWTH</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=INDEX(GROWTH(B1:B4,A1:A4,{5}),1,1)</span></td>
+</tr>
+<tr>
+  <td><strong>HARMEAN</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>3/4</td>
+  <td><span class="failed-expr">=HARMEAN(5,5,5)</span></td>
+</tr>
+<tr>
+  <td><strong>HYPGEOM.DIST</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>INTERCEPT</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=INTERCEPT(B1:B5,A1:A5)</span></td>
+</tr>
+<tr>
+  <td><strong>KURT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LARGE</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LINEST</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/2</td>
+  <td><span class="failed-expr">=INDEX(LINEST(B1:B5,A1:A5),1,1)</span>, <span class="failed-expr">=INDEX(LINEST(B1:B5,A1:A5),1,2)</span></td>
+</tr>
+<tr>
+  <td><strong>LOGEST</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=INDEX(LOGEST(B1:B4,A1:A4),1,1)</span></td>
+</tr>
+<tr>
+  <td><strong>LOGNORM.DIST</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LOGNORM.INV</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MAX</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MAXA</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MAXIFS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MEDIAN</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MIN</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MINA</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MINIFS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MODE.MULT</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=INDEX(MODE.MULT(A1:A8),1,1)</span></td>
+</tr>
+<tr>
+  <td><strong>MODE.SNGL</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NEGBINOM.DIST</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NORM.DIST</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/4</td>
+  <td><span class="failed-expr">=NORM.DIST(0,0,1,TRUE)</span>, <span class="failed-expr">=NORM.DIST(1,0,1,TRUE)</span>, <span class="failed-expr">=NORM.DIST(-1,0,1,TRUE)</span></td>
+</tr>
+<tr>
+  <td><strong>NORM.INV</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/4</td>
+  <td><span class="failed-expr">=NORM.INV(0.8413447461,0,1)</span>, <span class="failed-expr">=NORM.INV(0.975,0,1)</span></td>
+</tr>
+<tr>
+  <td><strong>NORM.S.DIST</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/4</td>
+  <td><span class="failed-expr">=NORM.S.DIST(0,TRUE)</span>, <span class="failed-expr">=NORM.S.DIST(1,TRUE)</span></td>
+</tr>
+<tr>
+  <td><strong>NORM.S.INV</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/4</td>
+  <td><span class="failed-expr">=NORM.S.INV(0.975)</span>, <span class="failed-expr">=NORM.S.INV(0.025)</span>, <span class="failed-expr">=NORM.S.INV(0.8413447461)</span></td>
+</tr>
+<tr>
+  <td><strong>PEARSON</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PERCENTILE.EXC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PERCENTILE.INC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PERCENTRANK.EXC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PERCENTRANK.INC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PERMUT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PERMUTATIONA</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PHI</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>POISSON.DIST</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PROB</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>QUARTILE.EXC</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>QUARTILE.INC</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>RANK.AVG</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>RANK.EQ</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>RSQ</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SKEW</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SKEW.P</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SLOPE</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=SLOPE(B1:B5,A1:A5)</span></td>
+</tr>
+<tr>
+  <td><strong>SMALL</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>STANDARDIZE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>STDEV.P</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=STDEV.P(A1:A5)</span></td>
+</tr>
+<tr>
+  <td><strong>STDEV.S</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=STDEV.S(A1:A5)</span></td>
+</tr>
+<tr>
+  <td><strong>STDEVA</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=STDEVA(A1:A5)</span></td>
+</tr>
+<tr>
+  <td><strong>STDEVPA</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=STDEVPA(A1:A5)</span></td>
+</tr>
+<tr>
+  <td><strong>STEYX</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>T.DIST</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>3/4</td>
+  <td><span class="failed-expr">=T.DIST(2,5,TRUE)</span></td>
+</tr>
+<tr>
+  <td><strong>T.DIST.2T</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>T.DIST.RT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>T.INV</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>T.INV.2T</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/3</td>
+  <td><span class="failed-expr">=T.INV.2T(0.01,30)</span></td>
+</tr>
+<tr>
+  <td><strong>T.TEST</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TREND</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=INDEX(TREND(B1:B5,A1:A5,{6}),1,1)</span></td>
+</tr>
+<tr>
+  <td><strong>TRIMMEAN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>VAR.P</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>1/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>VAR.S</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>1/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>VARA</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>VARPA</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>WEIBULL.DIST</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>Z.TEST</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=Z.TEST(A1:A5,4)</span></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Engineering<span class="cat-stats">54 functions &mdash; 1 pass, 3 fail, 50 not implemented, 0 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>BESSELI</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BESSELJ</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BESSELK</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BESSELY</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BIN2DEC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BIN2HEX</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BIN2OCT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BITAND</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BITLSHIFT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BITOR</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BITRSHIFT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BITXOR</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COMPLEX</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/4</td>
+  <td><span class="failed-expr">=COMPLEX(3,4)</span>, <span class="failed-expr">=COMPLEX(3,-4)</span>, <span class="failed-expr">=COMPLEX(0,1)</span>, <span class="failed-expr">=COMPLEX(1,0)</span></td>
+</tr>
+<tr>
+  <td><strong>CONVERT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DEC2BIN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DEC2HEX</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DEC2OCT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DELTA</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ERF</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/4</td>
+  <td><span class="failed-expr">=ERF(1)</span>, <span class="failed-expr">=ERF(0)</span>, <span class="failed-expr">=ERF(0.5)</span>, <span class="failed-expr">=ERF(0.745,1)</span></td>
+</tr>
+<tr>
+  <td><strong>ERF.PRECISE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ERFC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ERFC.PRECISE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>GESTEP</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>HEX2BIN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>HEX2DEC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>HEX2OCT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMABS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMAGINARY</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/4</td>
+  <td><span class="failed-expr">=IMAGINARY(&quot;3+4i&quot;)</span>, <span class="failed-expr">=IMAGINARY(&quot;5-2i&quot;)</span>, <span class="failed-expr">=IMAGINARY(&quot;i&quot;)</span>, <span class="failed-expr">=IMAGINARY(&quot;6&quot;)</span></td>
+</tr>
+<tr>
+  <td><strong>IMARGUMENT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMCONJUGATE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMCOS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMCOSH</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMCOT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMCSC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMCSCH</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMDIV</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMEXP</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMLN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMLOG10</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMLOG2</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMPOWER</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMPRODUCT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMREAL</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMSEC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMSECH</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMSIN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMSINH</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMSQRT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMSUB</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMSUM</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>IMTAN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>OCT2BIN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>OCT2DEC</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>OCT2HEX</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Compatibility<span class="cat-stats">42 functions &mdash; 0 pass, 0 fail, 0 not implemented, 42 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>BETADIST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BETAINV</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>BINOMDIST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CEILING</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CHIDIST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CHIINV</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CHITEST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CONCATENATE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CONFIDENCE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>COVAR</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CRITBINOM</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>EXPONDIST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FDIST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FINV</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FLOOR</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FORECAST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FTEST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>GAMMADIST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>GAMMAINV</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>HYPGEOMDIST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LOGINV</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>LOGNORMDIST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MODE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NEGBINOMDIST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NORMDIST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NORMINV</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NORMSDIST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NORMSINV</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PERCENTILE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PERCENTRANK</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>POISSON</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>QUARTILE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>RANK</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>STDEV</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>STDEVP</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TDIST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TINV</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TTEST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>VAR</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>VARP</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>WEIBULL</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ZTEST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Add-in<span class="cat-stats">5 functions &mdash; 0 pass, 0 fail, 0 not implemented, 5 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>CALL</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>EUROCONVERT</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>PY</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>REGISTER.ID</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SQL.REQUEST</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Information<span class="cat-stats">21 functions &mdash; 3 pass, 8 fail, 9 not implemented, 1 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>CELL</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/3</td>
+  <td><span class="failed-expr">=CELL(&quot;col&quot;,A1)</span>, <span class="failed-expr">=CELL(&quot;col&quot;,C1)</span>, <span class="failed-expr">=CELL(&quot;row&quot;,A5)</span></td>
+</tr>
+<tr>
+  <td><strong>ERROR.TYPE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>INFO</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=ISTEXT(INFO(&quot;osversion&quot;))</span></td>
+</tr>
+<tr>
+  <td><strong>ISBLANK</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ISERR</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/3</td>
+  <td><span class="failed-expr">=ISERR(NA())</span></td>
+</tr>
+<tr>
+  <td><strong>ISERROR</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>4/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ISEVEN</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ISFORMULA</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>2/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ISLOGICAL</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/4</td>
+  <td><span class="failed-expr">=ISLOGICAL(TRUE)</span>, <span class="failed-expr">=ISLOGICAL(FALSE)</span></td>
+</tr>
+<tr>
+  <td><strong>ISNA</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/3</td>
+  <td><span class="failed-expr">=ISNA(NA())</span></td>
+</tr>
+<tr>
+  <td><strong>ISNONTEXT</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ISNUMBER</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/4</td>
+  <td><span class="failed-expr">=ISNUMBER(1)</span>, <span class="failed-expr">=ISNUMBER(3.14)</span></td>
+</tr>
+<tr>
+  <td><strong>ISODD</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ISOMITTED</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ISREF</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ISTEXT</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>2/4</td>
+  <td><span class="failed-expr">=ISTEXT(&quot;hello&quot;)</span>, <span class="failed-expr">=ISTEXT(&quot;&quot;)</span></td>
+</tr>
+<tr>
+  <td><strong>N</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NA</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>1/2</td>
+  <td><span class="failed-expr">=ISNA(NA())</span></td>
+</tr>
+<tr>
+  <td><strong>SHEET</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SHEETS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TYPE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Cube<span class="cat-stats">7 functions &mdash; 0 pass, 0 fail, 0 not implemented, 7 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>CUBEKPIMEMBER</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CUBEMEMBER</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CUBEMEMBERPROPERTY</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CUBERANKEDMEMBER</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CUBESET</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CUBESETCOUNT</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>CUBEVALUE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Date &amp; Time<span class="cat-stats">25 functions &mdash; 4 pass, 5 fail, 16 not implemented, 0 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>DATE</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/4</td>
+  <td><span class="failed-expr">=DATE(2024,1,1)</span>, <span class="failed-expr">=DATE(2000,1,1)</span>, <span class="failed-expr">=DATE(1900,1,1)</span>, <span class="failed-expr">=DATE(2024,12,31)</span></td>
+</tr>
+<tr>
+  <td><strong>DATEDIF</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DATEVALUE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DAY</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DAYS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DAYS360</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>EDATE</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/4</td>
+  <td><span class="failed-expr">=EDATE(DATE(2024,1,15),1)</span>, <span class="failed-expr">=EDATE(DATE(2024,1,31),1)</span>, <span class="failed-expr">=EDATE(DATE(2024,3,15),-1)</span>, <span class="failed-expr">=EDATE(DATE(2024,1,15),12)</span></td>
+</tr>
+<tr>
+  <td><strong>EOMONTH</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/4</td>
+  <td><span class="failed-expr">=EOMONTH(DATE(2024,1,1),0)</span>, <span class="failed-expr">=EOMONTH(DATE(2024,1,1),1)</span>, <span class="failed-expr">=EOMONTH(DATE(2024,1,1),-1)</span>, <span class="failed-expr">=EOMONTH(DATE(2024,2,15),0)</span></td>
+</tr>
+<tr>
+  <td><strong>HOUR</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>ISOWEEKNUM</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MINUTE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>MONTH</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NETWORKDAYS</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NETWORKDAYS.INTL</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>NOW</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>1/1</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>SECOND</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TIME</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TIMEVALUE</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>TODAY</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/1</td>
+  <td><span class="failed-expr">=TODAY()</span></td>
+</tr>
+<tr>
+  <td><strong>WEEKDAY</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/4</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>WEEKNUM</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>WORKDAY</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>WORKDAY.INTL</strong></td>
+  <td><span class="badge not-implemented">Not Implemented</span></td>
+  <td>0/2</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>YEAR</strong></td>
+  <td><span class="badge pass">Pass</span></td>
+  <td>3/3</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>YEARFRAC</strong></td>
+  <td><span class="badge fail">Fail</span></td>
+  <td>0/3</td>
+  <td><span class="failed-expr">=YEARFRAC(DATE(2024,1,1),DATE(2024,7,1))</span>, <span class="failed-expr">=YEARFRAC(DATE(2024,1,1),DATE(2025,1,1))</span>, <span class="failed-expr">=YEARFRAC(DATE(2024,1,1),DATE(2024,4,1),1)</span></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Database<span class="cat-stats">12 functions &mdash; 0 pass, 0 fail, 0 not implemented, 12 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>DAVERAGE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DCOUNT</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DCOUNTA</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DGET</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DMAX</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DMIN</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DPRODUCT</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DSTDEV</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DSTDEVP</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DSUM</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DVAR</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>DVARP</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+</table></div>
+<div class="category">
+<h2>Web<span class="cat-stats">3 functions &mdash; 0 pass, 0 fail, 0 not implemented, 3 not tested</span></h2>
+<table>
+<tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
+<tr>
+  <td><strong>ENCODEURL</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>FILTERXML</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+<tr>
+  <td><strong>WEBSERVICE</strong></td>
+  <td><span class="badge not-tested">Not Tested</span></td>
+  <td>&mdash;</td>
+  <td></td>
+</tr>
+</table></div>
+</body></html>
