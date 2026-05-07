@@ -1,0 +1,367 @@
+[
+  {
+    "key": "ABS",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "SIGN",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "INT",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "MOD",
+    "results": {
+      "succeeded": 2,
+      "failed": 2,
+      "failed_tests": [
+        "=MOD(-10,3)",
+        "=MOD(10,-3)"
+      ]
+    }
+  },
+  {
+    "key": "POWER",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "SQRT",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ROUND",
+    "results": {
+      "succeeded": 4,
+      "failed": 1,
+      "failed_tests": [
+        "=ROUND(-1.475,2)"
+      ]
+    }
+  },
+  {
+    "key": "ROUNDUP",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ROUNDDOWN",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "TRUNC",
+    "results": {
+      "succeeded": 3,
+      "failed": 1,
+      "failed_tests": [
+        "=TRUNC(3.14159,2)"
+      ]
+    }
+  },
+  {
+    "key": "PI",
+    "results": {
+      "succeeded": 1,
+      "failed": 0
+    }
+  },
+  {
+    "key": "SIN",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "COS",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "TAN",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ASIN",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ACOS",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ATAN",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "ATAN2",
+    "results": {
+      "succeeded": 2,
+      "failed": 2,
+      "failed_tests": [
+        "=ATAN2(1,0)",
+        "=ATAN2(0,1)"
+      ]
+    }
+  },
+  {
+    "key": "DEGREES",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "RADIANS",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "UPPER",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "LOWER",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "PROPER",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "LEN",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "TRIM",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "LEFT",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "RIGHT",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "MID",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "TRUE",
+    "results": {
+      "succeeded": 1,
+      "failed": 0
+    }
+  },
+  {
+    "key": "FALSE",
+    "results": {
+      "succeeded": 1,
+      "failed": 0
+    }
+  },
+  {
+    "key": "AND",
+    "results": {
+      "succeeded": 5,
+      "failed": 0
+    }
+  },
+  {
+    "key": "OR",
+    "results": {
+      "succeeded": 5,
+      "failed": 0
+    }
+  },
+  {
+    "key": "NOT",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "XOR",
+    "results": {
+      "succeeded": 0,
+      "failed": 4,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IF",
+    "results": {
+      "succeeded": 6,
+      "failed": 0
+    }
+  },
+  {
+    "key": "IFERROR",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "IFNA",
+    "results": {
+      "succeeded": 0,
+      "failed": 2,
+      "error": "name"
+    }
+  },
+  {
+    "key": "IFS",
+    "results": {
+      "succeeded": 0,
+      "failed": 3,
+      "error": "name"
+    }
+  },
+  {
+    "key": "ROW",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "COLUMN",
+    "results": {
+      "succeeded": 1,
+      "failed": 2,
+      "failed_tests": [
+        "=COLUMN(C1)",
+        "=COLUMN(Z1)"
+      ]
+    }
+  },
+  {
+    "key": "ROWS",
+    "results": {
+      "succeeded": 2,
+      "failed": 1,
+      "failed_tests": [
+        "=ROWS(A1:A1)"
+      ]
+    }
+  },
+  {
+    "key": "COLUMNS",
+    "results": {
+      "succeeded": 2,
+      "failed": 1,
+      "failed_tests": [
+        "=COLUMNS(A1:A1)"
+      ]
+    }
+  },
+  {
+    "key": "CHOOSE",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "INDEX",
+    "results": {
+      "succeeded": 3,
+      "failed": 0
+    }
+  },
+  {
+    "key": "MATCH",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "VLOOKUP",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "HLOOKUP",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  },
+  {
+    "key": "XLOOKUP",
+    "results": {
+      "succeeded": 4,
+      "failed": 0
+    }
+  }
+]
