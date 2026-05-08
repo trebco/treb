@@ -1,5 +1,6 @@
 
 import { RunAllTests } from '@util';
+import { RunReport } from './src/report';
 import fs from 'node:fs/promises';
 
 // Math
@@ -11,15 +12,14 @@ import './tests/math-reciprocal-trig';
 import './tests/math-logarithmic';
 import './tests/math-ceiling-floor';
 import './tests/math-combinatorics';
-// import './tests/math-arithmetic';
+import './tests/math-arithmetic';
 import './tests/math-conversion';
 import './tests/math-sum';
 import './tests/math-sum-conditional';
 import './tests/math-sum-paired';
 import './tests/math-random';
-// import './tests/math-matrix';
+import './tests/math-matrix';
 import './tests/math-sequence';
-
 
 // Text
 import './tests/text-basic';
@@ -36,17 +36,19 @@ import './tests/text-byte';
 // Logical
 import './tests/logical-basic';
 import './tests/logical-switch';
-// import './tests/logical-lambda';
+import './tests/logical-lambda';
 
 // Lookup
 import './tests/lookup-basic';
 import './tests/lookup-vlookup';
 import './tests/lookup-address';
-//import './tests/lookup-filter';
-//import './tests/lookup-array-reshape';
-//import './tests/lookup-array-stack';
-//import './tests/lookup-array-slice';
 import './tests/lookup-search';
+
+import './tests/lookup-filter';
+import './tests/lookup-array-reshape';
+import './tests/lookup-array-stack';
+import './tests/lookup-array-slice';
+
 
 // Statistical
 import './tests/stat-central';
@@ -107,6 +109,7 @@ import './tests/info-cell';
 // Database
 import './tests/database-aggregate';
 import './tests/database-stats';
+*/
 
 // Compatibility
 import './tests/compat-stat-dist';
@@ -116,11 +119,20 @@ import './tests/compat-stat-basic';
 import './tests/compat-stat-var';
 import './tests/compat-misc';
 
+/*
 // Web
 import './tests/web-basic';
 */
 
-const results = await RunAllTests();
+let verbose = false;
+for (const arg of process.argv) {
+  if (arg === '--verbose') {
+    verbose = true;
+  }
+}
+
+const results = await RunAllTests(verbose);
 await fs.writeFile('test-results.json', JSON.stringify(results, undefined, 2), { encoding: 'utf-8' });
 
-console.info("done");
+await RunReport();
+

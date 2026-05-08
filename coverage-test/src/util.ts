@@ -158,7 +158,7 @@ export function AddTests(key: string, tests: TestType[], init?: InitFunction) {
 
 }
 
-interface TestResultsType {
+export interface TestResultsType {
   succeeded: number;
   failed: number;
   error?: 'name';
@@ -216,7 +216,7 @@ function RunTestsForKey(spreadsheet: EmbeddedSpreadsheet, key: string, tests: Te
 
 }
 
-interface KeyResultsType {
+export interface KeyResultsType {
   key: string;
   results: TestResultsType;
 }
@@ -228,7 +228,7 @@ function SetRangeFunctionImpl(spreadsheet: EmbeddedSpreadsheet, address_or_range
 /**
  * run all tests and return composite results
  */
-export async function RunAllTests() {
+export async function RunAllTests(verbose = false) {
 
   const results: KeyResultsType[] = [];
 
@@ -242,8 +242,10 @@ export async function RunAllTests() {
 
   for (const [key, groups] of global_tests.entries()) {
 
-    console.info(`running tests for key ${key}`)
-
+    if (verbose) {
+      console.info(`running tests for key ${key}`)
+    }
+    
     const composite: TestResultsType = { succeeded: 0, failed: 0 };
 
     for (const group of groups) {

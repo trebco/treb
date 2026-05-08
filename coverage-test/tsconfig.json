@@ -16,10 +16,9 @@
     "noEmit": true,
 
     // Path aliases
-    "baseUrl": ".",
     "paths": {
       "@treb": ["../"],
-      "@util": ["./src/util"]
+      "@util": ["./src/util.ts"]
     },
 
     // Best practices

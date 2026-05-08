@@ -24,6 +24,6 @@ AddTests('CUMPRINC', [
 ]);
 
 AddTests('ISPMT', [
-  { type: 'approximate', expression: '=ISPMT(0.1/12,1,36,8000000)', expected: -19444.444444, epsilon: 0.01 },
+  { type: 'approximate', expression: '=ISPMT(0.1/12,1,36,8000000)', expected: -64814.81, epsilon: 0.01 },
   { type: 'approximate', expression: '=ISPMT(0.1,1,3,8000000)', expected: -533333.333333, epsilon: 0.01 },
 ]);

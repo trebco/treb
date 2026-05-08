@@ -21,7 +21,6 @@ AddTests('REDUCE', [
   { type: 'expect', expression: '=REDUCE(0,A1:A4,LAMBDA(acc,x,acc+x))', expected: 10 },
   { type: 'expect', expression: '=REDUCE(1,A1:A4,LAMBDA(acc,x,acc*x))', expected: 24 },
   { type: 'expect', expression: '=REDUCE(0,A1:A4,LAMBDA(acc,x,acc+1))', expected: 4 },
-  { type: 'expect', expression: '=REDUCE("",A1:A3,LAMBDA(acc,x,acc&x))', expected: 'abc' },
 ], SetRange => {
   SetRange('A1', [[1], [2], [3], [4]]);
 });

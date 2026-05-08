@@ -17,8 +17,8 @@ AddTests('SYD', [
 
 AddTests('DB', [
   { type: 'approximate', expression: '=DB(1000000,100000,6,1)', expected: 319000, epsilon: 0.1 },
-  { type: 'approximate', expression: '=DB(1000000,100000,6,3)', expected: 147960.581, epsilon: 0.1 },
-  { type: 'approximate', expression: '=DB(1000000,100000,6,7,7)', expected: 18515.102, epsilon: 1 },
+  { type: 'approximate', expression: '=DB(1000000,100000,6,3)', expected: 147939.76, epsilon: 0.1 },
+  { type: 'approximate', expression: '=DB(1000000,100000,6,7,7)', expected: 15845.10, epsilon: 1 },
 ]);
 
 AddTests('DDB', [

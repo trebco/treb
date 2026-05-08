@@ -44,3 +44,17 @@ AddTests('SECH', [
   { type: 'approximate', expression: '=SECH(2)', expected: 0.2658022288, epsilon },
   { type: 'approximate', expression: '=SECH(-1)', expected: 0.6480542737, epsilon },
 ]);
+
+AddTests('ACOT', [
+  { type: 'approximate', expression: '=ACOT(1)', expected: 0.7853981634, epsilon },
+  { type: 'approximate', expression: '=ACOT(0)', expected: 1.5707963268, epsilon },
+  { type: 'approximate', expression: '=ACOT(-1)', expected: 2.3561944902, epsilon },
+  { type: 'approximate', expression: '=ACOT(10)', expected: 0.0996686525, epsilon },
+]);
+
+AddTests('ACOTH', [
+  { type: 'approximate', expression: '=ACOTH(2)', expected: 0.5493061443, epsilon },
+  { type: 'approximate', expression: '=ACOTH(10)', expected: 0.1003353477, epsilon },
+  { type: 'approximate', expression: '=ACOTH(-2)', expected: -0.5493061443, epsilon },
+  { type: 'approximate', expression: '=ACOTH(1.5)', expected: 0.8047189562, epsilon },
+]);
