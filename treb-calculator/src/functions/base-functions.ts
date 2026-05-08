@@ -734,6 +734,17 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
   },
 
+  IfNA: {
+    description: 'Returns the original value, or the alternate value if the original value is #NA',
+    arguments: [{ name: 'original value', allow_error: true, boxed: true, unroll: true }, { name: 'alternate value' }],
+    fn: (ref: UnionValue, value_if_error: unknown = 0): UnionValue => {
+      if (ref && ref.type === ValueType.error && ref.value === 'NA') {
+        return { value: value_if_error, type: GetValueType(value_if_error) } as UnionValue;
+      }
+      return ref;
+    },
+  },
+
   IsNA: {
     description: 'Checks if another cell contains a #NA error',
     arguments: [{ name: 'reference', allow_error: true, boxed: true }],
@@ -973,6 +984,77 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         return Box(!value);
       },
+    },
+
+    XOR: {
+      description: 'Returns the exclusive OR of all arguments',
+      arguments: [
+        { name: 'value', boxed: true, repeat: true }
+      ],
+      fn: (...args: UnionValue[]) => {
+
+        if (!args || !args.length) {
+          return ValueError();
+        }
+
+        const flat = Utils.FlattenBoxed(args);
+        let true_count = 0;
+
+        for (const arg of args) {
+          if (arg.value) {
+            true_count++;
+          }
+        }
+
+        return {
+          type: ValueType.boolean,
+          value: (true_count % 2 === 1),
+        }
+      }
+    },
+
+    Switch: {
+      description: 'Compares a value against multiple candidates and returns the value provided for the first matching candidate',
+      arguments: [
+        { name: 'test expression', boxed: true },
+        { name: 'comparison value', boxed: true, repeat: true },
+        { name: 'value if match', boxed: true, allow_error: true, repeat: true },
+        { name: 'default value', boxed: true }
+      ],
+      fn: (...args: UnionValue[]) => {
+
+        let i = 1;
+        for (; i < args.length; i += 2) {
+
+          // have we reached the end? 
+          if (!args[i+1]) {
+            return args[i];
+          }
+
+          // otherwise, test and return the next value
+          if (args[0].type === args[i].type && args[0].value === args[i].value) {
+            return args[i + 1];
+          }
+        }
+
+        return NAError(); // no matches and no default provided
+      }
+    },
+
+    Ifs: {
+      description: 'Tests multiple conditions and returns the value provided for the first matching condition',
+      arguments: [
+        { name: 'test value', boxed: true, repeat: true },
+        { name: 'value if true', boxed: true, allow_error: true, repeat: true },
+      ],
+      fn: (...args: UnionValue[]) => {
+        for (let i = 0; i < args.length; i += 2) {
+          if (args[i].value) {
+            return args[i+1] || ValueError();
+          }
+        }
+        return NAError(); // no value found
+      }
     },
 
     If: {
@@ -1598,6 +1680,8 @@ export const BaseFunctionLibrary: FunctionMap = {
       arguments: [{ name: 'reference', metadata: true }],
       fn: function(ref?: UnionValue): UnionValue {
 
+        // console.info({ref});
+
         if (!ref) {
           if (this?.area) {
             const value: UnionValue[][] = [];
@@ -1640,7 +1724,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
         else if (UnionIsMetadata(ref)) {
           return {
-            type: ValueType.number, value: ref.value.address.row + 1,
+            type: ValueType.number, value: ref.value.address.column + 1,
           }
         }
         return ArgumentError();
@@ -3079,10 +3163,10 @@ export const BaseFunctionLibrary: FunctionMap = {
 
     ATan2: {
       arguments: [
-        { name: 'y', boxed: true, unroll: true },
         { name: 'x', boxed: true, unroll: true },
+        { name: 'y', boxed: true, unroll: true },
       ],
-      fn: (y: UnionValue, x: UnionValue) => {
+      fn: (x: UnionValue, y: UnionValue) => {
 
         if (y.type === ValueType.number && x.type === ValueType.number) {
           return { type: ValueType.number, value: Math.atan2(y.value, x.value) };

@@ -65,6 +65,7 @@ import { Sheet } from 'treb-data-model';
 import type { Annotation, DataModel, ConnectedElementType, ConditionalFormat } from 'treb-data-model';
 
 import { ValueParser } from 'treb-format';
+import { GetExtendedFunctions } from './function-support';
 
 /**
  * breaking this out so we can use it for export (TODO)
@@ -258,6 +259,11 @@ export class Calculator extends Graph {
     for (const key of Object.keys(TextFunctionAliases)) {
       this.library.Alias(key, TextFunctionAliases[key]);
     }
+
+    // new
+
+    const extended_functions = GetExtendedFunctions();
+    this.library.RegisterMap(extended_functions);
 
     // special functions... need reference to the graph (this)
     // moving countif here so we can reference it in COUNTIFS... 
@@ -1042,7 +1048,6 @@ export class Calculator extends Graph {
           }
 
           // this is illegal, although we could just default to zeros
-
           if (row === undefined && column === undefined) {
             return ArgumentError();
           }
@@ -1059,6 +1064,24 @@ export class Calculator extends Graph {
 
             // FIXME: validate these are addresses (shouldn't be necessary
             // if we're marking the argument as metadata? what about literals?)
+
+            // we're going to get a regular array if the input is either 
+            // a literal array or a dynamic reference (#)
+
+            const first = range.value?.[0]?.[0];
+
+            if (first && first.type !== ValueType.object){
+
+              const columns = range.value.length;
+              const rows = range.value[0].length;
+
+              if (rows <= 0 || columns <= 0 || row > rows || column > columns || row < 0 || column < 0) {
+                return ArgumentError();
+              }
+
+              return range.value[column - 1][row - 1];
+
+            }
 
             // check rows and columns. we might need to return an array.
 
@@ -1111,9 +1134,19 @@ export class Calculator extends Graph {
           // single cell
 
           if ((row || rows === 1) && (column || columns === 1)) {
+
+            // when the source is a spill array, the address in this
+            // metadata field is not coming from the parser, so it 
+            // doesn't have the "type". we need to add that back so
+            // when the value is retrieved it will know it's a reference.
+            
+            // this may come up in other places? not sure
+
             return {
               type: ValueType.object,
-              value: arr[column ? column - 1 : 0][row ? row - 1 : 0].value.address,  
+              value: { 
+                type: 'address', // shut up typescript 
+                ...(arr[column ? column - 1 : 0][row ? row - 1 : 0].value.address) },  
             };
           }
 

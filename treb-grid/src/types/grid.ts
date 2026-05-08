@@ -5860,9 +5860,14 @@ export class Grid extends GridBase {
                 case 'range':
                   this.model.ResolveSheetID(unit);
                   sheet = this.model.sheets.Find(unit.start.sheet_id || 0);
-                  for (const address of new Area(unit.start, unit.end)) {
-                    finished = finished || Check(address, sheet);
-                    if (finished) { break; }
+                  {
+                    const concrete = sheet?.RealArea(new Area(unit.start, unit.end));
+                    if (concrete) {
+                      for (const address of concrete) {
+                        finished = finished || Check(address, sheet);
+                        if (finished) { break; }
+                      }
+                    }
                   }
                   break;
               }

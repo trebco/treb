@@ -984,6 +984,11 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       }
 
       const gcd = (x: number, y: number): number => {
+
+        if (y === 0) {
+          return x; // special case
+        }
+
         if (x % y == 0) {
           return y;               // Base case
         }

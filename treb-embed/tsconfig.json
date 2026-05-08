@@ -11,6 +11,7 @@
     "../treb-format/**/*.ts",
     "../treb-parser/**/*.ts",
     "../treb-calculator/**/*.ts",
+    "../extended-function-lib/**/*.ts",
     "../treb-base-types/**/*.ts",
     "../ooxml-types/**/*.ts",
     "src/content-types.d.ts"

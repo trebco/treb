@@ -1,0 +1,8 @@
+{
+  "name": "extended-function-lib",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "coverage-test": "cd .. && npm run coverage-test"
+  }
+}

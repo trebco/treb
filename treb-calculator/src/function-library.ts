@@ -32,6 +32,14 @@ export class FunctionLibrary {
   /** the actual functions */
   protected functions: ExtendedFunctionMap = {};
 
+  public RegisterMap(map: Map<string, CompositeFunctionDescriptor>) {
+    const pojo: Record<string, CompositeFunctionDescriptor> = {};
+    for (const [name, descriptor] of map.entries()) {
+      pojo[name] = descriptor;
+    }
+    return this.Register(pojo);
+  }
+
   /**
    * register one or more functions. keys in the passed object are
    * considered the canonical function names, and must be (icase) unique.

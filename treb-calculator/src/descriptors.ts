@@ -46,30 +46,32 @@ export enum ReturnType {
  */
 export interface ArgumentDescriptor {
 
+  /** used in tooltips and function descriptions */
   name?: string;
+
+  /** used in tooltips and function descriptions */
   description?: string;
+
+  /** default value in tooltips and function descriptions. this has
+   * no effect on the actual function. if you need a default value in
+   * the function, use a default argument in the typescript declaration
+   * (i.e. the normal way you'd set a default argument)
+   */
   default?: number|string|boolean;
 
   /** @internal TODO: rename */
   passthrough?: boolean;
 
-  // moved from function arrays:
-
   /**
    * allows error values to propagate. otherwise, a function will
-   * return an #ARG error if any arguments contain errors. used for
-   * IsError and IfError, atm.
-   * 
-   * UPDATE: also used in IF.
+   * return an #ARG error if any arguments contain errors. used in
+   * functions like IsError and IfError.
    */
   allow_error?: boolean;
 
   /**
    * this argument (reference) should be treated as an address, not resolved.
-   * it's used for identifying multivariate groups.
-   *
-   * UPDATE: this is used in reference + lookup functions (Offset, specifically)
-   * so don't move to MC lib.
+   * used in reference + lookup functions like Offset
    */
   address?: boolean;
 
@@ -80,24 +82,20 @@ export interface ArgumentDescriptor {
 
   /** 
    * this argument repeasts. this has no impact on the function descriptor
-   * but it's useful to know for clients. UPDATE: going to use this for 
-   * let, which repeats arguments at the front. not sure what that's going
-   * to do to clients. maybe it will just magically work!
+   * but it's useful to know for clients. 
    */
   repeat?: boolean;
 
   /**
-   * similar to collector, this flag will return metadata about the cell
-   *
-   * supported in annotations only, not spreadsheet cells (atm)
-   *
-   * returns cell data type defined in chart (FIXME: move)
+   * argument will return metadata about the cell
    */
   metadata?: boolean;
 
   /**
-   * new flag for automating array application. set this flag to allow
-   * unrolling of array parameters. @see ApplyArray in `utilities.ts`.
+   * automate array application. set this flag to allow unrolling of array 
+   * parameters. "unrolling" means if you call a function with an array
+   * parameter, the function will be called once for each value in the array,
+   * and will return an array.
    * 
    * if this flag is set in any argument descriptor in a function, we'll
    * apply arrays. that's done when the function is installed. 
@@ -113,7 +111,6 @@ export interface ArgumentDescriptor {
  */
 export interface ContextResult {
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context: Record<string, ExpressionUnit>;
 
   /**
@@ -240,7 +237,6 @@ export interface CompositeFunctionDescriptor {
    * 
    * @internal
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   create_binding_context?: (context: {
     args: ExpressionUnit[];
     descriptors: ArgumentDescriptor[];

@@ -70,6 +70,7 @@ import {
   Parser, DecimalMarkType, 
   ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
 
+import 'extended-function-lib';
 import { Calculator } from 'treb-calculator';
 
 import type {

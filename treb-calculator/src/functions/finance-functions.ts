@@ -54,6 +54,11 @@ const payment_function = (rate: number, periods: number, pv = 0, fv = 0, type = 
 
 /** broken out for use in ipmt, ppmt functions */
 const fv_function = (rate: number, periods: number, payment: number, pv = 0, type = 0): number => {
+
+  if (rate === 0) {
+    return -(pv + payment * periods);
+  }
+
   if (type) {
     return (1 + rate) * -payment / rate * (Math.pow(1 + rate, periods) - 1) - pv * Math.pow(1 + rate, periods);
   }
@@ -571,7 +576,10 @@ export const FinanceFunctionLibrary: FunctionMap = {
       { name: 'Type', default: 0 },
     ],
     fn: (rate: number, periods: number, payment: number, pv = 0, type = 0): UnionValue => {
-      return { type: ValueType.number, value: fv_function(rate, periods, payment, pv, type) };
+      return { 
+        type: ValueType.number, 
+        value: fv_function(rate, periods, payment, pv, type),
+      };
     },
   },
 

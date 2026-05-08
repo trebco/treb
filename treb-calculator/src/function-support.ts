@@ -19,12 +19,16 @@
  * 
  */
 
-export * from './calculator';
-// export * from './pack-results';
+import type { CompositeFunctionDescriptor } from './descriptors';
 
-// for annotations that have dependencies
+const extended_functions: Map<string, CompositeFunctionDescriptor> = new Map();
 
-export type { LeafVertex, StateLeafVertex } from './dag/graph';
-export * from './descriptors';
-export * from './function-error';
-export { AddExtendedFunction } from './function-support';
+export function AddExtendedFunction(name: string, descriptor: CompositeFunctionDescriptor) {
+  extended_functions.set(name, descriptor);
+}
+
+export function GetExtendedFunctions() {
+  return extended_functions;
+}
+
+

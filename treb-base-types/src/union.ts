@@ -58,7 +58,6 @@ export interface BooleanUnion {
   value: boolean;
 }
 
-/** we should have these for other types as well */
 export interface ComplexUnion {
   type: ValueType.complex;
   value: Complex;
@@ -93,7 +92,6 @@ export interface FunctionUnion {
   value: unknown;
 }
 
-/** potentially recursive structure */
 export interface ArrayUnion {
   type: ValueType.array;
   value: UnionValue[][]; // 2d

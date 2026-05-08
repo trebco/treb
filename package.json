@@ -75,6 +75,10 @@
       "import": "./build/ooxml-types/src/types/index.js",
       "types": "./build/ooxml-types/src/types/index.d.ts"
     },
+    "./extended-function-lib": {
+      "import": "./build/extended-function-lib/src/types/index.js",
+      "types": "./build/extended-function-lib/src/types/index.d.ts"
+    },
     "./esbuild-utils.mjs": "./esbuild-utils.mjs",
     "./package.json": "./package.json"
   },
@@ -84,8 +88,9 @@
     "@types/uzip": "^0.20201231.2",
     "base64-js": "^1.5.1",
     "cssnano": "^7.1.4",
-    "esbuild": "^0.27.4",
+    "esbuild": "^0.28.0",
     "eslint": "^10.1.0",
+    "extended-function-lib": "file:extended-function-lib",
     "fast-xml-parser": "^5.3.2",
     "html-minifier-terser": "^7.2.0",
     "ooxml-types": "file:ooxml-types",
@@ -117,6 +122,7 @@
     "watch-tsc": "tsc -b treb-embed/tsconfig.json -w",
     "watch-api": "tsx --watch api-generator/api-generator.ts --config api-config.json",
     "generate-api": "tsx api-generator/api-generator.ts --config api-config.json",
-    "release": "npm run clean && npm run rebuild-tsc && npm run build && npm run generate-api && npx tsx postprocess.ts"
+    "release": "npm run clean && npm run rebuild-tsc && npm run build && npm run generate-api && npx tsx postprocess.ts",
+    "coverage-test": "npm run build && cd coverage-test && bun run main.ts && bun run report.ts"
   }
 }

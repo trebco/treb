@@ -149,7 +149,7 @@ export const TextFunctionLibrary: FunctionMap = {
         return {
           type: ValueType.string,
           value: text.replaceAll(search, (...args) => {
-            console.info(args);
+            // console.info(args);
             return (counter++) === index ? replacement : search;
           }),
         };
