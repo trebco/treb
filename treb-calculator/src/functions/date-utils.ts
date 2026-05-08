@@ -35,29 +35,32 @@ export const DayOfYear = (year: number, month: number, day: number): number|fals
 export const ConstructDate = (year: number, month: number, day: number): number|false => {
 
   const date = new Date();
-  date.setMilliseconds(0);
-  date.setSeconds(0);
-  date.setMinutes(0);
-  date.setHours(0);
   
   if (year < 0 || year > 10000) { 
     // return ArgumentError();
     return false;
   }
   if (year < 1899) { year += 1900; }
-  date.setFullYear(year);
+  date.setUTCFullYear(year);
 
   if (month < 1 || month > 12) {
     // return ArgumentError();
     return false;
   }
-  date.setMonth(month - 1);
+  date.setUTCMonth(month - 1);
 
   if (day < 1 || day > 31) {
     // return ArgumentError();
     return false;
   }
-  date.setDate(day);
+  date.setUTCDate(day);
+
+  date.setUTCMilliseconds(0);
+  date.setUTCSeconds(0);
+  date.setUTCMinutes(0);
+  date.setUTCHours(0);
+
+  // console.info(date, {date});
 
   return UnlotusDate(date.getTime());
 
