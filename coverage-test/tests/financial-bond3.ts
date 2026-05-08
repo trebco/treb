@@ -10,11 +10,12 @@ AddTests('ACCRINT', [
 
 AddTests('ACCRINTM', [
   { type: 'approximate', expression: '=ACCRINTM(DATE(2008,4,1),DATE(2008,6,15),0.1,1000,3)', expected: 20.547945, epsilon: 0.01 },
-  { type: 'approximate', expression: '=ACCRINTM(DATE(2020,1,1),DATE(2020,7,1),0.05,100,0)', expected: 2.527778, epsilon: 0.01 },
+  { type: 'approximate', expression: '=ACCRINTM(DATE(2020,1,1),DATE(2020,7,1),0.05,100,0)', expected: 2.5, epsilon: 0.01 },
 ]);
 
 AddTests('AMORDEGRC', [
   { type: 'approximate', expression: '=AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,1)', expected: 776, epsilon: 1 },
+  { type: 'approximate', expression: '=AMORDEGRC(5000,DATE(2020,10,10),DATE(2024,2,3),1000,1,0.15,1)', expected: 375, epsilon: 1 },
 ]);
 
 AddTests('AMORLINC', [

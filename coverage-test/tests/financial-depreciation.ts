@@ -30,5 +30,5 @@ AddTests('DDB', [
 AddTests('VDB', [
   { type: 'approximate', expression: '=VDB(2400,300,10,0,1)', expected: 480, epsilon: 0.01 },
   { type: 'approximate', expression: '=VDB(2400,300,10,0,0.875)', expected: 420, epsilon: 0.01 },
-  { type: 'approximate', expression: '=VDB(2400,300,10,6,10)', expected: 307.488, epsilon: 0.1 },
+  { type: 'approximate', expression: '=VDB(2400,300,10,6,10)', expected: 329.15, epsilon: 0.1 },
 ]);

@@ -1,6 +1,7 @@
 import { Box, type UnionValue } from 'treb-base-types';
 import { AddExtendedFunction } from 'treb-calculator';
 import { DivideByZeroError, ValueError } from 'treb-calculator';
+import { extractNumbers } from './stats-array-utils';
 
 AddExtendedFunction('ISPMT', {
   description: 'Returns the interest paid during a specific period of a loan with even principal payments',
@@ -149,5 +150,23 @@ AddExtendedFunction('RRI', {
       return DivideByZeroError();
     }
     return Box(Math.pow(fv / pv, 1 / nper) - 1);
+  },
+});
+
+AddExtendedFunction('FVSCHEDULE', {
+  description: 'Returns the future value of an initial principal after applying a series of compound interest rates',
+  arguments: [
+    { name: 'principal', description: 'The present value' },
+    { name: 'schedule', description: 'An array of interest rates to apply', boxed: true },
+  ],
+  fn: (principal?: number, schedule?: UnionValue): UnionValue => {
+    if (principal === undefined || !schedule) return ValueError();
+    const rates = extractNumbers(schedule);
+    if (rates.length === 0) return ValueError();
+    let result = principal;
+    for (const rate of rates) {
+      result *= (1 + rate);
+    }
+    return Box(result);
   },
 });

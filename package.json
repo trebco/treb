@@ -123,6 +123,6 @@
     "watch-api": "tsx --watch api-generator/api-generator.ts --config api-config.json",
     "generate-api": "tsx api-generator/api-generator.ts --config api-config.json",
     "release": "npm run clean && npm run rebuild-tsc && npm run build && npm run generate-api && npx tsx postprocess.ts",
-    "coverage-test": "npm run build && cd coverage-test && bun run main.ts && bun run report.ts"
+    "coverage-test": "npm run build && cd coverage-test && bun run main.ts"
   }
 }

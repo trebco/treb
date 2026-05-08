@@ -76,6 +76,29 @@ AddExtendedFunction('SECH', {
   },
 });
 
+AddExtendedFunction('ACOT', {
+  description: 'Returns the arc cotangent of a number',
+  arguments: [
+    { name: 'number', description: 'The number', unroll: true },
+  ],
+  fn: (x?: number): UnionValue => {
+    if (x === undefined) return ValueError();
+    return Box(Math.PI / 2 - Math.atan(x));
+  },
+});
+
+AddExtendedFunction('ACOTH', {
+  description: 'Returns the inverse hyperbolic cotangent of a number',
+  arguments: [
+    { name: 'number', description: 'The number', unroll: true },
+  ],
+  fn: (x?: number): UnionValue => {
+    if (x === undefined) return ValueError();
+    if (Math.abs(x) <= 1) return ValueError();
+    return Box(Math.atanh(1 / x));
+  },
+});
+
 AddExtendedFunction('SQRTPI', {
   description: 'Returns the square root of (number * PI)',
   arguments: [

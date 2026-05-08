@@ -236,17 +236,15 @@
   {
     "key": "ACOT",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "ACOTH",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -2294,9 +2292,8 @@
   {
     "key": "FVSCHEDULE",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -2363,9 +2360,8 @@
   {
     "key": "MIRR",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -2419,177 +2415,156 @@
   {
     "key": "VDB",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "PRICE",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "error": "name"
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "YIELD",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "DURATION",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "MDURATION",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "PRICEMAT",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "YIELDMAT",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "PRICEDISC",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "YIELDDISC",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "DISC",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "RECEIVED",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "INTRATE",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "ACCRINT",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "error": "name"
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "ACCRINTM",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "error": "name"
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "AMORDEGRC",
     "results": {
       "succeeded": 0,
-      "failed": 1,
+      "failed": 2,
       "error": "name"
     }
   },
   {
     "key": "AMORLINC",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "COUPDAYBS",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "error": "name"
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "COUPDAYS",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "error": "name"
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "COUPDAYSNC",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "error": "name"
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "COUPNCD",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "COUPNUM",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "error": "name"
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "COUPPCD",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -2637,70 +2612,57 @@
   {
     "key": "TBILLEQ",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "TBILLPRICE",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "TBILLYIELD",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "ODDFPRICE",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "ODDFYIELD",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "ODDLPRICE",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "ODDLYIELD",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "DATE",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "failed_tests": [
-        "=DATE(2024,1,1)",
-        "=DATE(2000,1,1)",
-        "=DATE(1900,1,1)",
-        "=DATE(2024,12,31)"
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {

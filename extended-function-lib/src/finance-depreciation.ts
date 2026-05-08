@@ -126,3 +126,51 @@ AddExtendedFunction('DDB', {
     return Box(depreciation);
   },
 });
+
+AddExtendedFunction('VDB', {
+  description: 'Returns the depreciation of an asset using a variable declining balance method',
+  arguments: [
+    { name: 'cost', description: 'Initial cost of the asset' },
+    { name: 'salvage', description: 'Value at the end of the depreciation' },
+    { name: 'life', description: 'Number of periods over which the asset is depreciated' },
+    { name: 'start_period', description: 'Starting period for the calculation' },
+    { name: 'end_period', description: 'Ending period for the calculation' },
+    { name: 'factor', description: 'Rate at which the balance declines (default 2)' },
+    { name: 'no_switch', description: 'If true, do not switch to straight-line (default false)' },
+  ],
+  fn: (cost?: number, salvage?: number, life?: number, start_period?: number, end_period?: number, factor?: number, no_switch?: boolean): UnionValue => {
+    if (cost === undefined || salvage === undefined || life === undefined || start_period === undefined || end_period === undefined) {
+      return ValueError();
+    }
+    if (factor === undefined) factor = 2;
+    if (no_switch === undefined) no_switch = false;
+    if (cost < 0 || salvage < 0 || life <= 0 || start_period < 0 || end_period < start_period || end_period > life || factor <= 0) {
+      return ValueError();
+    }
+
+    const rate = factor / life;
+    let total_dep = 0;
+    let book_value = cost;
+
+    for (let p = 1; p <= Math.ceil(end_period); p++) {
+      let ddb_dep = book_value * rate;
+      let sln_dep = no_switch ? 0 : (book_value - salvage) / (life - p + 1);
+      let dep = no_switch ? ddb_dep : Math.max(ddb_dep, sln_dep);
+      dep = Math.min(dep, book_value - salvage);
+      if (dep < 0) dep = 0;
+
+      const period_start = p - 1;
+      const period_end = p;
+      const overlap_start = Math.max(period_start, start_period);
+      const overlap_end = Math.min(period_end, end_period);
+
+      if (overlap_end > overlap_start) {
+        total_dep += dep * (overlap_end - overlap_start);
+      }
+
+      book_value -= dep;
+    }
+
+    return Box(total_dep);
+  },
+});
