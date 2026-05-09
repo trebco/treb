@@ -36,7 +36,7 @@ import * as Utilities from './utilities';
 import { StringUnion } from './utilities';
 
 import { FunctionLibrary } from './function-library';
-import type { ExtendedFunctionDescriptor, FunctionMap } from './descriptors';
+import type { CompositeFunctionDescriptor, ExtendedFunctionDescriptor, FunctionMap } from './descriptors';
 // import * as Utils from './utilities';
 
 import { AltFunctionLibrary, BaseFunctionLibrary } from './functions/base-functions';
@@ -65,7 +65,6 @@ import { Sheet } from 'treb-data-model';
 import type { Annotation, DataModel, ConnectedElementType, ConditionalFormat } from 'treb-data-model';
 
 import { ValueParser } from 'treb-format';
-import { GetExtendedFunctions } from './function-support';
 
 /**
  * breaking this out so we can use it for export (TODO)
@@ -159,6 +158,8 @@ const default_calculator_options: CalculatorOptions = {
   spill: false, 
 };
 
+const RXX = Math.round(Math.random() * 1e8);
+
 /**
  * Calculator now extends graph. there's a 1-1 relationship between the
  * two, and we wind up passing a lot of operations from one to the other.
@@ -176,6 +177,12 @@ const default_calculator_options: CalculatorOptions = {
  * 
  */
 export class Calculator extends Graph {
+
+  protected static extended_functions: Map<string, CompositeFunctionDescriptor> = new Map();
+
+  public static AddExtendedFunction(name: string, descriptor: CompositeFunctionDescriptor) {
+    this.extended_functions.set(name, descriptor);
+  }
 
   /** 
    * localized parser instance. we're sharing. 
@@ -262,8 +269,7 @@ export class Calculator extends Graph {
 
     // new
 
-    const extended_functions = GetExtendedFunctions();
-    this.library.RegisterMap(extended_functions);
+    this.library.RegisterMap(Calculator.extended_functions);
 
     // special functions... need reference to the graph (this)
     // moving countif here so we can reference it in COUNTIFS... 

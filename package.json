@@ -1,6 +1,6 @@
 {
   "name": "@trebco/treb",
-  "version": "38.0.0",
+  "version": "38.1.0",
   "license": "LGPL-3.0-or-later",
   "homepage": "https://treb.app",
   "repository": {
@@ -18,66 +18,66 @@
     },
     "./treb-grid": {
       "types": "./build/treb-grid/src/index.d.ts",
-      "import": "./build/treb-grid/src/index.js"
+      "import": "./treb-grid/src/index.ts"
     },
     "./treb-grid/*": {
       "types": "./build/treb-grid/*.d.ts",
-      "import": "./build/treb-grid/*.js"
+      "import": "./treb-grid/*.ts"
     },
     "./treb-charts": {
       "types": "./build/treb-charts/src/index.d.ts",
-      "import": "./build/treb-charts/src/index.js"
+      "import": "./treb-charts/src/index.ts"
     },
     "./treb-charts/*": {
       "types": "./build/treb-charts/*.d.ts",
-      "import": "./build/treb-charts/*.js"
+      "import": "./treb-charts/*.ts"
     },
     "./treb-embed": {
       "types": "./build/treb-embed/src/index.d.ts",
-      "import": "./build/treb-embed/src/index.js"
+      "import": "./treb-embed/src/index.ts"
     },
     "./treb-embed/*": {
       "types": "./build/treb-embed/*.d.ts",
-      "import": "./build/treb-embed/*.js"
+      "import": "./treb-embed/*.ts"
     },
     "./treb-embed/*.html": {
       "import": "./treb-embed/*.html"
     },
     "./treb-calculator": {
       "types": "./build/treb-calculator/src/index.d.ts",
-      "import": "./build/treb-calculator/src/index.js"
+      "import": "./treb-calculator/src/index.ts"
     },
     "./treb-calculator/*": {
       "types": "./build/treb-calculator/*.d.ts",
-      "import": "./build/treb-calculator/*.js"
+      "import": "./treb-calculator/*.ts"
     },
     "./treb-format": {
       "types": "./build/treb-format/src/index.d.ts",
-      "import": "./build/treb-format/src/index.js"
+      "import": "./treb-format/src/index.ts"
     },
     "./treb-parser": {
-      "import": "./build/treb-parser/src/index.js",
-      "types": "./build/treb-parser/src/index.d.ts"
+      "types": "./build/treb-parser/src/index.d.ts",
+      "import": "./treb-parser/src/index.ts"
     },
     "./treb-utils": {
-      "import": "./build/treb-utils/src/index.js",
-      "types": "./build/treb-utils/src/index.d.ts"
+      "types": "./build/treb-utils/src/index.d.ts",
+      "import": "./treb-utils/src/index.ts"
     },
     "./treb-data-model": {
-      "import": "./build/treb-data-model/src/index.js",
-      "types": "./build/treb-data-model/src/index.d.ts"
+      "types": "./build/treb-data-model/src/index.d.ts",
+      "import": "./treb-data-model/src/index.ts"
     },
     "./treb-base-types": {
-      "import": "./build/treb-base-types/src/index.js",
-      "types": "./build/treb-base-types/src/index.d.ts"
+      "types": "./build/treb-base-types/src/index.d.ts",
+      "import": "./treb-base-types/src/index.ts"
     },
     "./ooxml-types": {
-      "import": "./build/ooxml-types/src/types/index.js",
-      "types": "./build/ooxml-types/src/types/index.d.ts"
+      "types": "./build/ooxml-types/src/types/index.d.ts",
+      "import": "./ooxml-types/src/types/index.ts"
     },
     "./extended-function-lib": {
-      "import": "./build/extended-function-lib/src/types/index.js",
-      "types": "./build/extended-function-lib/src/types/index.d.ts"
+      "types": "./build/extended-function-lib/src/types/index.d.ts",
+      "import": "./extended-function-lib/src/types/index.ts"
     },
     "./esbuild-utils.mjs": "./esbuild-utils.mjs",
     "./package.json": "./package.json"

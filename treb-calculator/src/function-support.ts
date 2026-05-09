@@ -21,6 +21,8 @@
 
 import type { CompositeFunctionDescriptor } from './descriptors';
 
+/*
+
 const extended_functions: Map<string, CompositeFunctionDescriptor> = new Map();
 
 export function AddExtendedFunction(name: string, descriptor: CompositeFunctionDescriptor) {
@@ -30,5 +32,13 @@ export function AddExtendedFunction(name: string, descriptor: CompositeFunctionD
 export function GetExtendedFunctions() {
   return extended_functions;
 }
+*/
+
+import { Calculator } from './calculator';
+export function AddExtendedFunction(name: string, descriptor: CompositeFunctionDescriptor) {
+  Calculator.AddExtendedFunction(name, descriptor);
+}
+
+
 
 
