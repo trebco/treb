@@ -1145,7 +1145,8 @@ export class Calculator extends Graph {
             return {
               type: ValueType.object,
               value: { 
-                type: 'address', // shut up typescript 
+                // @ts-ignore - the source _might_ not be a proper parser address type
+                type: 'address', 
                 ...(arr[column ? column - 1 : 0][row ? row - 1 : 0].value.address) },  
             };
           }

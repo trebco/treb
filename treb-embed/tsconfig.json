@@ -23,6 +23,8 @@
     "src/index-modern-mc.ts",
     "src/index-module-mc.ts",
     "../treb-parser/test/**/*.ts",
+    "../coverage-test/**/*",
+    "../extended-function-lib/check-test-results.ts",
     "../**/*.test.ts"
   ]
 }
