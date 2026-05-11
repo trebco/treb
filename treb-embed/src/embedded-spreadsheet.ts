@@ -4897,7 +4897,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @public
    */
-  public Select(range?: RangeReference, scroll?: true|'smooth'): void {
+  public Select(range?: RangeReference, scroll?: boolean|'smooth'): void {
 
     let resolved: Area|undefined = undefined; 
 
