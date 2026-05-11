@@ -70,8 +70,6 @@ import {
   Parser, DecimalMarkType, 
   ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
 
-console.info("PREPARE TO IMPORT");
-
 import 'extended-function-lib';
 import { Calculator } from 'treb-calculator';
 
@@ -4899,7 +4897,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @public
    */
-  public Select(range?: RangeReference): void {
+  public Select(range?: RangeReference, scroll?: true|'smooth'): void {
 
     let resolved: Area|undefined = undefined; 
 
@@ -4913,6 +4911,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
 
     this.grid.SelectRange(resolved);
+    if (scroll && resolved?.start) {
+      this.grid.ScrollIntoView(resolved.start, scroll === 'smooth');
+    }
 
   }
 
