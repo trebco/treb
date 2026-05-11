@@ -140,21 +140,3 @@ AddExtendedFunction('STEYX', {
     return Box(Math.sqrt(sse / (n - 2)));
   },
 });
-
-AddExtendedFunction('FORECAST.LINEAR', {
-  description: 'Returns a predicted value based on a linear trend',
-  arguments: [
-    { name: 'x', description: 'The x-value for which to predict y' },
-    { name: 'known_y', description: 'Known dependent values', boxed: true },
-    { name: 'known_x', description: 'Known independent values', boxed: true },
-  ],
-  fn: (x?: number, known_y?: UnionValue, known_x?: UnionValue): UnionValue => {
-    if (x === undefined || !known_y || !known_x) return ValueError();
-    const pairs = extractNumberPairs(known_y, known_x);
-    if (!pairs) return ValueError();
-    const [ys, xs] = pairs;
-    if (xs.length < 2) return ValueError();
-    const reg = linearRegression(xs, ys);
-    return Box(reg.slope * x + reg.intercept);
-  },
-});
