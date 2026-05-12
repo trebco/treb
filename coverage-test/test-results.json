@@ -562,14 +562,8 @@
   {
     "key": "MUNIT",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "failed_tests": [
-        "=INDEX(MUNIT(3),1,1)",
-        "=INDEX(MUNIT(3),1,2)",
-        "=INDEX(MUNIT(3),2,2)",
-        "=INDEX(MUNIT(3),3,3)"
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -1752,10 +1746,7 @@
     "results": {
       "succeeded": 0,
       "failed": 2,
-      "failed_tests": [
-        "=FORECAST.LINEAR(6,B1:B5,A1:A5)",
-        "=FORECAST.LINEAR(10,B1:B5,A1:A5)"
-      ]
+      "error": "name"
     }
   },
   {

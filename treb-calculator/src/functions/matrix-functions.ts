@@ -20,9 +20,9 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import type { Complex, UnionValue} from 'treb-base-types';
+import type { ArrayUnion, Complex, UnionValue} from 'treb-base-types';
 import { ValueType, ComplexOrReal } from 'treb-base-types';
-import { ValueError } from '../function-error';
+import { ArgumentError, ValueError } from '../function-error';
 import * as ComplexMath from '../complex-math';
 
 import type { ComplexMatrixType } from '../complex-math';
@@ -144,6 +144,33 @@ export const MatrixFunctionLibrary: FunctionMap = {
       // return inverse.map(row => row.map(value => ComplexOrReal(value)));
       
     },
+  },
+
+  MUnit: {
+    description: 'Returns the unit matrix for dimension n',
+    arguments: [
+      { name: 'n' },
+    ],
+    fn: (n: number): UnionValue => {
+      if (typeof n !== 'number' || n < 1) {
+        return ArgumentError();
+      }
+
+      const mat: ArrayUnion = {
+        type: ValueType.array,
+        value: [],
+      };
+
+      for (let i = 0; i < n; i++) {
+        const row: UnionValue[] = [];
+        for (let j = 0; j < n; j++) {
+          row.push({ type: ValueType.number, value: (i === j ? 1 : 0) });
+        }
+        mat.value.push(row);
+      }
+
+      return mat;
+    }
   },
 
   MMult: {
