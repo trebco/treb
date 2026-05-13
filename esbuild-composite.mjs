@@ -19,6 +19,7 @@ import pkg from './package.json' with { type: 'json' };
  * @property {boolean} xlsx_support - import/export xlsx files
  * @property {string} output_filename - generated filename. we enforce the directory.
  * @property {string} outdir - target directory
+ * @property {boolean} split - enable splitting
  */
 
 /** 
@@ -35,6 +36,7 @@ const options = {
   xlsx_support: true,
   output_filename: 'treb-spreadsheet',
   outdir: 'dist',
+  split: true,
 };
 
 //------------------------------------------------------------------------------
@@ -60,6 +62,10 @@ for (let i = 0; i < process.argv.length; i++) {
   if (process.argv[i] === '--output-filename') {
     options.output_filename = process.argv[++i];
   }
+  if (process.argv[i] === '--alt') {
+    options.outdir = 'alt-lib/dist';
+    options.split = false;
+  }
 }
 
 
@@ -77,7 +83,7 @@ const build_options = {
   // outfile: 'dist/' + options.output_filename,
   outExtension: { '.js': '.mjs' },
   minify: options.minify,
-  splitting: true,
+  splitting: options.split,
   metafile: true,
   format: 'esm',
   external: ['*.wasm', 'node:*'],

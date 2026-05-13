@@ -22,7 +22,7 @@
 import type { GraphCallbacks } from './spreadsheet_vertex_base';
 import { SpreadsheetVertexBase } from './spreadsheet_vertex_base';
 import type { Cell, CellValue, ICellAddress, UnionValue } from 'treb-base-types';
-import { Box, ValueType } from 'treb-base-types';
+import { Area, Box, ValueType } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
 import { ErrorType } from '../function-error';
@@ -94,6 +94,33 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
     if (this.reference) {
       this.result = Box(this.reference.GetValue());
     }
+  }
+
+  /**
+   * once we populate a spill array, we need to follow edges
+   * to dirty nodes and recalculate. watch out for loops, though
+   * 
+   * @returns expanded list, or false if we detect a loop
+   */
+  public ExpandEdgeList(source: SpreadsheetVertex, list: SpreadsheetVertex[]): SpreadsheetVertex[] | false {
+
+    const expanded: SpreadsheetVertex[] = [...list];
+    const queue: SpreadsheetVertex[] = [...list];
+
+    while (queue.length > 0) {
+      const entry = queue.shift();
+      if (entry) {
+        for (const edge of entry.edges_out.values()) {
+          if (edge as SpreadsheetVertex === source) {
+            return false;
+          }
+          expanded.push(edge as SpreadsheetVertex);
+          queue.push(...Array.from(edge.edges_out.values()) as SpreadsheetVertex[]);
+        }
+      }
+    }
+
+    return expanded;
   }
 
   /**
@@ -226,19 +253,54 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
           // note array of length 1 should not trigger spill behavior
           // (moved to callback method)
 
+          // the return value here (recalc) is the list of updated cells.
+          // not sure if we're properly handling cells that _were_ part
+          // of the spill but are no longer. we might need to track the 
+          // original value for that (TODO/FIXME)
+
           const recalc = graph.SpillCallback.call(graph, this, this.result);
           if (recalc) {
-            // console.info("RC", recalc);
+
+            // set everyone dirty first, then recalculate. the aim is to 
+            // avoid extra recalcs if a cell is based on two inputs that
+            // change (although that's unlikely here...)
+
+            const recalc_list: SpreadsheetVertex[] = [];
+           
             for (const entry of (recalc as SpreadsheetVertex[])) {
 
+              const expanded = this.ExpandEdgeList(this, Array.from(entry.edges_out.values()) as SpreadsheetVertex[]);
+              if (expanded === false) {
+                throw new Error('loop');
+              }
+
+              for (const edge of expanded) {
+                edge.dirty = true;
+                recalc_list.push(edge);
+              }
+
+              /*
               // will this work properly with loops? (...)
 
               for (const edge of entry.edges_out) {
+
+                // I think this is the problem. we're setting out edges
+                // on this vertex dirty but not following the graph after
+                // that
+
                 (edge as SpreadsheetVertex).dirty = true;
                 (edge as SpreadsheetVertex).Calculate(graph);
               }
+              */
 
             }
+
+            for (const edge of recalc_list) {
+              if (edge.dirty) {
+                edge.Calculate(graph);
+              }
+            }
+
           }
 
         }

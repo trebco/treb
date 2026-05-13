@@ -80,6 +80,21 @@ export class Vertex {
 
   }
 
+  /** search for this vertex among outbound edges */
+  public SearchOutEdges(test: Vertex, recurse = true) {
+    for (const edge of this.edges_out.values()) {
+      if (edge === test) {
+        return true;
+      }
+      else if (recurse) {
+        if (edge.SearchOutEdges(test, recurse)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   /** removes all inbound edges (dependencies) */
   public ClearDependencies(): void {
     for (const edge of this.edges_in) {

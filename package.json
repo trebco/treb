@@ -1,6 +1,6 @@
 {
   "name": "@trebco/treb",
-  "version": "38.1.3",
+  "version": "38.2.0",
   "license": "LGPL-3.0-or-later",
   "homepage": "https://treb.app",
   "repository": {
@@ -113,6 +113,7 @@
   },
   "scripts": {
     "build": "node esbuild-composite.mjs",
+    "alt": "node esbuild-composite.mjs --alt",
     "dev": "node esbuild-composite.mjs --dev",
     "clean": "rm -fr build dist",
     "watch": "node --watch esbuild-composite.mjs --watch --dev",

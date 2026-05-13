@@ -1396,6 +1396,9 @@ export class Calculator extends Graph {
     let counter = 0;
     let error = false;
 
+    // why do we create the spill area even if there's an error? the reason is
+    // we need to know when the spill is "cured", so we can repopulate
+
     for (const {cell, row, column} of cells.IterateRC(area, true)) {
       if (counter++ && (cell.type !== ValueType.undefined || cell.area || cell.merge_area || cell.table)) {
         error = true; // spill error.
@@ -1433,11 +1436,13 @@ export class Calculator extends Graph {
 
     if (value.length === 1 && value[0].length === 1) {
       reference.SetCalculatedValue(value[0][0].value as CellValue);
+      // ?? // console.info("RX1");
       return recalculate_list;
     }
 
     if (!this.options.spill) {
       reference.SetCalculatedValue(value[0][0].value as CellValue);
+      // ?? // console.info("RX2");
       return recalculate_list;
     }
 
@@ -1456,29 +1461,27 @@ export class Calculator extends Graph {
       const rows = result.value[0].length;
       const area = new Area(address).Reshape(rows, columns);
 
+      // let's check for loops here, before we attach data. that should
+      // prevent future calculation errors.
 
-      /*
-      let counter = 0;
-      let error = false;
-      const leaf = new StateLeafVertex();
-
-      for (const {cell, row, column} of cells.IterateRC(area, true)) {
-        if (counter++ && (cell.type !== ValueType.undefined || cell.area || cell.merge_area || cell.table)) {
-          error = true; // spill error.
+      for (const test of area) {
+        if (test.row === address.row && test.column === address.column) {
+          continue;
         }
-        this.AddLeafVertexEdge({row, column, sheet_id: area.start.sheet_id}, leaf);
+
+        const edge = this.GetVertex(test, false); 
+        if (edge?.SearchOutEdges(vertex)) {
+          // console.info("loop detected in spill array")
+          reference.SetCalculationError('LOOP');
+          return recalculate_list;
+        }
+
       }
-
-      console.info("storing spill data");
-
-      // this.spills.push(new Area(area.start, area.end));
-      this.spill_data.push({area, vertex: leaf});
-      */
-
+      
       const { error } = this.AttachSpillData(area, cells);
 
       if (error) {
-        // console.info("returning error");
+        // console.info("returning spill error");
         reference.SetCalculationError('SPILL');
         return recalculate_list;
       }
@@ -1606,6 +1609,8 @@ export class Calculator extends Graph {
         }
 
       }
+
+      // console.info("RL:", vertex.address ? new Area(vertex.address).spreadsheet_label : '(...)' , recalculate_list.map(entry => entry.address ? new Area(entry.address).spreadsheet_label : 'NA'));
 
       return recalculate_list;
 
