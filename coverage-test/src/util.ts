@@ -40,27 +40,27 @@ function EvaluateTranspose(spreadsheet: EmbeddedSpreadsheet, expression: string)
   return result;
 }
 
-interface ExpectTest {
+export interface ExpectTest {
   type: 'expect';
   expression: string;
   expected: EvaluateResultType;
 }
 
-interface ApproximateTest {
+export interface ApproximateTest {
   type: 'approximate';
   expression: string;
   expected: number;
   epsilon: number;
 }
 
-interface CustomTest {
+export interface CustomTest {
   type: 'custom';
   expression: string;
   count: number;
   validate: (result: EvaluateResultType[]) => boolean;
 }
 
-type TestType = ExpectTest | ApproximateTest | CustomTest;
+export type TestType = ExpectTest | ApproximateTest | CustomTest;
 
 /**
  * run a function and match against an expected result.
@@ -162,7 +162,7 @@ export interface TestResultsType {
   succeeded: number;
   failed: number;
   error?: 'name';
-  failed_tests?: string[];
+  failed_tests?: TestType[];
 }
 
 /**
@@ -172,7 +172,7 @@ export interface TestResultsType {
 function RunTestsForKey(spreadsheet: EmbeddedSpreadsheet, key: string, tests: TestType[]): TestResultsType {
   
   const results: TestResultsType = { succeeded: 0, failed: 0 };
-  const failed_tests: string[] = [];
+  const failed_tests: TestType[] = [];
 
   for (const [index, test] of tests.entries()) {
     let result: boolean|'name' = false;
@@ -202,7 +202,7 @@ function RunTestsForKey(spreadsheet: EmbeddedSpreadsheet, key: string, tests: Te
     }
     else {
       // console.info(`Test ${index} for "${key}" failed`);
-      failed_tests.push(test.expression);
+      failed_tests.push({ ...test });
     }
 
   }

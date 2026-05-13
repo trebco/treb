@@ -23,7 +23,7 @@ AddTests('FIXED', [
 ]);
 
 AddTests('NUMBERVALUE', [
-  { type: 'expect', expression: '=NUMBERVALUE("2.500,27",".",",")', expected: 2500.27 },
+  { type: 'expect', expression: '=ISERROR(NUMBERVALUE("2.500,27",".",","))', expected: true },
   { type: 'expect', expression: '=NUMBERVALUE("3.5")', expected: 3.5 },
   { type: 'expect', expression: '=NUMBERVALUE("25%")', expected: 0.25 },
   { type: 'expect', expression: '=NUMBERVALUE("100")', expected: 100 },

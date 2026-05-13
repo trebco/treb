@@ -4,10 +4,10 @@ import { AddTests } from '@util';
 const epsilon = 1e-6;
 
 AddTests('DAYS', [
-  { type: 'expect', expression: '=DAYS(DATE(2024,12,31),DATE(2024,1,1))', expected: 366 },
-  { type: 'expect', expression: '=DAYS(DATE(2023,12,31),DATE(2023,1,1))', expected: 365 },
+  { type: 'expect', expression: '=DAYS(DATE(2024,12,31),DATE(2024,1,1))', expected: 365 },
+  { type: 'expect', expression: '=DAYS(DATE(2023,12,31),DATE(2023,1,1))', expected: 364 },
   { type: 'expect', expression: '=DAYS(DATE(2024,3,1),DATE(2024,2,1))', expected: 29 },
-  { type: 'expect', expression: '=DAYS(DATE(2024,1,1),DATE(2024,12,31))', expected: -366 },
+  { type: 'expect', expression: '=DAYS(DATE(2024,1,1),DATE(2024,12,31))', expected: -365 },
 ]);
 
 AddTests('DAYS360', [
@@ -17,8 +17,8 @@ AddTests('DAYS360', [
 ]);
 
 AddTests('EDATE', [
-  { type: 'expect', expression: '=EDATE(DATE(2024,1,15),1)', expected: 45338 },
-  { type: 'expect', expression: '=EDATE(DATE(2024,1,31),1)', expected: 45352 },
+  { type: 'expect', expression: '=EDATE(DATE(2024,1,15),1)', expected: 45337 },
+  { type: 'expect', expression: '=EDATE(DATE(2024,1,31),1)', expected: 45351 },
   { type: 'expect', expression: '=EDATE(DATE(2024,3,15),-1)', expected: 45337 },
   { type: 'expect', expression: '=EDATE(DATE(2024,1,15),12)', expected: 45672 },
 ]);

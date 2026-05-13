@@ -1,11 +1,12 @@
 
+import type { TestType } from '@util';
 import fs from 'node:fs/promises';
 
 interface TestResults {
   succeeded: number;
   failed: number;
   error?: 'name';
-  failed_tests?: string[];
+  failed_tests?: TestType[];
 }
 
 interface TestEntry {
@@ -21,7 +22,7 @@ interface FunctionRow {
   status: Status;
   passed: number;
   total: number;
-  failed_tests?: string[];
+  failed_tests?: TestType[];
 }
 
 export async function RunReport() {
@@ -164,7 +165,7 @@ export async function RunReport() {
     for (const row of catRows) {
       const testsCol = row.status === 'not-tested' ? '&mdash;' : `${row.passed}/${row.total}`;
       const failedCol = row.failed_tests?.length
-        ? row.failed_tests.map(t => `<span class="failed-expr">${esc(t)}</span>`).join(', ')
+        ? row.failed_tests.map(t => `<span class="failed-expr">${esc(t.expression)}</span>`).join(', ')
         : '';
 
       html += `<tr>
