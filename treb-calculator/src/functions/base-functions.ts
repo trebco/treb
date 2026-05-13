@@ -64,7 +64,7 @@ import { ConstructDate } from './date-utils';
 
 // OK, just one.
 
-
+/*
 const edate_calc = (start: number, months: number) => {
   
   let date = new Date(LotusDate(start));
@@ -103,6 +103,7 @@ const edate_calc = (start: number, months: number) => {
   return date;
 
 };
+*/
 
 const zlookup_arguments = [
   {
@@ -558,6 +559,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
   // --- FIXME: break out date functions? --------------------------------------
 
+  /*
   EDate: {
     arguments: [
       { 
@@ -639,6 +641,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
     }
   },
+  */
 
   Now: {
     description: 'Returns current time',

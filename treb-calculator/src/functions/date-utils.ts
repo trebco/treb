@@ -37,20 +37,17 @@ export const ConstructDate = (year: number, month: number, day: number): number|
   const date = new Date();
   
   if (year < 0 || year > 10000) { 
-    // return ArgumentError();
     return false;
   }
   if (year < 1899) { year += 1900; }
   date.setUTCFullYear(year);
 
   if (month < 1 || month > 12) {
-    // return ArgumentError();
     return false;
   }
   date.setUTCMonth(month - 1);
 
   if (day < 1 || day > 31) {
-    // return ArgumentError();
     return false;
   }
   date.setUTCDate(day);
@@ -59,8 +56,6 @@ export const ConstructDate = (year: number, month: number, day: number): number|
   date.setUTCSeconds(0);
   date.setUTCMinutes(0);
   date.setUTCHours(0);
-
-  // console.info(date, {date});
 
   return UnlotusDate(date.getTime());
 
