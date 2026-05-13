@@ -27,6 +27,7 @@ Do not read `../coverage-test/report.html` — it is generated from the JSON rep
    - `extractNumbers` from `./stats-array-utils` for array arguments
 4. Use `boxed: true` on argument descriptors to receive raw `UnionValue` (for array args)
 5. Use `unroll: true` on argument descriptors to auto-apply the function over array elements
+6. Use `allow_error: true` on argument descriptors to receive error values instead of having the calculator short-circuit on errors (needed for functions like TYPE and ERROR.TYPE)
 
 ## Testing and validation
 

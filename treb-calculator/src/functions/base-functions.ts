@@ -1520,6 +1520,13 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    NA: {
+      description: 'Returns #N/A error',
+      fn: () => {
+        return NAError();
+      }
+    },
+
 
     /*
     MMult: {

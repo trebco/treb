@@ -22,4 +22,8 @@ import './stats-scalar';
 import './stats-descriptive';
 import './stats-rank';
 import './stats-regression';
+import './engineering-base-conversion';
+import './engineering-bitwise';
+import './datetime-parts';
+import './info-functions';
 

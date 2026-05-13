@@ -2680,9 +2680,8 @@
   {
     "key": "DATEVALUE",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -2806,41 +2805,36 @@
   {
     "key": "TIME",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "TIMEVALUE",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "HOUR",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "MINUTE",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "SECOND",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -2863,97 +2857,85 @@
   {
     "key": "BIN2DEC",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "BIN2HEX",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "BIN2OCT",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "DEC2BIN",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "DEC2HEX",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "DEC2OCT",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "HEX2BIN",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "HEX2DEC",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "HEX2OCT",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "OCT2BIN",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "OCT2DEC",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "OCT2HEX",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -2967,41 +2949,36 @@
   {
     "key": "BITAND",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "BITOR",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "BITXOR",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "BITLSHIFT",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "BITRSHIFT",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -3014,9 +2991,8 @@
   {
     "key": "GESTEP",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -3323,21 +3299,15 @@
   {
     "key": "ISERR",
     "results": {
-      "succeeded": 2,
-      "failed": 1,
-      "failed_tests": [
-        "=ISERR(NA())"
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "ISNA",
     "results": {
-      "succeeded": 2,
-      "failed": 1,
-      "failed_tests": [
-        "=ISNA(NA())"
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -3376,25 +3346,22 @@
   {
     "key": "ISNONTEXT",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "ISEVEN",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "ISODD",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -3415,35 +3382,29 @@
   {
     "key": "TYPE",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "N",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "NA",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        "=ISNA(NA())"
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "ERROR.TYPE",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "error": "name"
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
