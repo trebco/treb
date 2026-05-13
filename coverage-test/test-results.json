@@ -3789,8 +3789,15 @@
   {
     "key": "ISBLANK",
     "results": {
-      "succeeded": 3,
-      "failed": 0
+      "succeeded": 2,
+      "failed": 1,
+      "failed_tests": [
+        {
+          "type": "expect",
+          "expression": "=ISBLANK(A1)",
+          "expected": true
+        }
+      ]
     }
   },
   {
@@ -3817,58 +3824,22 @@
   {
     "key": "ISLOGICAL",
     "results": {
-      "succeeded": 2,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=ISLOGICAL(TRUE)",
-          "expected": true
-        },
-        {
-          "type": "expect",
-          "expression": "=ISLOGICAL(FALSE)",
-          "expected": true
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "ISNUMBER",
     "results": {
-      "succeeded": 2,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=ISNUMBER(1)",
-          "expected": true
-        },
-        {
-          "type": "expect",
-          "expression": "=ISNUMBER(3.14)",
-          "expected": true
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "ISTEXT",
     "results": {
-      "succeeded": 2,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=ISTEXT(\"hello\")",
-          "expected": true
-        },
-        {
-          "type": "expect",
-          "expression": "=ISTEXT(\"\")",
-          "expected": true
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -3964,13 +3935,7 @@
     "results": {
       "succeeded": 0,
       "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=ISTEXT(INFO(\"osversion\"))",
-          "expected": true
-        }
-      ]
+      "error": "name"
     }
   },
   {

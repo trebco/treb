@@ -22,16 +22,9 @@
 import type { FunctionMap } from '../descriptors';
 import { type UnionValue, ValueType } from 'treb-base-types';
 
-const MatchType = (type: string, ref: UnionValue): UnionValue => {
-  return { 
-    type: ValueType.boolean, 
-    value: typeof (ref.value as {value?: unknown})?.value === type,
-  };
-};
-
 const match_arguments = [{
   name: 'Reference',
-  metadata: true,
+  boxed: true,
   unroll: true,
 }];
 
@@ -40,25 +33,25 @@ export const InformationFunctionLibrary: FunctionMap = {
   IsBlank: {
     description: 'Returns true if the reference is blank',
     arguments: match_arguments,
-    fn: MatchType.bind(0, 'undefined'),
+    fn: (value: UnionValue) => ({ type: ValueType.boolean, value: value.type === ValueType.undefined }),
   },
 
   IsNumber: {
     description: 'Returns true if the reference is a number',
     arguments: match_arguments,
-    fn: MatchType.bind(0, 'number'),
+    fn: (value: UnionValue) => ({ type: ValueType.boolean, value: value.type === ValueType.number }),
   },
 
   IsLogical: {
     description: 'Returns true if the reference is a logical TRUE or FALSE',
     arguments: match_arguments,
-    fn: MatchType.bind(0, 'boolean'),
+    fn: (value: UnionValue) => ({ type: ValueType.boolean, value: value.type === ValueType.boolean }),
   },
 
   IsText: {
     description: 'Returns true if the reference is text',
     arguments: match_arguments,
-    fn: MatchType.bind(0, 'string'),
+    fn: (value: UnionValue) => ({ type: ValueType.boolean, value: value.type === ValueType.string }),
   },
 
   /* needs more data
