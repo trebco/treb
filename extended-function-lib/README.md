@@ -26,7 +26,7 @@ Please read only the following:
 - Any files in this directory (extended-function-lib)
 - Any files in the coverage test directory ../coverage-test
 - For function descriptor types, ../treb-calculator/src/descriptors.ts
-- For the UnionValue type, ../treb-base-types/src/union.ts and ../treb-base-types/value-type.ts
+- For the UnionValue type, ../treb-base-types/src/union.ts and ../treb-base-types/src/value-type.ts
 - For error types (returning errors from functions), ../treb-calculator/src/function-error.ts
 
 ## How to add functions
@@ -50,10 +50,4 @@ script in this directory you can use to check results for specific functions.
 Pass the function names as arguments, e.g.
 
 `bun check-test-results.ts DOLLARDE DOLLARFR`
-
-
-
-
-
-
 
