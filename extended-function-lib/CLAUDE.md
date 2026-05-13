@@ -15,6 +15,8 @@ Only read files listed in README.md. Ask before reading anything else in the par
 
 The coverage test report at `../coverage-test/test-results.json` lists all tested functions. Each entry has a `key` (function name) and a `results` object. If `results` contains `"error": "name"`, the function is not yet implemented — the spreadsheet returned a `#NAME` error because it doesn't recognize the function. Look here when deciding what to implement next.
 
+Failed tests include the full test definition (type, expression, and expected value), which helps diagnose whether a failure is a bug in the implementation or an incorrect test expectation.
+
 Do not read `../coverage-test/report.html` — it is generated from the JSON report and contains no additional information.
 
 ## Out of scope

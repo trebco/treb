@@ -205,6 +205,11 @@ AddExtendedFunction('NUMBERVALUE', {
       s = s.slice(0, -1);
     }
 
+    const dec_pos = s.indexOf(dec_sep);
+    if (dec_pos !== -1 && grp_sep && s.indexOf(grp_sep, dec_pos) !== -1) {
+      return ValueError();
+    }
+
     if (grp_sep) {
       s = s.split(grp_sep).join('');
     }

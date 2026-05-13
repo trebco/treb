@@ -104,6 +104,39 @@ AddExtendedFunction('DATEVALUE', {
   },
 });
 
+AddExtendedFunction('EDATE', {
+  description: 'Returns a date a given number of months before or after a start date',
+  arguments: [
+    { name: 'start_date', description: 'The start date', unroll: true },
+    { name: 'months', description: 'Number of months before or after' },
+  ],
+  fn: (start_date?: number, months?: number): UnionValue => {
+    if (start_date === undefined || months === undefined) return ValueError();
+    const d = SerialToDate(Math.trunc(start_date));
+    const total_months = (d.year * 12 + (d.month - 1)) + Math.trunc(months);
+    const new_year = Math.floor(total_months / 12);
+    const new_month = total_months - new_year * 12 + 1;
+    const new_day = Math.min(d.day, DaysInMonth(new_year, new_month));
+    return Box(DateToSerial(new_year, new_month, new_day));
+  },
+});
+
+AddExtendedFunction('EOMONTH', {
+  description: 'Returns the last day of the month a given number of months before or after a start date',
+  arguments: [
+    { name: 'start_date', description: 'The start date', unroll: true },
+    { name: 'months', description: 'Number of months before or after' },
+  ],
+  fn: (start_date?: number, months?: number): UnionValue => {
+    if (start_date === undefined || months === undefined) return ValueError();
+    const d = SerialToDate(Math.trunc(start_date));
+    const total_months = (d.year * 12 + (d.month - 1)) + Math.trunc(months);
+    const new_year = Math.floor(total_months / 12);
+    const new_month = total_months - new_year * 12 + 1;
+    return Box(DateToSerial(new_year, new_month, DaysInMonth(new_year, new_month)));
+  },
+});
+
 AddExtendedFunction('DAYS', {
   description: 'Returns the number of days between two dates',
   arguments: [
@@ -230,9 +263,9 @@ AddExtendedFunction('ISOWEEKNUM', {
     const d = SerialToJsDate(Math.trunc(serial));
     const temp = new Date(d.getTime());
     temp.setDate(temp.getDate() + 3 - ((temp.getDay() + 6) % 7));
-    const jan4 = new Date(temp.getFullYear(), 0, 4);
-    const day_diff = Math.round((temp.getTime() - jan4.getTime()) / 86400000);
-    return Box(Math.ceil((day_diff + 1) / 7));
+    const jan1 = new Date(temp.getFullYear(), 0, 1);
+    const day_diff = Math.round((temp.getTime() - jan1.getTime()) / 86400000);
+    return Box(Math.floor(day_diff / 7) + 1);
   },
 });
 
