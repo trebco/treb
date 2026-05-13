@@ -26,4 +26,5 @@ import './engineering-base-conversion';
 import './engineering-bitwise';
 import './datetime-parts';
 import './info-functions';
+import './text-format';
 

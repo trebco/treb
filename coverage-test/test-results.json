@@ -694,25 +694,25 @@
   {
     "key": "DOLLAR",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "FIXED",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "NUMBERVALUE",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 1,
+      "failed_tests": [
+        "=NUMBERVALUE(\"2.500,27\",\".\",\",\")"
+      ]
     }
   },
   {
@@ -735,9 +735,8 @@
   {
     "key": "TEXTJOIN",
     "results": {
-      "succeeded": 0,
-      "failed": 5,
-      "error": "name"
+      "succeeded": 5,
+      "failed": 0
     }
   },
   {
@@ -750,17 +749,15 @@
   {
     "key": "TEXTAFTER",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "TEXTBEFORE",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -2687,25 +2684,27 @@
   {
     "key": "DATEDIF",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "DAYS",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 1,
+      "failed": 3,
+      "failed_tests": [
+        "=DAYS(DATE(2024,12,31),DATE(2024,1,1))",
+        "=DAYS(DATE(2023,12,31),DATE(2023,1,1))",
+        "=DAYS(DATE(2024,1,1),DATE(2024,12,31))"
+      ]
     }
   },
   {
     "key": "DAYS360",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -2749,57 +2748,53 @@
   {
     "key": "ISOWEEKNUM",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 2,
+      "failed": 1,
+      "failed_tests": [
+        "=ISOWEEKNUM(DATE(2024,12,31))"
+      ]
     }
   },
   {
     "key": "NETWORKDAYS",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "NETWORKDAYS.INTL",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "error": "name"
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "WORKDAY",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "WORKDAY.INTL",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "error": "name"
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "WEEKDAY",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "error": "name"
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "WEEKNUM",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "error": "name"
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {

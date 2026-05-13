@@ -35,17 +35,17 @@
   </head>
   <body>
   <h1>TREB Function Coverage Report</h1>
-  <div class="timestamp">Generated 2026-05-13 19:14:01 UTC</div>
+  <div class="timestamp">Generated 2026-05-13 19:24:24 UTC</div>
   <div class="summary">
-    <div class="summary-card pass"><span class="num">274</span>Pass (52.5%)</div>
-    <div class="summary-card fail"><span class="num">76</span>Fail (14.6%)</div>
-    <div class="summary-card not-implemented"><span class="num">129</span>Not Implemented (24.7%)</div>
+    <div class="summary-card pass"><span class="num">287</span>Pass (55.0%)</div>
+    <div class="summary-card fail"><span class="num">79</span>Fail (15.1%)</div>
+    <div class="summary-card not-implemented"><span class="num">113</span>Not Implemented (21.6%)</div>
     <div class="summary-card not-tested"><span class="num">43</span>Not Tested (8.2%)</div>
   </div>
   <div class="bar">
-    <div style="width:52.5%;background:#22c55e"></div>
-    <div style="width:14.6%;background:#ef4444"></div>
-    <div style="width:24.7%;background:#9ca3af"></div>
+    <div style="width:55.0%;background:#22c55e"></div>
+    <div style="width:15.1%;background:#ef4444"></div>
+    <div style="width:21.6%;background:#9ca3af"></div>
     <div style="width:8.2%;background:#d1d5db"></div>
   </div>
   <div class="category">
@@ -1239,7 +1239,7 @@
   </tr>
 </table></div>
 <div class="category">
-  <h2>Text<span class="cat-stats">48 functions &mdash; 22 pass, 5 fail, 15 not implemented, 6 not tested</span></h2>
+  <h2>Text<span class="cat-stats">48 functions &mdash; 27 pass, 6 fail, 9 not implemented, 6 not tested</span></h2>
   <table>
   <tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
   <tr>
@@ -1298,8 +1298,8 @@
   </tr>
 <tr>
     <td><strong>DOLLAR</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/4</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>4/4</td>
     <td></td>
   </tr>
 <tr>
@@ -1322,8 +1322,8 @@
   </tr>
 <tr>
     <td><strong>FIXED</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/4</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>4/4</td>
     <td></td>
   </tr>
 <tr>
@@ -1370,9 +1370,9 @@
   </tr>
 <tr>
     <td><strong>NUMBERVALUE</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/4</td>
-    <td></td>
+    <td><span class="badge fail">Fail</span></td>
+    <td>3/4</td>
+    <td><span class="failed-expr">=NUMBERVALUE(&quot;2.500,27&quot;,&quot;.&quot;,&quot;,&quot;)</span></td>
   </tr>
 <tr>
     <td><strong>PHONETIC</strong></td>
@@ -1466,20 +1466,20 @@
   </tr>
 <tr>
     <td><strong>TEXTAFTER</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/4</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>4/4</td>
     <td></td>
   </tr>
 <tr>
     <td><strong>TEXTBEFORE</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/4</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>4/4</td>
     <td></td>
   </tr>
 <tr>
     <td><strong>TEXTJOIN</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/5</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>5/5</td>
     <td></td>
   </tr>
 <tr>
@@ -2996,7 +2996,7 @@
   </tr>
 </table></div>
 <div class="category">
-  <h2>Date &amp; Time<span class="cat-stats">25 functions &mdash; 11 pass, 4 fail, 10 not implemented, 0 not tested</span></h2>
+  <h2>Date &amp; Time<span class="cat-stats">25 functions &mdash; 19 pass, 6 fail, 0 not implemented, 0 not tested</span></h2>
   <table>
   <tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
   <tr>
@@ -3007,8 +3007,8 @@
   </tr>
 <tr>
     <td><strong>DATEDIF</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/4</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>4/4</td>
     <td></td>
   </tr>
 <tr>
@@ -3025,14 +3025,14 @@
   </tr>
 <tr>
     <td><strong>DAYS</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/4</td>
-    <td></td>
+    <td><span class="badge fail">Fail</span></td>
+    <td>1/4</td>
+    <td><span class="failed-expr">=DAYS(DATE(2024,12,31),DATE(2024,1,1))</span>, <span class="failed-expr">=DAYS(DATE(2023,12,31),DATE(2023,1,1))</span>, <span class="failed-expr">=DAYS(DATE(2024,1,1),DATE(2024,12,31))</span></td>
   </tr>
 <tr>
     <td><strong>DAYS360</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/3</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>3/3</td>
     <td></td>
   </tr>
 <tr>
@@ -3055,9 +3055,9 @@
   </tr>
 <tr>
     <td><strong>ISOWEEKNUM</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/3</td>
-    <td></td>
+    <td><span class="badge fail">Fail</span></td>
+    <td>2/3</td>
+    <td><span class="failed-expr">=ISOWEEKNUM(DATE(2024,12,31))</span></td>
   </tr>
 <tr>
     <td><strong>MINUTE</strong></td>
@@ -3073,14 +3073,14 @@
   </tr>
 <tr>
     <td><strong>NETWORKDAYS</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/3</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>3/3</td>
     <td></td>
   </tr>
 <tr>
     <td><strong>NETWORKDAYS.INTL</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/2</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>2/2</td>
     <td></td>
   </tr>
 <tr>
@@ -3115,26 +3115,26 @@
   </tr>
 <tr>
     <td><strong>WEEKDAY</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/4</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>4/4</td>
     <td></td>
   </tr>
 <tr>
     <td><strong>WEEKNUM</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/3</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>3/3</td>
     <td></td>
   </tr>
 <tr>
     <td><strong>WORKDAY</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/3</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>3/3</td>
     <td></td>
   </tr>
 <tr>
     <td><strong>WORKDAY.INTL</strong></td>
-    <td><span class="badge not-implemented">Not Implemented</span></td>
-    <td>0/2</td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>2/2</td>
     <td></td>
   </tr>
 <tr>
