@@ -11,6 +11,12 @@ Only read files listed in README.md. Ask before reading anything else in the par
 - Function names and helper functions: UpperCamelCase (e.g. `YearFrac`, `CalcPrice`)
 - Variable names: lower_snake_case (e.g. `settlement_date`, `day_count`)
 
+## Finding unimplemented functions
+
+The coverage test report at `../coverage-test/test-results.json` lists all tested functions. Each entry has a `key` (function name) and a `results` object. If `results` contains `"error": "name"`, the function is not yet implemented — the spreadsheet returned a `#NAME` error because it doesn't recognize the function. Look here when deciding what to implement next.
+
+Do not read `../coverage-test/report.html` — it is generated from the JSON report and contains no additional information.
+
 ## Adding functions
 
 1. Create or edit a file in `./src/` (see `./src/template.ts` for the pattern)
