@@ -20,7 +20,8 @@ AddTests('FINDB', [
 AddTests('SEARCH', [
   { type: 'expect', expression: '=SEARCH("e","Statements",6)', expected: 7 },
   { type: 'expect', expression: '=SEARCH("margin","Profit Margin")', expected: 8 },
-  { type: 'expect', expression: '=SEARCH("?","what?")', expected: 5 },
+  { type: 'expect', expression: '=SEARCH("?","what?")', expected: 1 },
+  { type: 'expect', expression: '=SEARCH("~?","what?")', expected: 5 },
   { type: 'expect', expression: '=SEARCH("M","Miriam McGovern")', expected: 1 },
 ]);
 

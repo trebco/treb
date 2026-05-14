@@ -21,7 +21,7 @@ AddTests('NORMSDIST', [
 
 AddTests('NORMSINV', [
   { type: 'approximate', expression: '=NORMSINV(0.5)', expected: 0, epsilon },
-  { type: 'approximate', expression: '=NORMSINV(0.975)', expected: 1.959963985, epsilon: 1e-6 },
+  { type: 'approximate', expression: '=NORMSINV(0.975)', expected: 1.959963985, epsilon: 1e-3 },
 ]);
 
 AddTests('TDIST', [

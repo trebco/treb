@@ -40,6 +40,16 @@ Do not read `../coverage-test/report.html` — it is generated from the JSON rep
 5. Use `unroll: true` on argument descriptors to auto-apply the function over array elements
 6. Use `allow_error: true` on argument descriptors to receive error values instead of having the calculator short-circuit on errors (needed for functions like TYPE and ERROR.TYPE)
 
+## Adding aliases
+
+Aliases are names that will map to existing functions. For example we can use 
+an alias to implement the older function GAMMADIST which will map to the modern
+function GAMMA.DIST.
+
+We have a method that adds aliases as [string, string] pairs. Internally, aliases
+are processed after functions so aliases can be created at any time. The file
+`./src/template.ts` includes an example of using the alias function.
+
 ## Testing and validation
 
 Run from this directory:

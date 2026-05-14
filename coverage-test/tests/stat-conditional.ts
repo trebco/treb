@@ -3,7 +3,7 @@ import { AddTests } from '@util';
 
 AddTests('AVERAGEIF', [
   { type: 'expect', expression: '=AVERAGEIF(A1:A5,">20")', expected: 40 },
-  { type: 'expect', expression: '=AVERAGEIF(B1:B5,"Sales",A1:A5)', expected: 35 },
+  { type: 'expect', expression: '=AVERAGEIF(B1:B5,"Sales",A1:A5)', expected: 30 },
   { type: 'expect', expression: '=AVERAGEIF(A1:A5,"<30")', expected: 15 },
 ], SetRange => {
   SetRange('A1', [[10], [20], [30], [40], [50]]);

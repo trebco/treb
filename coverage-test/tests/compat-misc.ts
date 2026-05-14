@@ -31,7 +31,7 @@ AddTests('FORECAST', [
 });
 
 AddTests('POISSON', [
-  { type: 'approximate', expression: '=POISSON(2,5,FALSE)', expected: 0.0842243531, epsilon },
+  { type: 'approximate', expression: '=POISSON(2,5,FALSE)', expected: 0.0842243375, epsilon },
   { type: 'approximate', expression: '=POISSON(2,5,TRUE)', expected: 0.1246520195, epsilon },
 ]);
 

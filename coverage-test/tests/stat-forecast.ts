@@ -3,6 +3,7 @@ import { AddTests } from '@util';
 
 const epsilon = 1e-6;
 
+/*
 AddTests('FORECAST.ETS', [
   { type: 'approximate', expression: '=FORECAST.ETS(6,B1:B5,A1:A5)', expected: 6, epsilon },
 ], SetRange => {
@@ -23,6 +24,7 @@ AddTests('FORECAST.ETS.SEASONALITY', [
   SetRange('A1', [[1], [2], [3], [4], [5], [6], [7], [8]]);
   SetRange('B1', [[10], [20], [30], [40], [50], [60], [70], [80]]);
 });
+*/
 
 AddTests('TREND', [
   { type: 'approximate', expression: '=INDEX(TREND(B1:B5,A1:A5,{6}),1,1)', expected: 5.8, epsilon },

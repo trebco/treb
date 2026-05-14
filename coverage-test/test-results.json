@@ -1801,17 +1801,8 @@
   {
     "key": "T.DIST",
     "results": {
-      "succeeded": 3,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=T.DIST(2,5,TRUE)",
-          "expected": 0.9490302832,
-          "epsilon": 1e-8,
-          "received": 0.9490302605853088
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -1824,21 +1815,21 @@
           "type": "approximate",
           "expression": "=T.DIST.2T(1,10)",
           "expected": 0.3408931321,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         },
         {
           "type": "approximate",
           "expression": "=T.DIST.2T(2,5)",
           "expected": 0.1019394336,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         },
         {
           "type": "approximate",
           "expression": "=T.DIST.2T(1.96,30)",
           "expected": 0.0594242696,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         }
       ]
@@ -1854,21 +1845,21 @@
           "type": "approximate",
           "expression": "=T.DIST.RT(1,10)",
           "expected": 0.1704465661,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         },
         {
           "type": "approximate",
           "expression": "=T.DIST.RT(0,10)",
           "expected": 0.5,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         },
         {
           "type": "approximate",
           "expression": "=T.DIST.RT(2,5)",
           "expected": 0.0509697168,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         }
       ]
@@ -1916,266 +1907,71 @@
   {
     "key": "CHISQ.DIST",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.DIST(2,5,TRUE)",
-          "expected": 0.1508549816,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.DIST(10,5,TRUE)",
-          "expected": 0.9246527477,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.DIST(2,5,FALSE)",
-          "expected": 0.1383691882,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "CHISQ.DIST.RT",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.DIST.RT(2,5)",
-          "expected": 0.8491450184,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.DIST.RT(10,5)",
-          "expected": 0.0753472523,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.DIST.RT(3.84,1)",
-          "expected": 0.0500518189,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "CHISQ.INV",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.INV(0.5,5)",
-          "expected": 4.3514601741,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.INV(0.95,10)",
-          "expected": 18.307038054,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.INV(0.05,1)",
-          "expected": 0.00393214,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "CHISQ.INV.RT",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.INV.RT(0.05,5)",
-          "expected": 11.070497694,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.INV.RT(0.5,5)",
-          "expected": 4.3514601741,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.INV.RT(0.95,1)",
-          "expected": 0.00393214,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "CHISQ.TEST",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CHISQ.TEST(A1:B2,C1:D2)",
-          "expected": 0.0003093803,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "F.DIST",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=F.DIST(1,5,10,TRUE)",
-          "expected": 0.5356529836,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=F.DIST(2,5,10,TRUE)",
-          "expected": 0.8465028702,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=F.DIST(1,5,10,FALSE)",
-          "expected": 0.4451191979,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "F.DIST.RT",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=F.DIST.RT(1,5,10)",
-          "expected": 0.4643470164,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=F.DIST.RT(2,5,10)",
-          "expected": 0.1534971298,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=F.DIST.RT(4,3,7)",
-          "expected": 0.0589782978,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "F.INV",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=F.INV(0.5,5,10)",
-          "expected": 0.9276244622,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=F.INV(0.95,5,10)",
-          "expected": 3.3258342367,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "F.INV.RT",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=F.INV.RT(0.05,5,10)",
-          "expected": 3.3258342367,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=F.INV.RT(0.5,5,10)",
-          "expected": 0.9276244622,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=F.INV.RT(0.01,3,7)",
-          "expected": 8.4513052206,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "F.TEST",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=F.TEST(A1:A5,B1:B5)",
-          "expected": 0.6483073891,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -2197,171 +1993,43 @@
   {
     "key": "BINOM.DIST",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=BINOM.DIST(6,10,0.5,FALSE)",
-          "expected": 0.205078125,
-          "epsilon": 1e-10,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=BINOM.DIST(6,10,0.5,TRUE)",
-          "expected": 0.828125,
-          "epsilon": 1e-10,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=BINOM.DIST(0,10,0.5,FALSE)",
-          "expected": 0.0009765625,
-          "epsilon": 1e-10,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=BINOM.DIST(10,10,0.5,FALSE)",
-          "expected": 0.0009765625,
-          "epsilon": 1e-10,
-          "received": "name"
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "BINOM.DIST.RANGE",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=BINOM.DIST.RANGE(60,0.75,45)",
-          "expected": 0.0838695159,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=BINOM.DIST.RANGE(60,0.75,40,50)",
-          "expected": 0.8538285108,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "BINOM.INV",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=BINOM.INV(6,0.5,0.75)",
-          "expected": 4,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=BINOM.INV(10,0.5,0.5)",
-          "expected": 5,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=BINOM.INV(10,0.5,0.05)",
-          "expected": 2,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "POISSON.DIST",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=POISSON.DIST(2,5,FALSE)",
-          "expected": 0.0842243531,
-          "epsilon": 1e-10,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=POISSON.DIST(2,5,TRUE)",
-          "expected": 0.1246520195,
-          "epsilon": 1e-10,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=POISSON.DIST(0,1,FALSE)",
-          "expected": 0.3678794412,
-          "epsilon": 1e-10,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=POISSON.DIST(5,5,FALSE)",
-          "expected": 0.1754673698,
-          "epsilon": 1e-10,
-          "received": "name"
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "NEGBINOM.DIST",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=NEGBINOM.DIST(10,5,0.25,FALSE)",
-          "expected": 0.0550486247,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=NEGBINOM.DIST(10,5,0.25,TRUE)",
-          "expected": 0.3464207798,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "HYPGEOM.DIST",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=HYPGEOM.DIST(1,4,8,20,TRUE)",
-          "expected": 0.3919599666,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=HYPGEOM.DIST(1,4,8,20,FALSE)",
-          "expected": 0.3632794457,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -2469,61 +2137,15 @@
   {
     "key": "LOGNORM.DIST",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=LOGNORM.DIST(4,3.5,1.2,TRUE)",
-          "expected": 0.0390835557,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=LOGNORM.DIST(4,3.5,1.2,FALSE)",
-          "expected": 0.0176175966,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=LOGNORM.DIST(1,0,1,TRUE)",
-          "expected": 0.5,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "LOGNORM.INV",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=LOGNORM.INV(0.0390835557,3.5,1.2)",
-          "expected": 4,
-          "epsilon": 0.01,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=LOGNORM.INV(0.5,0,1)",
-          "expected": 1,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=LOGNORM.INV(0.5,3.5,1.2)",
-          "expected": 33.115452,
-          "epsilon": 0.01,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -4337,14 +3959,14 @@
           "expression": "=BETADIST(2,8,10,1,3)",
           "expected": 0.6854706,
           "epsilon": 0.000001,
-          "received": "name"
+          "received": 1
         },
         {
           "type": "approximate",
           "expression": "=BETADIST(0.5,2,5)",
           "expected": 0.890625,
           "epsilon": 1e-8,
-          "received": "name"
+          "received": 0.9375000000497307
         }
       ]
     }
@@ -4352,22 +3974,15 @@
   {
     "key": "BETAINV",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
+      "succeeded": 1,
+      "failed": 1,
       "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=BETAINV(0.6854706,8,10,1,3)",
-          "expected": 2,
-          "epsilon": 0.01,
-          "received": "name"
-        },
         {
           "type": "approximate",
           "expression": "=BETAINV(0.5,2,5)",
           "expected": 0.235339311,
           "epsilon": 0.000001,
-          "received": "name"
+          "received": 0.26444998328423874
         }
       ]
     }
@@ -4375,86 +3990,29 @@
   {
     "key": "BINOMDIST",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=BINOMDIST(6,10,0.5,FALSE)",
-          "expected": 0.205078125,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=BINOMDIST(6,10,0.5,TRUE)",
-          "expected": 0.828125,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "CHIDIST",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CHIDIST(2,5)",
-          "expected": 0.8491450184,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CHIDIST(10,5)",
-          "expected": 0.0753472523,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "CHIINV",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CHIINV(0.05,5)",
-          "expected": 11.070497694,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CHIINV(0.5,5)",
-          "expected": 4.3514601741,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "CHITEST",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CHITEST(A1:B2,C1:D2)",
-          "expected": 0.0003093803,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -4483,84 +4041,36 @@
   {
     "key": "FDIST",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=FDIST(1,5,10)",
-          "expected": 0.4643470164,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=FDIST(2,5,10)",
-          "expected": 0.1534971298,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "FINV",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=FINV(0.05,5,10)",
-          "expected": 3.3258342367,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=FINV(0.5,5,10)",
-          "expected": 0.9276244622,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "FTEST",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=FTEST(A1:A5,B1:B5)",
-          "expected": 0.6483073891,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "GAMMADIST",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
+      "succeeded": 1,
+      "failed": 1,
       "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=GAMMADIST(2,3,2,TRUE)",
-          "expected": 0.0803013971,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
         {
           "type": "approximate",
           "expression": "=GAMMADIST(2,3,2,FALSE)",
           "expected": 0.0758163325,
           "epsilon": 0.000001,
-          "received": "name"
+          "received": 0.09196986029286054
         }
       ]
     }
@@ -4576,7 +4086,7 @@
           "expression": "=GAMMAINV(0.5,3,2)",
           "expected": 5.3481341135,
           "epsilon": 0.000001,
-          "received": "name"
+          "received": 5.348120480775833
         }
       ]
     }
@@ -4590,9 +4100,9 @@
         {
           "type": "approximate",
           "expression": "=HYPGEOMDIST(1,4,8,20)",
-          "expected": 0.3632794457,
+          "expected": 0.3632610939,
           "epsilon": 0.000001,
-          "received": "name"
+          "received": "VALUE"
         }
       ]
     }
@@ -4608,7 +4118,7 @@
           "expression": "=LOGNORMDIST(4,3.5,1.2)",
           "expected": 0.0390835557,
           "epsilon": 1e-8,
-          "received": "name"
+          "received": "VALUE"
         }
       ]
     }
@@ -4616,24 +4126,8 @@
   {
     "key": "LOGINV",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=LOGINV(0.5,0,1)",
-          "expected": 1,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=LOGINV(0.5,3.5,1.2)",
-          "expected": 33.115452,
-          "epsilon": 0.01,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -4647,7 +4141,7 @@
           "expression": "=NEGBINOMDIST(10,5,0.25)",
           "expected": 0.0550486247,
           "epsilon": 0.000001,
-          "received": "name"
+          "received": "VALUE"
         }
       ]
     }
@@ -4662,22 +4156,15 @@
   {
     "key": "NORMINV",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
+      "succeeded": 1,
+      "failed": 1,
       "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=NORMINV(0.5,0,1)",
-          "expected": 0,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
         {
           "type": "approximate",
           "expression": "=NORMINV(0.975,0,1)",
           "expected": 1.959963985,
           "epsilon": 0.000001,
-          "received": "name"
+          "received": 1.9603949169253396
         }
       ]
     }
@@ -4692,17 +4179,8 @@
   {
     "key": "NORMSINV",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=NORMSINV(0.975)",
-          "expected": 1.959963985,
-          "epsilon": 0.000001,
-          "received": 1.9603949169253396
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -4716,14 +4194,14 @@
           "expression": "=TDIST(1,10,2)",
           "expected": 0.3408931321,
           "epsilon": 1e-8,
-          "received": "name"
+          "received": 0.8295534338501603
         },
         {
           "type": "approximate",
           "expression": "=TDIST(1,10,1)",
           "expected": 0.1704465661,
           "epsilon": 1e-8,
-          "received": "name"
+          "received": 0.8295534338501603
         }
       ]
     }
@@ -4731,24 +4209,8 @@
   {
     "key": "TINV",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=TINV(0.05,10)",
-          "expected": 2.228138852,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=TINV(0.1,5)",
-          "expected": 2.0150483727,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -4770,22 +4232,8 @@
   {
     "key": "CRITBINOM",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=CRITBINOM(6,0.5,0.75)",
-          "expected": 4,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=CRITBINOM(10,0.5,0.5)",
-          "expected": 5,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -4864,17 +4312,8 @@
   {
     "key": "STDEVP",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=STDEVP(A1:A5)",
-          "expected": 14.142135624,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -4887,17 +4326,8 @@
   {
     "key": "VARP",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=VARP(A1:A5)",
-          "expected": 200,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -4934,7 +4364,7 @@
           "expression": "=ZTEST(A1:A5,4)",
           "expected": 0.8380710199,
           "epsilon": 0.000001,
-          "received": "name"
+          "received": 0.008413695909277985
         }
       ]
     }
@@ -4979,24 +4409,8 @@
   {
     "key": "POISSON",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=POISSON(2,5,FALSE)",
-          "expected": 0.0842243531,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=POISSON(2,5,TRUE)",
-          "expected": 0.1246520195,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {

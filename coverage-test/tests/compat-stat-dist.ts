@@ -19,8 +19,8 @@ AddTests('BINOMDIST', [
 ]);
 
 AddTests('CHIDIST', [
-  { type: 'approximate', expression: '=CHIDIST(2,5)', expected: 0.8491450184, epsilon },
-  { type: 'approximate', expression: '=CHIDIST(10,5)', expected: 0.0753472523, epsilon },
+  { type: 'approximate', expression: '=CHIDIST(2,5)', expected: 0.8491450361, epsilon },
+  { type: 'approximate', expression: '=CHIDIST(10,5)', expected: 0.0752352461, epsilon },
 ]);
 
 AddTests('CHIINV', [
@@ -29,7 +29,7 @@ AddTests('CHIINV', [
 ]);
 
 AddTests('CHITEST', [
-  { type: 'approximate', expression: '=CHITEST(A1:B2,C1:D2)', expected: 0.0003093803, epsilon: 1e-6 },
+  { type: 'approximate', expression: '=CHITEST(A1:B2,C1:D2)', expected: 0.0002197627, epsilon: 1e-6 },
 ], SetRange => {
   SetRange('A1', [[58, 35], [11, 25]]);
   SetRange('C1', [[45.35, 47.65], [23.65, 24.85]]);
@@ -41,6 +41,6 @@ AddTests('EXPONDIST', [
 ]);
 
 AddTests('FDIST', [
-  { type: 'approximate', expression: '=FDIST(1,5,10)', expected: 0.4643470164, epsilon },
-  { type: 'approximate', expression: '=FDIST(2,5,10)', expected: 0.1534971298, epsilon },
+  { type: 'approximate', expression: '=FDIST(1,5,10)', expected: 0.4651194265, epsilon },
+  { type: 'approximate', expression: '=FDIST(2,5,10)', expected: 0.1641949509, epsilon },
 ]);

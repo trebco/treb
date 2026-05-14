@@ -28,4 +28,11 @@ import './datetime-parts';
 import './info-functions';
 import './text-format';
 import './array-manipulate';
+import './stats-dist-binomial';
+import './stats-dist-chisq';
+import './stats-dist-poisson';
+import './stats-dist-lognormal';
+import './stats-dist-f';
+import './stats-dist-hypgeom';
+import './compat-aliases';
 

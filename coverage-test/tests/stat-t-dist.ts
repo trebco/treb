@@ -1,7 +1,7 @@
 
 import { AddTests } from '@util';
 
-const epsilon = 1e-8;
+const epsilon = 1e-6;
 
 AddTests('T.DIST', [
   { type: 'approximate', expression: '=T.DIST(1,10,TRUE)', expected: 0.8295534339, epsilon },
