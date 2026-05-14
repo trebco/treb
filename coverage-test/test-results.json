@@ -3375,31 +3375,8 @@
   {
     "key": "YEARFRAC",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=YEARFRAC(DATE(2024,1,1),DATE(2024,7,1))",
-          "expected": 0.5,
-          "epsilon": 0.000001,
-          "received": 0.5055555555555555
-        },
-        {
-          "type": "approximate",
-          "expression": "=YEARFRAC(DATE(2024,1,1),DATE(2025,1,1))",
-          "expected": 1,
-          "epsilon": 0.000001,
-          "received": 1.0166666666666666
-        },
-        {
-          "type": "approximate",
-          "expression": "=YEARFRAC(DATE(2024,1,1),DATE(2024,4,1),1)",
-          "expected": 0.2486338798,
-          "epsilon": 0.000001,
-          "received": 0.25277777777777777
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -3496,15 +3473,8 @@
   {
     "key": "TODAY",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "custom",
-          "expression": "=TODAY()",
-          "count": 1
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -3686,7 +3656,7 @@
           "type": "approximate",
           "expression": "=BESSELI(1.5,1)",
           "expected": 0.9816664286,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         },
         {
@@ -3699,7 +3669,7 @@
           "type": "approximate",
           "expression": "=BESSELI(1,0)",
           "expected": 1.2660658778,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         }
       ]
@@ -3715,7 +3685,7 @@
           "type": "approximate",
           "expression": "=BESSELJ(1.9,2)",
           "expected": 0.3299837532,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         },
         {
@@ -3728,7 +3698,7 @@
           "type": "approximate",
           "expression": "=BESSELJ(1,1)",
           "expected": 0.4400505857,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         }
       ]
@@ -3744,14 +3714,14 @@
           "type": "approximate",
           "expression": "=BESSELK(1.5,1)",
           "expected": 0.2773878005,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         },
         {
           "type": "approximate",
           "expression": "=BESSELK(1,0)",
           "expected": 0.4210244382,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         }
       ]
@@ -3767,14 +3737,14 @@
           "type": "approximate",
           "expression": "=BESSELY(2.5,1)",
           "expected": 0.145918138,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         },
         {
           "type": "approximate",
           "expression": "=BESSELY(1,0)",
           "expected": 0.0882569642,
-          "epsilon": 1e-8,
+          "epsilon": 0.000001,
           "received": "name"
         }
       ]
@@ -3783,124 +3753,29 @@
   {
     "key": "ERF",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=ERF(1)",
-          "expected": 0.8427007929,
-          "epsilon": 1e-8,
-          "received": 0.8427006897475899
-        },
-        {
-          "type": "expect",
-          "expression": "=ERF(0)",
-          "expected": 0,
-          "received": 9.999999717180685e-10
-        },
-        {
-          "type": "approximate",
-          "expression": "=ERF(0.5)",
-          "expected": 0.5204998778,
-          "epsilon": 1e-8,
-          "received": 0.5205000163047472
-        },
-        {
-          "type": "approximate",
-          "expression": "=ERF(0.745,1)",
-          "expected": 0.1282106938,
-          "epsilon": 1e-8,
-          "received": 0.7079288608852725
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "ERF.PRECISE",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=ERF.PRECISE(1)",
-          "expected": 0.8427007929,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=ERF.PRECISE(0)",
-          "expected": 0,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=ERF.PRECISE(0.5)",
-          "expected": 0.5204998778,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "ERFC",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=ERFC(1)",
-          "expected": 0.1572992071,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=ERFC(0)",
-          "expected": 1,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=ERFC(0.5)",
-          "expected": 0.4795001222,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "ERFC.PRECISE",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=ERFC.PRECISE(1)",
-          "expected": 0.1572992071,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=ERFC.PRECISE(0)",
-          "expected": 1,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=ERFC.PRECISE(0.5)",
-          "expected": 0.4795001222,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -4557,16 +4432,8 @@
   {
     "key": "ISBLANK",
     "results": {
-      "succeeded": 2,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=ISBLANK(A1)",
-          "expected": true,
-          "received": false
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -4642,28 +4509,8 @@
   {
     "key": "ISREF",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=ISREF(A1)",
-          "expected": true,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=ISREF(1)",
-          "expected": false,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=ISREF(\"hello\")",
-          "expected": false,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {

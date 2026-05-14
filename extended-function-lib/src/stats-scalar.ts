@@ -103,6 +103,39 @@ AddExtendedFunction('PERMUTATIONA', {
   },
 });
 
+AddExtendedFunction('ERF.PRECISE', {
+  description: 'Returns the error function integrated between 0 and a limit',
+  arguments: [
+    { name: 'x', description: 'The upper bound', unroll: true },
+  ],
+  fn: (x?: number): UnionValue => {
+    if (x === undefined) return ValueError();
+    return Box(erf(x));
+  },
+});
+
+AddExtendedFunction('ERFC', {
+  description: 'Returns the complementary error function',
+  arguments: [
+    { name: 'x', description: 'The lower bound', unroll: true },
+  ],
+  fn: (x?: number): UnionValue => {
+    if (x === undefined) return ValueError();
+    return Box(1 - erf(x));
+  },
+});
+
+AddExtendedFunction('ERFC.PRECISE', {
+  description: 'Returns the complementary error function',
+  arguments: [
+    { name: 'x', description: 'The lower bound', unroll: true },
+  ],
+  fn: (x?: number): UnionValue => {
+    if (x === undefined) return ValueError();
+    return Box(1 - erf(x));
+  },
+});
+
 AddExtendedFunction('GAUSS', {
   description: 'Returns the probability that a standard normal population member falls between the mean and z standard deviations from the mean',
   arguments: [

@@ -2,7 +2,7 @@ import { Box, type UnionValue } from 'treb-base-types';
 import { ValueType } from 'treb-base-types';
 import { AddExtendedFunction } from 'treb-calculator';
 import { ValueError, NAError } from 'treb-calculator';
-import { DateToSerial, SerialToDate, DaysInMonth, Days360Us, Days360Eu } from './finance-date-utils';
+import { DateToSerial, SerialToDate, DaysInMonth, Days360Us, Days360Eu, YearFrac } from './finance-date-utils';
 import { extractNumbers } from './stats-array-utils';
 
 AddExtendedFunction('HOUR', {
@@ -220,6 +220,21 @@ AddExtendedFunction('DATEDIF', {
       default:
         return ValueError();
     }
+  },
+});
+
+AddExtendedFunction('YEARFRAC', {
+  description: 'Returns the year fraction between two dates',
+  arguments: [
+    { name: 'start_date', description: 'The start date', unroll: true },
+    { name: 'end_date', description: 'The end date' },
+    { name: 'basis', description: 'Day count basis (0-4, default 0)' },
+  ],
+  fn: (start_date?: number, end_date?: number, basis?: number): UnionValue => {
+    if (start_date === undefined || end_date === undefined) return ValueError();
+    const b = basis === undefined ? 0 : Math.trunc(basis);
+    if (b < 0 || b > 4) return ValueError();
+    return Box(YearFrac(Math.trunc(start_date), Math.trunc(end_date), b));
   },
 });
 
