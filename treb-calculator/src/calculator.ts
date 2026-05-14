@@ -1207,19 +1207,21 @@ export class Calculator extends Graph {
        */
       Rows: {
         arguments: [{
-          name: 'reference', description: 'Array or reference' },
+          name: 'reference', description: 'Array or reference', boxed: true },
         ],
         volatile: false,
-        fn: (reference: unknown) => {
+        fn: (reference: UnionValue) => {
           if (!reference) {
             return ArgumentError();
           }
-          if (Array.isArray(reference)) {
-            const column = reference[0];
-            if (Array.isArray(column)) {
-              return { type: ValueType.number, value: column.length };
-            }
-            return ValueError();
+          if (!reference) {
+            return ArgumentError();
+          }
+          if (reference.type === ValueType.array) {
+            return {
+              type: ValueType.number,
+              value: reference.value[0].length,
+            };
           }
           return { type: ValueType.number, value: 1 };
         },
@@ -1231,15 +1233,19 @@ export class Calculator extends Graph {
        */
       Columns: {
         arguments: [{
-          name: 'reference', description: 'Array or reference' },
+          name: 'reference', description: 'Array or reference', boxed: true },
         ],
         volatile: false,
-        fn: (reference: unknown) => {
+        fn: (reference: UnionValue): UnionValue => {
+
           if (!reference) {
             return ArgumentError();
           }
-          if (Array.isArray(reference)) {
-            return { type: ValueType.number, value: reference.length };
+          if (reference.type === ValueType.array) {
+            return {
+              type: ValueType.number,
+              value: reference.value.length,
+            };
           }
           return { type: ValueType.number, value: 1 };
         },
@@ -2220,8 +2226,15 @@ export class Calculator extends Graph {
         return true;
       });
 
+      const root_address = options.address || 
+      {
+        row: -1,
+        column: -1,
+        sheet_id: active_sheet?.id || -1,
+      };
+
       // console.info({expression: parse_result.expression})
-      const result = this.CalculateExpression(parse_expression, options.address);
+      const result = this.CalculateExpression(parse_expression, root_address);
       if (raw_result) {
         return result;
       }

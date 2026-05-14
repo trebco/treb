@@ -1167,6 +1167,23 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    Trunc: {
+      arguments: [
+        { name: 'n', unroll: true },
+        { name: 'digits', unroll: true },
+      ],
+      fn: (n: number, digits = 0) => {
+
+        const scale = Math.pow(10, digits);
+        const sign = n < 0 ? -1 : 1;
+
+        return {
+          type: ValueType.number,
+          value: Math.floor(Math.abs(n * scale)) / scale * sign,
+        }
+      }
+    },
+
     Mod: {
       arguments: [
         { unroll: true },
@@ -1176,7 +1193,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         if (!divisor) { 
           return DivideByZeroError();
         }
-        return Box(num % divisor);
+        return Box(num - divisor * Math.floor(num / divisor));
       },
     },
 
@@ -2554,13 +2571,14 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Round: {
-      arguments: [ { unroll: true }, { unroll: true } ], // FIXME: lazy
+      arguments: [ { name: 'n', unroll: true }, { name: 'digits', unroll: true } ], // FIXME: lazy
 
-      fn: (a, digits = 0) => {
-        const m = Math.pow(10, digits);
+      fn: (n: number, digits = 0) => {
+
+        const factor = Math.pow(10, digits);
         return { 
           type: ValueType.number, 
-          value: Math.round(m * a) / m,
+          value: Math.sign(n) * Math.round(Math.abs(n) * factor + Number.EPSILON) / factor,
         };
       },
     },
