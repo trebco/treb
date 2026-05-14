@@ -295,7 +295,7 @@ export class Calculator extends Graph {
      * this is a function that does sumif/averageif/countif.
      * args is one or more sets of [criteria_range, criteria]
      */
-    const XIf = (type: 'sum'|'count'|'average', value_range: CellValue[][]|CellValue, ...args: unknown[]): UnionValue => {
+    const XIf = (type: 'sum'|'count'|'average'|'min'|'max', value_range: CellValue[][]|CellValue, ...args: unknown[]): UnionValue => {
 
       // there's a bug here if the value range is a single value? 
       // that happens if countif passes in a one-cell range... we should 
@@ -334,17 +334,59 @@ export class Calculator extends Graph {
         
       let count = 0;
       let sum = 0;
-      for (const [index, test] of filter.entries()) {
-      if (test) {
-          count++; 
-          const value = values[index];
-          if (typeof value === 'number') {
-            sum += value;
+      let min = 0;
+      let max = 0;
+      let first = false;
+
+      // overoptimizing
+
+      if (type === 'min') {
+        for (const [index, test] of filter.entries()) {
+          if (test) {
+            const value = values[index];
+            if (typeof value === 'number') {
+              if (!first) {
+                min = value;
+                first = true;
+              }
+              min = Math.min(min, value);
+            }
+          }
+        }
+      }
+      else if (type === 'max') {
+        for (const [index, test] of filter.entries()) {
+          if (test) {
+            const value = values[index];
+            if (typeof value === 'number') {
+              if (!first) {
+                max = value;
+                first = true;
+              }
+              max = Math.max(min, value);
+            }
+          }
+        }
+      }
+      else {
+        for (const [index, test] of filter.entries()) {
+          if (test) {
+            count++; 
+            const value = values[index];
+            if (typeof value === 'number') {
+              sum += value;
+            }
           }
         }
       }
 
       switch (type) {
+        case 'min':
+          return { type: ValueType.number, value: min };
+
+        case 'max':
+          return { type: ValueType.number, value: max };
+
         case 'count': 
           return { type: ValueType.number, value: count };
 
@@ -758,6 +800,32 @@ export class Calculator extends Graph {
         ],
         fn: (...args): UnionValue => {
           return XIf('count', args[0], ...args);
+        },
+      },
+
+      MinIfs: {
+        arguments: [
+          { name: 'value range', },
+          { name: 'criteria range', },
+          { name: 'criteria', },
+          { name: 'criteria range', },
+          { name: 'criteria', },
+        ],
+        fn: (range: CellValue[][], ...args) => {
+          return XIf('min', range, ...args);
+        },
+      },
+
+      MaxIfs: {
+        arguments: [
+          { name: 'value range', },
+          { name: 'criteria range', },
+          { name: 'criteria', },
+          { name: 'criteria range', },
+          { name: 'criteria', },
+        ],
+        fn: (range: CellValue[][], ...args) => {
+          return XIf('max', range, ...args);
         },
       },
 

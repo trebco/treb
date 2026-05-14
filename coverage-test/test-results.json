@@ -1369,55 +1369,15 @@
   {
     "key": "MAXIFS",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=MAXIFS(B1:B5,A1:A5,\"Sales\")",
-          "expected": 40,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=MAXIFS(B1:B5,A1:A5,\"Engineering\")",
-          "expected": 35,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=MAXIFS(B1:B5,B1:B5,\">25\")",
-          "expected": 40,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "MINIFS",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=MINIFS(B1:B5,A1:A5,\"Sales\")",
-          "expected": 20,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=MINIFS(B1:B5,A1:A5,\"Engineering\")",
-          "expected": 25,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=MINIFS(B1:B5,B1:B5,\"<35\")",
-          "expected": 20,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
