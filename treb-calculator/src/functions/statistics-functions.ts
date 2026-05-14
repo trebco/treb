@@ -389,10 +389,17 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       { name: 'b', },
       { name: 'cumulative', },
     ],
-    fn: (x: number, a: number, b: number, cumulative: boolean) => {
+    fn: (x: number, a: number, b: number, cumulative: boolean, A?: number, B?: number) => {
 
       if (a < 0 || b < 0) {
         return ArgumentError();
+      }
+
+      if (typeof A === 'number' && typeof B === 'number') {
+        if (A === B) {
+          return ArgumentError();
+        }
+        x = (x - A) / (B - A);
       }
 
       if (cumulative) {
@@ -419,16 +426,26 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       {name: 'a', },
       {name: 'b', },
     ],
-    fn: (x: number, a: number, b: number) => {
+    fn: (x: number, a: number, b: number, A?: number, B?: number) => {
 
       if (a < 0 || b < 0) {
         return ArgumentError();
       }
 
+      let value = InverseBeta(x, a, b);
+
+      if (typeof A === 'number' && typeof B === 'number') {
+        if (A === B) {
+          return ArgumentError();
+        }
+        value = value * (B - A) + A;
+      }
+
       return {
         type: ValueType.number,
-        value: InverseBeta(x, a, b),
-      }
+        value,
+      };
+
     }
   },
 
