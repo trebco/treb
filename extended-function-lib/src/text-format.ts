@@ -1,7 +1,7 @@
 import { Box, type UnionValue } from 'treb-base-types';
 import { ValueType } from 'treb-base-types';
 import { AddExtendedFunction } from 'treb-calculator';
-import { ValueError } from 'treb-calculator';
+import { ValueError, NAError } from 'treb-calculator';
 
 function FlattenToStrings(v: UnionValue): string[] {
   const result: string[] = [];
@@ -220,5 +220,159 @@ AddExtendedFunction('NUMBERVALUE', {
     const result = Number(s);
     if (isNaN(result)) return ValueError();
     return Box(result / 100 ** pct_count);
+  },
+});
+
+AddExtendedFunction('TEXTSPLIT', {
+  description: 'Splits text into an array by column and/or row delimiters',
+  arguments: [
+    { name: 'text', description: 'The text to split' },
+    { name: 'col_delimiter', description: 'Delimiter for splitting into columns', boxed: true },
+    { name: 'row_delimiter', description: 'Delimiter for splitting into rows', boxed: true },
+    { name: 'ignore_empty', description: 'TRUE to treat consecutive delimiters as one' },
+    { name: 'match_mode', description: '0 = case-sensitive (default), 1 = case-insensitive' },
+    { name: 'pad_with', description: 'Value for padding ragged arrays', boxed: true },
+  ],
+  fn: (text?: string, col_delimiter?: UnionValue, row_delimiter?: UnionValue, ignore_empty?: boolean, match_mode?: number, pad_with?: UnionValue): UnionValue => {
+    if (text === undefined) return ValueError();
+    const s = String(text);
+    const ignore = ignore_empty === true;
+    const case_insensitive = match_mode === 1;
+    const pad = pad_with ?? NAError();
+
+    const col_delims = ExtractDelimiters(col_delimiter);
+    const row_delims = ExtractDelimiters(row_delimiter);
+
+    if (col_delims.length === 0 && row_delims.length === 0) return ValueError();
+
+    let rows: string[];
+    if (row_delims.length > 0) {
+      rows = SplitByDelimiters(s, row_delims, case_insensitive);
+      if (ignore) rows = rows.filter(r => r !== '');
+    } else {
+      rows = [s];
+    }
+
+    let grid: string[][];
+    if (col_delims.length > 0) {
+      grid = rows.map(row => {
+        const parts = SplitByDelimiters(row, col_delims, case_insensitive);
+        return ignore ? parts.filter(p => p !== '') : parts;
+      });
+    } else {
+      grid = rows.map(row => [row]);
+    }
+
+    const max_cols = Math.max(...grid.map(r => r.length));
+
+    // column-major: result[col][row]
+    const result: UnionValue[][] = [];
+    for (let c = 0; c < max_cols; c++) {
+      const col: UnionValue[] = [];
+      for (let r = 0; r < grid.length; r++) {
+        col.push(c < grid[r].length ? Box(grid[r][c]) : pad);
+      }
+      result.push(col);
+    }
+
+    return { type: ValueType.array, value: result };
+  },
+});
+
+function ExtractDelimiters(v: UnionValue | undefined): string[] {
+  if (!v || v.type === ValueType.undefined) return [];
+  if (v.type === ValueType.string) return [v.value];
+  if (v.type === ValueType.array) {
+    const delims: string[] = [];
+    for (const col of v.value) {
+      for (const cell of col) {
+        if (cell.type === ValueType.string) delims.push(cell.value);
+      }
+    }
+    return delims;
+  }
+  return [];
+}
+
+function SplitByDelimiters(text: string, delimiters: string[], case_insensitive: boolean): string[] {
+  const parts: string[] = [];
+  const search_text = case_insensitive ? text.toLowerCase() : text;
+  const search_delims = case_insensitive ? delimiters.map(d => d.toLowerCase()) : delimiters;
+
+  let pos = 0;
+  while (pos <= search_text.length) {
+    let best_idx = -1;
+    let best_len = 0;
+    for (const d of search_delims) {
+      const idx = search_text.indexOf(d, pos);
+      if (idx !== -1 && (best_idx === -1 || idx < best_idx)) {
+        best_idx = idx;
+        best_len = d.length;
+      }
+    }
+    if (best_idx === -1) {
+      parts.push(text.substring(pos));
+      break;
+    }
+    parts.push(text.substring(pos, best_idx));
+    pos = best_idx + best_len;
+  }
+  return parts;
+}
+
+function FormatCellValue(v: UnionValue, strict: boolean): string {
+  switch (v.type) {
+    case ValueType.string:
+      return strict ? `"${v.value}"` : v.value;
+    case ValueType.number:
+      return String(v.value);
+    case ValueType.boolean:
+      return v.value ? 'TRUE' : 'FALSE';
+    default:
+      return '';
+  }
+}
+
+AddExtendedFunction('ARRAYTOTEXT', {
+  description: 'Returns an array of text values from any specified range',
+  arguments: [
+    { name: 'array', description: 'The array to convert', boxed: true },
+    { name: 'format', description: '0 = concise (default), 1 = strict' },
+  ],
+  fn: (array?: UnionValue, format?: number): UnionValue => {
+    if (!array) return ValueError();
+    const strict = format === 1;
+
+    if (array.type !== ValueType.array) {
+      return Box(FormatCellValue(array, strict));
+    }
+
+    // column-major: data[col][row]
+    const data = array.value;
+    if (data.length === 0) return Box('');
+
+    const col_count = data.length;
+    const row_count = data[0].length;
+
+    if (strict) {
+      const row_strings: string[] = [];
+      for (let r = 0; r < row_count; r++) {
+        const cells: string[] = [];
+        for (let c = 0; c < col_count; c++) {
+          cells.push(FormatCellValue(data[c][r], true));
+        }
+        row_strings.push(cells.join(','));
+      }
+      return Box('{' + row_strings.join(';') + '}');
+    }
+
+    const parts: string[] = [];
+    for (let r = 0; r < row_count; r++) {
+      for (let c = 0; c < col_count; c++) {
+        const formatted = FormatCellValue(data[c][r], false);
+        if (formatted !== '') parts.push(formatted);
+      }
+    }
+    return Box(parts.join(', '));
   },
 });

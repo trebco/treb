@@ -1,7 +1,7 @@
 
 import { AddTests } from '@util';
 
-const epsilon = 1e-10;
+const epsilon = 1e-9;
 
 AddTests('VAR.P', [
   { type: 'approximate', expression: '=VAR.P(A1:A5)', expected: 200, epsilon },

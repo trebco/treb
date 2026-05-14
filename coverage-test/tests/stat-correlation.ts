@@ -4,10 +4,24 @@ import { AddTests } from '@util';
 const epsilon = 1e-10;
 
 AddTests('CORREL', [
-  { type: 'approximate', expression: '=CORREL(A1:A5,B1:B5)', expected: 0.9970544856, epsilon },
+  { type: 'approximate', expression: '=CORREL(A1:A5,B1:B5)', expected: 0.774596669241483, epsilon },
 ], SetRange => {
   SetRange('A1', [[1], [2], [3], [4], [5]]);
   SetRange('B1', [[2], [4], [5], [4], [5]]);
+});
+
+AddTests('CORREL', [
+  { type: 'approximate', expression: '=CORREL(A1:A4,B1:B4)', expected: 1, epsilon },
+], SetRange => {
+  SetRange('A1', [[2], [4], [6], [8]]);
+  SetRange('B1', [[3], [6], [9], [12]]);
+});
+
+AddTests('CORREL', [
+  { type: 'approximate', expression: '=CORREL(A1:A4,B1:B4)', expected: -0.9768308314557045, epsilon },
+], SetRange => {
+  SetRange('A1', [[1], [2], [3], [4]]);
+  SetRange('B1', [[10], [6], [5], [2]]);
 });
 
 AddTests('PEARSON', [
@@ -15,6 +29,20 @@ AddTests('PEARSON', [
 ], SetRange => {
   SetRange('A1', [[1], [2], [3], [4], [5]]);
   SetRange('B1', [[2], [4], [5], [4], [5]]);
+});
+
+AddTests('PEARSON', [
+  { type: 'approximate', expression: '=PEARSON(A1:A4,B1:B4)', expected: 1, epsilon },
+], SetRange => {
+  SetRange('A1', [[2], [4], [6], [8]]);
+  SetRange('B1', [[3], [6], [9], [12]]);
+});
+
+AddTests('PEARSON', [
+  { type: 'approximate', expression: '=PEARSON(A1:A4,B1:B4)', expected: -0.9768308314557045, epsilon },
+], SetRange => {
+  SetRange('A1', [[1], [2], [3], [4]]);
+  SetRange('B1', [[10], [6], [5], [2]]);
 });
 
 

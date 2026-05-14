@@ -21,7 +21,7 @@ AddTests('AVERAGEA', [
 });
 
 AddTests('AVERAGEA', [
-  { type: 'approximate', expression: '=AVERAGEA(A1:A4)', expected: 2.5, epsilon },
+  { type: 'approximate', expression: '=AVERAGEA(A1:A4)', expected: 2.75, epsilon },
 ], SetRange => {
   SetRange('A1', 10);
   SetRange('A2', true);
@@ -51,13 +51,13 @@ AddTests('MODE.MULT', [
 AddTests('GEOMEAN', [
   { type: 'approximate', expression: '=GEOMEAN(4,9)', expected: 6, epsilon },
   { type: 'approximate', expression: '=GEOMEAN(1,2,3,4,5)', expected: 2.6051710847, epsilon },
-  { type: 'expect', expression: '=GEOMEAN(5,5,5)', expected: 5 },
+  { type: 'approximate', expression: '=GEOMEAN(5,5,5)', expected: 5, epsilon },
   { type: 'approximate', expression: '=GEOMEAN(2,8)', expected: 4, epsilon },
 ]);
 
 AddTests('HARMEAN', [
   { type: 'approximate', expression: '=HARMEAN(4,9)', expected: 5.5384615385, epsilon },
   { type: 'approximate', expression: '=HARMEAN(1,2,3,4,5)', expected: 2.18978102189781, epsilon },
-  { type: 'expect', expression: '=HARMEAN(5,5,5)', expected: 5 },
+  { type: 'approximate', expression: '=HARMEAN(5,5,5)', expected: 5, epsilon },
   { type: 'approximate', expression: '=HARMEAN(2,8)', expected: 3.2, epsilon },
 ]);

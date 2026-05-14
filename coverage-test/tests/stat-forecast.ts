@@ -25,17 +25,45 @@ AddTests('FORECAST.ETS.SEASONALITY', [
 });
 
 AddTests('TREND', [
-  { type: 'approximate', expression: '=INDEX(TREND(B1:B5,A1:A5,{6}),1,1)', expected: 6.4, epsilon },
+  { type: 'approximate', expression: '=INDEX(TREND(B1:B5,A1:A5,{6}),1,1)', expected: 5.8, epsilon },
 ], SetRange => {
   SetRange('A1', [[1], [2], [3], [4], [5]]);
   SetRange('B1', [[2], [4], [5], [4], [5]]);
 });
 
+AddTests('TREND', [
+  { type: 'approximate', expression: '=INDEX(TREND(B1:B4,A1:A4,{5}),1,1)', expected: 15, epsilon },
+], SetRange => {
+  SetRange('A1', [[1], [2], [3], [4]]);
+  SetRange('B1', [[3], [6], [9], [12]]);
+});
+
+AddTests('TREND', [
+  { type: 'approximate', expression: '=INDEX(TREND(B1:B5,A1:A5,{6}),1,1)', expected: 11, epsilon },
+], SetRange => {
+  SetRange('A1', [[1], [2], [3], [4], [5]]);
+  SetRange('B1', [[1], [3], [5], [7], [9]]);
+});
+
 AddTests('GROWTH', [
-  { type: 'approximate', expression: '=INDEX(GROWTH(B1:B4,A1:A4,{5}),1,1)', expected: 14.634, epsilon: 0.1 },
+  { type: 'approximate', expression: '=INDEX(GROWTH(B1:B4,A1:A4,{5}),1,1)', expected: 22.360679774997894, epsilon },
 ], SetRange => {
   SetRange('A1', [[1], [2], [3], [4]]);
   SetRange('B1', [[1], [3], [5], [10]]);
+});
+
+AddTests('GROWTH', [
+  { type: 'approximate', expression: '=INDEX(GROWTH(B1:B3,A1:A3,{4}),1,1)', expected: 16, epsilon },
+], SetRange => {
+  SetRange('A1', [[1], [2], [3]]);
+  SetRange('B1', [[2], [4], [8]]);
+});
+
+AddTests('GROWTH', [
+  { type: 'approximate', expression: '=INDEX(GROWTH(B1:B4,A1:A4,{5}),1,1)', expected: 96, epsilon },
+], SetRange => {
+  SetRange('A1', [[1], [2], [3], [4]]);
+  SetRange('B1', [[6], [12], [24], [48]]);
 });
 
 AddTests('FREQUENCY', [

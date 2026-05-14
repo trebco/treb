@@ -1,4 +1,5 @@
 import { Box, type UnionValue } from 'treb-base-types';
+import { ValueType } from 'treb-base-types';
 import { AddExtendedFunction } from 'treb-calculator';
 import { DivideByZeroError, ValueError } from 'treb-calculator';
 import { extractNumbers, extractNumbersA, mean, sampleVariance, populationVariance } from './stats-array-utils';
@@ -173,5 +174,87 @@ AddExtendedFunction('VARPA', {
     const values = extractNumbersA(arr);
     if (values.length === 0) return DivideByZeroError();
     return Box(populationVariance(values));
+  },
+});
+
+function ModeCounts(values: number[]): { modes: number[]; max_count: number } {
+  const counts = new Map<number, number>();
+  for (const v of values) {
+    counts.set(v, (counts.get(v) ?? 0) + 1);
+  }
+  let max_count = 0;
+  for (const c of counts.values()) {
+    if (c > max_count) max_count = c;
+  }
+  if (max_count < 2) return { modes: [], max_count: 0 };
+  const modes: number[] = [];
+  for (const v of values) {
+    if (counts.get(v) === max_count && !modes.includes(v)) {
+      modes.push(v);
+    }
+  }
+  return { modes, max_count };
+}
+
+AddExtendedFunction('MODE.SNGL', {
+  description: 'Returns the most frequently occurring value',
+  arguments: [{ name: 'array', description: 'The values', boxed: true, repeat: true }],
+  fn: (...args: (UnionValue | undefined)[]): UnionValue => {
+    const values: number[] = [];
+    for (const a of args) {
+      if (a) values.push(...extractNumbers(a));
+    }
+    if (values.length === 0) return ValueError();
+    const { modes } = ModeCounts(values);
+    if (modes.length === 0) return ValueError();
+    return Box(modes[0]);
+  },
+});
+
+AddExtendedFunction('MODE.MULT', {
+  description: 'Returns an array of the most frequently occurring values',
+  arguments: [{ name: 'array', description: 'The values', boxed: true, repeat: true }],
+  fn: (...args: (UnionValue | undefined)[]): UnionValue => {
+    const values: number[] = [];
+    for (const a of args) {
+      if (a) values.push(...extractNumbers(a));
+    }
+    if (values.length === 0) return ValueError();
+    const { modes } = ModeCounts(values);
+    if (modes.length === 0) return ValueError();
+    const col: UnionValue[] = modes.map(m => Box(m));
+    return { type: ValueType.array, value: [col] };
+  },
+});
+
+AddExtendedFunction('FREQUENCY', {
+  description: 'Returns a frequency distribution as a vertical array',
+  arguments: [
+    { name: 'data_array', description: 'The values to count', boxed: true },
+    { name: 'bins_array', description: 'The bin boundaries', boxed: true },
+  ],
+  fn: (data_array?: UnionValue, bins_array?: UnionValue): UnionValue => {
+    if (!data_array || !bins_array) return ValueError();
+    const data = extractNumbers(data_array);
+    const bins = extractNumbers(bins_array);
+    if (bins.length === 0) return ValueError();
+
+    const sorted_bins = [...bins].sort((a, b) => a - b);
+    const counts = new Array<number>(sorted_bins.length + 1).fill(0);
+
+    for (const v of data) {
+      let placed = false;
+      for (let i = 0; i < sorted_bins.length; i++) {
+        if (v <= sorted_bins[i]) {
+          counts[i]++;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) counts[sorted_bins.length]++;
+    }
+
+    const col: UnionValue[] = counts.map(c => Box(c));
+    return { type: ValueType.array, value: [col] };
   },
 });

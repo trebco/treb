@@ -644,16 +644,8 @@
   {
     "key": "SEARCH",
     "results": {
-      "succeeded": 3,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=SEARCH(\"?\",\"what?\")",
-          "expected": 5,
-          "received": 1
-        }
-      ]
+      "succeeded": 5,
+      "failed": 0
     }
   },
   {
@@ -661,39 +653,6 @@
     "results": {
       "succeeded": 4,
       "failed": 0
-    }
-  },
-  {
-    "key": "REPLACEB",
-    "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=REPLACEB(\"abcdefghijk\",6,5,\"*\")",
-          "expected": "abcde*k",
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=REPLACEB(\"2009\",3,2,\"10\")",
-          "expected": "2010",
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=REPLACEB(\"123456\",1,3,\"A\")",
-          "expected": "A456",
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=REPLACEB(\"hello\",6,0,\" world\")",
-          "expected": "hello world",
-          "received": "name"
-        }
-      ]
     }
   },
   {
@@ -784,34 +743,8 @@
   {
     "key": "TEXTSPLIT",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=INDEX(TEXTSPLIT(\"Jan,Feb,Mar\",\",\"),1,1)",
-          "expected": "Jan",
-          "received": "ARG"
-        },
-        {
-          "type": "expect",
-          "expression": "=INDEX(TEXTSPLIT(\"Jan,Feb,Mar\",\",\"),1,2)",
-          "expected": "Feb",
-          "received": "ARG"
-        },
-        {
-          "type": "expect",
-          "expression": "=INDEX(TEXTSPLIT(\"Jan,Feb,Mar\",\",\"),1,3)",
-          "expected": "Mar",
-          "received": "ARG"
-        },
-        {
-          "type": "expect",
-          "expression": "=INDEX(TEXTSPLIT(\"a.b.c\",\".\"),1,1)",
-          "expected": "a",
-          "received": "ARG"
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -903,22 +836,8 @@
   {
     "key": "ARRAYTOTEXT",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=ARRAYTOTEXT(A1:B2)",
-          "expected": "1, 2, 3, 4",
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=ARRAYTOTEXT(A1:A3,1)",
-          "expected": "{\"hello\";\"world\";\"test\"}",
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -1380,17 +1299,8 @@
   {
     "key": "AVERAGEA",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=AVERAGEA(A1:A4)",
-          "expected": 2.5,
-          "epsilon": 1e-10,
-          "received": 2.75
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -1403,76 +1313,36 @@
   {
     "key": "MODE.SNGL",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=MODE.SNGL(A1:A8)",
-          "expected": 4,
-          "received": "name"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "MODE.MULT",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=INDEX(MODE.MULT(A1:A8),1,1)",
-          "expected": 4,
-          "received": "ARG"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "GEOMEAN",
     "results": {
-      "succeeded": 3,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=GEOMEAN(5,5,5)",
-          "expected": 5,
-          "received": 4.999999999999999
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "HARMEAN",
     "results": {
-      "succeeded": 3,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=HARMEAN(5,5,5)",
-          "expected": 5,
-          "received": 4.999999999999999
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "AVERAGEIF",
     "results": {
-      "succeeded": 2,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=AVERAGEIF(B1:B5,\"Sales\",A1:A5)",
-          "expected": 35,
-          "received": 30
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -1658,65 +1528,29 @@
   {
     "key": "STDEV.P",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=STDEV.P(A1:A5)",
-          "expected": 14.142135624,
-          "epsilon": 1e-10,
-          "received": 14.142135623730951
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "STDEV.S",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=STDEV.S(A1:A5)",
-          "expected": 15.811388301,
-          "epsilon": 1e-10,
-          "received": 15.811388300841896
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "STDEVA",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=STDEVA(A1:A5)",
-          "expected": 15.811388301,
-          "epsilon": 1e-10,
-          "received": 15.811388300841896
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "STDEVPA",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=STDEVPA(A1:A5)",
-          "expected": 14.142135624,
-          "epsilon": 1e-10,
-          "received": 14.142135623730951
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -1827,23 +1661,14 @@
   {
     "key": "CORREL",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CORREL(A1:A5,B1:B5)",
-          "expected": 0.9970544856,
-          "epsilon": 1e-10,
-          "received": 0.7745966692414834
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "PEARSON",
     "results": {
-      "succeeded": 1,
+      "succeeded": 3,
       "failed": 0
     }
   },
@@ -2028,60 +1853,22 @@
   {
     "key": "TREND",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=INDEX(TREND(B1:B5,A1:A5,{6}),1,1)",
-          "expected": 6.4,
-          "epsilon": 0.000001,
-          "received": "ARG"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "GROWTH",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=INDEX(GROWTH(B1:B4,A1:A4,{5}),1,1)",
-          "expected": 14.634,
-          "epsilon": 0.1,
-          "received": "ARG"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "FREQUENCY",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=INDEX(FREQUENCY(A1:A10,B1:B3),1,1)",
-          "expected": 3,
-          "received": "ARG"
-        },
-        {
-          "type": "expect",
-          "expression": "=INDEX(FREQUENCY(A1:A10,B1:B3),2,1)",
-          "expected": 3,
-          "received": "ARG"
-        },
-        {
-          "type": "expect",
-          "expression": "=INDEX(FREQUENCY(A1:A10,B1:B3),3,1)",
-          "expected": 3,
-          "received": "ARG"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {

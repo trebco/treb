@@ -1,4 +1,5 @@
 import { Box, type UnionValue } from 'treb-base-types';
+import { ValueType } from 'treb-base-types';
 import { AddExtendedFunction } from 'treb-calculator';
 import { DivideByZeroError, ValueError } from 'treb-calculator';
 import { extractNumbers, extractNumberPairs, mean } from './stats-array-utils';
@@ -138,5 +139,80 @@ AddExtendedFunction('STEYX', {
       sse += err * err;
     }
     return Box(Math.sqrt(sse / (n - 2)));
+  },
+});
+
+function DefaultXs(n: number): number[] {
+  const xs: number[] = [];
+  for (let i = 1; i <= n; i++) xs.push(i);
+  return xs;
+}
+
+function ExtractOrDefault(v: UnionValue | undefined, n: number): number[] | null {
+  if (!v || v.type === ValueType.undefined) return DefaultXs(n);
+  const nums = extractNumbers(v);
+  return nums.length === n ? nums : null;
+}
+
+AddExtendedFunction('TREND', {
+  description: 'Returns values along a linear trend',
+  arguments: [
+    { name: 'known_y', description: 'Known y values', boxed: true },
+    { name: 'known_x', description: 'Known x values', boxed: true },
+    { name: 'new_x', description: 'New x values for prediction', boxed: true },
+  ],
+  fn: (known_y?: UnionValue, known_x?: UnionValue, new_x?: UnionValue): UnionValue => {
+    if (!known_y) return ValueError();
+    const ys = extractNumbers(known_y);
+    if (ys.length === 0) return ValueError();
+
+    const xs = ExtractOrDefault(known_x, ys.length);
+    if (!xs) return ValueError();
+
+    let new_xs: number[];
+    if (new_x && new_x.type !== ValueType.undefined) {
+      new_xs = extractNumbers(new_x);
+      if (new_xs.length === 0) return ValueError();
+    } else {
+      new_xs = xs;
+    }
+
+    const reg = linearRegression(xs, ys);
+    const col: UnionValue[] = new_xs.map(x => Box(reg.slope * x + reg.intercept));
+    return { type: ValueType.array, value: [col] };
+  },
+});
+
+AddExtendedFunction('GROWTH', {
+  description: 'Returns values along an exponential trend',
+  arguments: [
+    { name: 'known_y', description: 'Known y values', boxed: true },
+    { name: 'known_x', description: 'Known x values', boxed: true },
+    { name: 'new_x', description: 'New x values for prediction', boxed: true },
+  ],
+  fn: (known_y?: UnionValue, known_x?: UnionValue, new_x?: UnionValue): UnionValue => {
+    if (!known_y) return ValueError();
+    const ys = extractNumbers(known_y);
+    if (ys.length === 0) return ValueError();
+
+    for (const y of ys) {
+      if (y <= 0) return ValueError();
+    }
+
+    const xs = ExtractOrDefault(known_x, ys.length);
+    if (!xs) return ValueError();
+
+    let new_xs: number[];
+    if (new_x && new_x.type !== ValueType.undefined) {
+      new_xs = extractNumbers(new_x);
+      if (new_xs.length === 0) return ValueError();
+    } else {
+      new_xs = xs;
+    }
+
+    const ln_ys = ys.map(y => Math.log(y));
+    const reg = linearRegression(xs, ln_ys);
+    const col: UnionValue[] = new_xs.map(x => Box(Math.exp(reg.intercept + reg.slope * x)));
+    return { type: ValueType.array, value: [col] };
   },
 });
