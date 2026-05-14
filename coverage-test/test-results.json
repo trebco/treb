@@ -1437,22 +1437,8 @@
   {
     "key": "COUNTBLANK",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=COUNTBLANK(A1:A5)",
-          "expected": 2,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=COUNTBLANK(A1:A3)",
-          "expected": 0,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -1808,61 +1794,15 @@
   {
     "key": "T.DIST.2T",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=T.DIST.2T(1,10)",
-          "expected": 0.3408931321,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=T.DIST.2T(2,5)",
-          "expected": 0.1019394336,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=T.DIST.2T(1.96,30)",
-          "expected": 0.0594242696,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "T.DIST.RT",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=T.DIST.RT(1,10)",
-          "expected": 0.1704465661,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=T.DIST.RT(0,10)",
-          "expected": 0.5,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=T.DIST.RT(2,5)",
-          "expected": 0.0509697168,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -1899,7 +1839,7 @@
           "expression": "=T.TEST(A1:A5,B1:B5,2,1)",
           "expected": 0.0790205567,
           "epsilon": 0.000001,
-          "received": "name"
+          "received": 0.44727504436206234
         }
       ]
     }
@@ -2035,38 +1975,8 @@
   {
     "key": "EXPON.DIST",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=EXPON.DIST(0.2,10,TRUE)",
-          "expected": 0.8646647168,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=EXPON.DIST(0.2,10,FALSE)",
-          "expected": 1.353352832,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=EXPON.DIST(1,1,TRUE)",
-          "expected": 0.6321205588,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=EXPON.DIST(0,1,TRUE)",
-          "expected": 0,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -2107,31 +2017,8 @@
   {
     "key": "WEIBULL.DIST",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=WEIBULL.DIST(105,20,100,TRUE)",
-          "expected": 0.9295813901,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=WEIBULL.DIST(105,20,100,FALSE)",
-          "expected": 0.0353520118,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=WEIBULL.DIST(1,1,1,TRUE)",
-          "expected": 0.6321205588,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -2165,47 +2052,15 @@
   {
     "key": "CONFIDENCE.NORM",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CONFIDENCE.NORM(0.05,2.5,50)",
-          "expected": 0.6929519121,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CONFIDENCE.NORM(0.05,1,100)",
-          "expected": 0.1959963985,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "CONFIDENCE.T",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CONFIDENCE.T(0.05,1,50)",
-          "expected": 0.2840159669,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CONFIDENCE.T(0.05,2.5,30)",
-          "expected": 0.933978177,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -4018,24 +3873,8 @@
   {
     "key": "EXPONDIST",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=EXPONDIST(0.2,10,TRUE)",
-          "expected": 0.8646647168,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=EXPONDIST(0.2,10,FALSE)",
-          "expected": 1.353352832,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -4186,24 +4025,8 @@
   {
     "key": "TDIST",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=TDIST(1,10,2)",
-          "expected": 0.3408931321,
-          "epsilon": 1e-8,
-          "received": 0.8295534338501603
-        },
-        {
-          "type": "approximate",
-          "expression": "=TDIST(1,10,1)",
-          "expected": 0.1704465661,
-          "epsilon": 1e-8,
-          "received": 0.8295534338501603
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -4224,7 +4047,7 @@
           "expression": "=TTEST(A1:A5,B1:B5,2,1)",
           "expected": 0.0790205567,
           "epsilon": 0.000001,
-          "received": "name"
+          "received": 0.44727504436206234
         }
       ]
     }
@@ -4246,16 +4069,8 @@
   {
     "key": "MODE",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=MODE(A1:A8)",
-          "expected": 4,
-          "received": "name"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -4268,24 +4083,8 @@
   {
     "key": "PERCENTRANK",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=PERCENTRANK(A1:A5,30)",
-          "expected": 0.5,
-          "epsilon": 1e-8,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=PERCENTRANK(A1:A5,10)",
-          "expected": 0,
-          "epsilon": 1e-8,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -4333,24 +4132,8 @@
   {
     "key": "WEIBULL",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=WEIBULL(105,20,100,TRUE)",
-          "expected": 0.9295813901,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=WEIBULL(105,20,100,FALSE)",
-          "expected": 0.0353520118,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -4416,24 +4199,8 @@
   {
     "key": "CONFIDENCE",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CONFIDENCE(0.05,2.5,50)",
-          "expected": 0.6929519121,
-          "epsilon": 0.000001,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=CONFIDENCE(0.05,1,100)",
-          "expected": 0.1959963985,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   }
 ]

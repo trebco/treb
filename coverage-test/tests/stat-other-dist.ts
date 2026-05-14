@@ -32,6 +32,6 @@ AddTests('CONFIDENCE.NORM', [
 ]);
 
 AddTests('CONFIDENCE.T', [
-  { type: 'approximate', expression: '=CONFIDENCE.T(0.05,1,50)', expected: 0.2840159669, epsilon: 1e-6 },
-  { type: 'approximate', expression: '=CONFIDENCE.T(0.05,2.5,30)', expected: 0.9339781770, epsilon: 1e-6 },
+  { type: 'approximate', expression: '=CONFIDENCE.T(0.05,1,50)', expected: 0.2841968555, epsilon: 1e-6 },
+  { type: 'approximate', expression: '=CONFIDENCE.T(0.05,2.5,30)', expected: 0.9335153419, epsilon: 1e-6 },
 ]);

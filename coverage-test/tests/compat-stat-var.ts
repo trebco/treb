@@ -29,7 +29,7 @@ AddTests('VARP', [
 
 AddTests('WEIBULL', [
   { type: 'approximate', expression: '=WEIBULL(105,20,100,TRUE)', expected: 0.9295813901, epsilon: 1e-6 },
-  { type: 'approximate', expression: '=WEIBULL(105,20,100,FALSE)', expected: 0.0353520118, epsilon: 1e-6 },
+  { type: 'approximate', expression: '=WEIBULL(105,20,100,FALSE)', expected: 0.0355888640, epsilon: 1e-6 },
 ]);
 
 AddTests('ZTEST', [

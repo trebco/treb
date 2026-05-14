@@ -34,5 +34,9 @@ import './stats-dist-poisson';
 import './stats-dist-lognormal';
 import './stats-dist-f';
 import './stats-dist-hypgeom';
+import './stats-dist-t';
+import './stats-dist-expon';
+import './stats-dist-weibull';
+import './stats-confidence';
 import './compat-aliases';
 

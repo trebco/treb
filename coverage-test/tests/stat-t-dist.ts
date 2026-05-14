@@ -13,7 +13,7 @@ AddTests('T.DIST', [
 AddTests('T.DIST.2T', [
   { type: 'approximate', expression: '=T.DIST.2T(1,10)', expected: 0.3408931321, epsilon },
   { type: 'approximate', expression: '=T.DIST.2T(2,5)', expected: 0.1019394336, epsilon },
-  { type: 'approximate', expression: '=T.DIST.2T(1.96,30)', expected: 0.0594242696, epsilon },
+  { type: 'approximate', expression: '=T.DIST.2T(1.96,30)', expected: 0.0593423129, epsilon },
 ]);
 
 AddTests('T.DIST.RT', [
