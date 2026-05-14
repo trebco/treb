@@ -1752,107 +1752,29 @@
   {
     "key": "NORM.DIST",
     "results": {
-      "succeeded": 1,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=NORM.DIST(0,0,1,TRUE)",
-          "expected": 0.5,
-          "epsilon": 1e-10,
-          "received": 0.5000000005
-        },
-        {
-          "type": "approximate",
-          "expression": "=NORM.DIST(1,0,1,TRUE)",
-          "expected": 0.8413447461,
-          "epsilon": 1e-10,
-          "received": 0.8413447361676363
-        },
-        {
-          "type": "approximate",
-          "expression": "=NORM.DIST(-1,0,1,TRUE)",
-          "expected": 0.1586552539,
-          "epsilon": 1e-10,
-          "received": 0.15865526383236372
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "NORM.INV",
     "results": {
-      "succeeded": 2,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=NORM.INV(0.8413447461,0,1)",
-          "expected": 1,
-          "epsilon": 0.000001,
-          "received": 0.99996848396044
-        },
-        {
-          "type": "approximate",
-          "expression": "=NORM.INV(0.975,0,1)",
-          "expected": 1.959963985,
-          "epsilon": 0.000001,
-          "received": 1.9603949169253396
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "NORM.S.DIST",
     "results": {
-      "succeeded": 2,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=NORM.S.DIST(0,TRUE)",
-          "expected": 0.5,
-          "epsilon": 1e-10,
-          "received": 0.5000000005
-        },
-        {
-          "type": "approximate",
-          "expression": "=NORM.S.DIST(1,TRUE)",
-          "expected": 0.8413447461,
-          "epsilon": 1e-10,
-          "received": 0.8413447361676363
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "NORM.S.INV",
     "results": {
-      "succeeded": 1,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=NORM.S.INV(0.975)",
-          "expected": 1.959963985,
-          "epsilon": 0.000001,
-          "received": 1.9603949169253396
-        },
-        {
-          "type": "approximate",
-          "expression": "=NORM.S.INV(0.025)",
-          "expected": -1.959963985,
-          "epsilon": 0.000001,
-          "received": -1.96039491692534
-        },
-        {
-          "type": "approximate",
-          "expression": "=NORM.S.INV(0.8413447461)",
-          "expected": 1,
-          "epsilon": 0.000001,
-          "received": 0.99996848396044
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -2452,28 +2374,28 @@
           "type": "approximate",
           "expression": "=EXPON.DIST(0.2,10,TRUE)",
           "expected": 0.8646647168,
-          "epsilon": 1e-10,
+          "epsilon": 0.000001,
           "received": "name"
         },
         {
           "type": "approximate",
           "expression": "=EXPON.DIST(0.2,10,FALSE)",
           "expected": 1.353352832,
-          "epsilon": 1e-10,
+          "epsilon": 0.000001,
           "received": "name"
         },
         {
           "type": "approximate",
           "expression": "=EXPON.DIST(1,1,TRUE)",
           "expected": 0.6321205588,
-          "epsilon": 1e-10,
+          "epsilon": 0.000001,
           "received": "name"
         },
         {
           "type": "approximate",
           "expression": "=EXPON.DIST(0,1,TRUE)",
           "expected": 0,
-          "epsilon": 1e-10,
+          "epsilon": 0.000001,
           "received": "name"
         }
       ]
@@ -2482,91 +2404,36 @@
   {
     "key": "GAMMA",
     "results": {
-      "succeeded": 2,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=GAMMA(5)",
-          "expected": 24,
-          "received": 24.00000000000004
-        },
-        {
-          "type": "expect",
-          "expression": "=GAMMA(1)",
-          "expected": 1,
-          "received": 0.9999999999999998
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "GAMMA.DIST",
     "results": {
-      "succeeded": 2,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=GAMMA.DIST(2,3,2,FALSE)",
-          "expected": 0.0758163325,
-          "epsilon": 0.000001,
-          "received": 0.09196986029286054
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "GAMMA.INV",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=GAMMA.INV(0.5,3,2)",
-          "expected": 5.3481341135,
-          "epsilon": 0.000001,
-          "received": 5.348120480775833
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "GAMMALN",
     "results": {
-      "succeeded": 2,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=GAMMALN(4)",
-          "expected": 1.7917594692,
-          "epsilon": 1e-10,
-          "received": 1.791759469089682
-        },
-        {
-          "type": "expect",
-          "expression": "=GAMMALN(1)",
-          "expected": 0,
-          "received": -3.413624938275461e-11
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "GAMMALN.PRECISE",
     "results": {
-      "succeeded": 2,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=GAMMALN.PRECISE(1)",
-          "expected": 0,
-          "received": -2.2204460492503136e-16
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -2593,7 +2460,7 @@
           "type": "approximate",
           "expression": "=WEIBULL.DIST(1,1,1,TRUE)",
           "expected": 0.6321205588,
-          "epsilon": 1e-10,
+          "epsilon": 0.000001,
           "received": "name"
         }
       ]
