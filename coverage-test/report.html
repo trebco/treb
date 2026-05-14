@@ -35,16 +35,16 @@
   </head>
   <body>
   <h1>TREB Function Coverage Report</h1>
-  <div class="timestamp">Generated 2026-05-14 18:57:26 UTC</div>
+  <div class="timestamp">Generated 2026-05-14 19:15:03 UTC</div>
   <div class="summary">
-    <div class="summary-card pass"><span class="num">408</span>Pass (78.2%)</div>
-    <div class="summary-card fail"><span class="num">19</span>Fail (3.6%)</div>
+    <div class="summary-card pass"><span class="num">419</span>Pass (80.3%)</div>
+    <div class="summary-card fail"><span class="num">8</span>Fail (1.5%)</div>
     <div class="summary-card not-implemented"><span class="num">40</span>Not Implemented (7.7%)</div>
     <div class="summary-card not-tested"><span class="num">55</span>Not Tested (10.5%)</div>
   </div>
   <div class="bar">
-    <div style="width:78.2%;background:#22c55e"></div>
-    <div style="width:3.6%;background:#ef4444"></div>
+    <div style="width:80.3%;background:#22c55e"></div>
+    <div style="width:1.5%;background:#ef4444"></div>
     <div style="width:7.7%;background:#9ca3af"></div>
     <div style="width:10.5%;background:#d1d5db"></div>
   </div>
@@ -1532,7 +1532,7 @@
   </tr>
 </table></div>
 <div class="category">
-  <h2>Statistical<span class="cat-stats">110 functions &mdash; 100 pass, 3 fail, 2 not implemented, 5 not tested</span></h2>
+  <h2>Statistical<span class="cat-stats">110 functions &mdash; 101 pass, 2 fail, 2 not implemented, 5 not tested</span></h2>
   <table>
   <tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
   <tr>
@@ -1657,9 +1657,9 @@
   </tr>
 <tr>
     <td><strong>COUNTBLANK</strong></td>
-    <td><span class="badge pass">Pass</span></td>
-    <td>2/2</td>
-    <td></td>
+    <td><span class="badge fail">Fail</span></td>
+    <td>1/2</td>
+    <td><span class="failed-expr">=COUNTBLANK(A1:A5)</span></td>
   </tr>
 <tr>
     <td><strong>COUNTIF</strong></td>
@@ -2143,9 +2143,9 @@
   </tr>
 <tr>
     <td><strong>T.TEST</strong></td>
-    <td><span class="badge fail">Fail</span></td>
-    <td>0/1</td>
-    <td><span class="failed-expr">=T.TEST(A1:A5,B1:B5,2,1)</span></td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>1/1</td>
+    <td></td>
   </tr>
 <tr>
     <td><strong>TREND</strong></td>
@@ -2191,9 +2191,9 @@
   </tr>
 <tr>
     <td><strong>Z.TEST</strong></td>
-    <td><span class="badge fail">Fail</span></td>
-    <td>0/1</td>
-    <td><span class="failed-expr">=Z.TEST(A1:A5,4)</span></td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>4/4</td>
+    <td></td>
   </tr>
 </table></div>
 <div class="category">
@@ -2526,20 +2526,20 @@
   </tr>
 </table></div>
 <div class="category">
-  <h2>Compatibility<span class="cat-stats">42 functions &mdash; 31 pass, 10 fail, 1 not implemented, 0 not tested</span></h2>
+  <h2>Compatibility<span class="cat-stats">42 functions &mdash; 41 pass, 0 fail, 1 not implemented, 0 not tested</span></h2>
   <table>
   <tr><th>Function</th><th>Status</th><th>Tests</th><th>Failed Expressions</th></tr>
   <tr>
     <td><strong>BETADIST</strong></td>
-    <td><span class="badge fail">Fail</span></td>
-    <td>0/2</td>
-    <td><span class="failed-expr">=BETADIST(2,8,10,1,3)</span>, <span class="failed-expr">=BETADIST(0.5,2,5)</span></td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>2/2</td>
+    <td></td>
   </tr>
 <tr>
     <td><strong>BETAINV</strong></td>
-    <td><span class="badge fail">Fail</span></td>
-    <td>1/2</td>
-    <td><span class="failed-expr">=BETAINV(0.5,2,5)</span></td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>2/2</td>
+    <td></td>
   </tr>
 <tr>
     <td><strong>BINOMDIST</strong></td>
@@ -2633,21 +2633,21 @@
   </tr>
 <tr>
     <td><strong>GAMMADIST</strong></td>
-    <td><span class="badge fail">Fail</span></td>
-    <td>1/2</td>
-    <td><span class="failed-expr">=GAMMADIST(2,3,2,FALSE)</span></td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>2/2</td>
+    <td></td>
   </tr>
 <tr>
     <td><strong>GAMMAINV</strong></td>
-    <td><span class="badge fail">Fail</span></td>
-    <td>0/1</td>
-    <td><span class="failed-expr">=GAMMAINV(0.5,3,2)</span></td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>1/1</td>
+    <td></td>
   </tr>
 <tr>
     <td><strong>HYPGEOMDIST</strong></td>
-    <td><span class="badge fail">Fail</span></td>
-    <td>0/1</td>
-    <td><span class="failed-expr">=HYPGEOMDIST(1,4,8,20)</span></td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>1/1</td>
+    <td></td>
   </tr>
 <tr>
     <td><strong>LOGINV</strong></td>
@@ -2657,9 +2657,9 @@
   </tr>
 <tr>
     <td><strong>LOGNORMDIST</strong></td>
-    <td><span class="badge fail">Fail</span></td>
-    <td>0/1</td>
-    <td><span class="failed-expr">=LOGNORMDIST(4,3.5,1.2)</span></td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>1/1</td>
+    <td></td>
   </tr>
 <tr>
     <td><strong>MODE</strong></td>
@@ -2669,9 +2669,9 @@
   </tr>
 <tr>
     <td><strong>NEGBINOMDIST</strong></td>
-    <td><span class="badge fail">Fail</span></td>
-    <td>0/1</td>
-    <td><span class="failed-expr">=NEGBINOMDIST(10,5,0.25)</span></td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>1/1</td>
+    <td></td>
   </tr>
 <tr>
     <td><strong>NORMDIST</strong></td>
@@ -2681,9 +2681,9 @@
   </tr>
 <tr>
     <td><strong>NORMINV</strong></td>
-    <td><span class="badge fail">Fail</span></td>
-    <td>1/2</td>
-    <td><span class="failed-expr">=NORMINV(0.975,0,1)</span></td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>2/2</td>
+    <td></td>
   </tr>
 <tr>
     <td><strong>NORMSDIST</strong></td>
@@ -2753,9 +2753,9 @@
   </tr>
 <tr>
     <td><strong>TTEST</strong></td>
-    <td><span class="badge fail">Fail</span></td>
-    <td>0/1</td>
-    <td><span class="failed-expr">=TTEST(A1:A5,B1:B5,2,1)</span></td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>1/1</td>
+    <td></td>
   </tr>
 <tr>
     <td><strong>VAR</strong></td>
@@ -2777,9 +2777,9 @@
   </tr>
 <tr>
     <td><strong>ZTEST</strong></td>
-    <td><span class="badge fail">Fail</span></td>
-    <td>0/1</td>
-    <td><span class="failed-expr">=ZTEST(A1:A5,4)</span></td>
+    <td><span class="badge pass">Pass</span></td>
+    <td>1/1</td>
+    <td></td>
   </tr>
 </table></div>
 <div class="category">

@@ -35,7 +35,7 @@ AddTests('T.INV.2T', [
 ]);
 
 AddTests('T.TEST', [
-  { type: 'approximate', expression: '=T.TEST(A1:A5,B1:B5,2,1)', expected: 0.0790205567, epsilon: 1e-6 },
+  { type: 'approximate', expression: '=T.TEST(A1:A5,B1:B5,2,1)', expected: 0.4472750444, epsilon: 1e-6 },
 ], SetRange => {
   SetRange('A1', [[3], [4], [5], [8], [9]]);
   SetRange('B1', [[6], [19], [3], [2], [14]]);

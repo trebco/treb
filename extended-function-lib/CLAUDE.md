@@ -23,6 +23,7 @@ Do not read `../coverage-test/report.html` — it is generated from the JSON rep
 
 - **IM* complex number functions** (IMREAL, IMABS, IMSUM, etc.) — TREB has a native complex type, so the Excel text-based complex functions are not needed. May be added later for compatibility.
 - **FORECAST.\* functions** (FORECAST.LINEAR, FORECAST.ETS, etc.) — already implemented in a separate WASM-based library. They show as unimplemented in the test report but are done.
+- **BESSEL functions** (BESSELI, BESSELJ, BESSELK, BESSELY) — will be implemented in a C++/WASM library, not here.
 
 ## Array layout
 

@@ -17,7 +17,11 @@ AddTests('F.TEST', [
 });
 
 AddTests('Z.TEST', [
-  { type: 'approximate', expression: '=Z.TEST(A1:A5,4)', expected: 0.8380710199, epsilon: 1e-6 },
+  { type: 'approximate', expression: '=Z.TEST(A1:A5,4)', expected: 0.0084136959, epsilon: 1e-6 },
+  { type: 'approximate', expression: '=Z.TEST(B1:B10,4)', expected: 0.0905742615, epsilon: 1e-6 },
+  { type: 'approximate', expression: '=Z.TEST(B1:B10,6)', expected: 0.8630433466, epsilon: 1e-6 },
+  { type: 'approximate', expression: '=Z.TEST(B1:B10,4,1)', expected: 0.0002521550, epsilon: 1e-6 },
 ], SetRange => {
   SetRange('A1', [[3], [6], [7], [8], [6]]);
+  SetRange('B1', [[3], [6], [7], [8], [6], [5], [4], [2], [1], [9]]);
 });

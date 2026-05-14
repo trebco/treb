@@ -38,5 +38,7 @@ import './stats-dist-t';
 import './stats-dist-expon';
 import './stats-dist-weibull';
 import './stats-confidence';
+import './stats-ztest';
+import './compat-functions';
 import './compat-aliases';
 

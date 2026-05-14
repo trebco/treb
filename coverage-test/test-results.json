@@ -1437,8 +1437,16 @@
   {
     "key": "COUNTBLANK",
     "results": {
-      "succeeded": 2,
-      "failed": 0
+      "succeeded": 1,
+      "failed": 1,
+      "failed_tests": [
+        {
+          "type": "expect",
+          "expression": "=COUNTBLANK(A1:A5)",
+          "expected": 2,
+          "received": 0
+        }
+      ]
     }
   },
   {
@@ -1831,17 +1839,8 @@
   {
     "key": "T.TEST",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=T.TEST(A1:A5,B1:B5,2,1)",
-          "expected": 0.0790205567,
-          "epsilon": 0.000001,
-          "received": 0.44727504436206234
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -1917,17 +1916,8 @@
   {
     "key": "Z.TEST",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=Z.TEST(A1:A5,4)",
-          "expected": 0.8380710199,
-          "epsilon": 0.000001,
-          "received": 0.008413695909277985
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -3806,40 +3796,15 @@
   {
     "key": "BETADIST",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=BETADIST(2,8,10,1,3)",
-          "expected": 0.6854706,
-          "epsilon": 0.000001,
-          "received": 1
-        },
-        {
-          "type": "approximate",
-          "expression": "=BETADIST(0.5,2,5)",
-          "expected": 0.890625,
-          "epsilon": 1e-8,
-          "received": 0.9375000000497307
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "BETAINV",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=BETAINV(0.5,2,5)",
-          "expected": 0.235339311,
-          "epsilon": 0.000001,
-          "received": 0.26444998328423874
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -3901,65 +3866,29 @@
   {
     "key": "GAMMADIST",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=GAMMADIST(2,3,2,FALSE)",
-          "expected": 0.0758163325,
-          "epsilon": 0.000001,
-          "received": 0.09196986029286054
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "GAMMAINV",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=GAMMAINV(0.5,3,2)",
-          "expected": 5.3481341135,
-          "epsilon": 0.000001,
-          "received": 5.348120480775833
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "HYPGEOMDIST",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=HYPGEOMDIST(1,4,8,20)",
-          "expected": 0.3632610939,
-          "epsilon": 0.000001,
-          "received": "VALUE"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "LOGNORMDIST",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=LOGNORMDIST(4,3.5,1.2)",
-          "expected": 0.0390835557,
-          "epsilon": 1e-8,
-          "received": "VALUE"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -3972,17 +3901,8 @@
   {
     "key": "NEGBINOMDIST",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=NEGBINOMDIST(10,5,0.25)",
-          "expected": 0.0550486247,
-          "epsilon": 0.000001,
-          "received": "VALUE"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -3995,17 +3915,8 @@
   {
     "key": "NORMINV",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=NORMINV(0.975,0,1)",
-          "expected": 1.959963985,
-          "epsilon": 0.000001,
-          "received": 1.9603949169253396
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -4039,17 +3950,8 @@
   {
     "key": "TTEST",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=TTEST(A1:A5,B1:B5,2,1)",
-          "expected": 0.0790205567,
-          "epsilon": 0.000001,
-          "received": 0.44727504436206234
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -4139,17 +4041,8 @@
   {
     "key": "ZTEST",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=ZTEST(A1:A5,4)",
-          "expected": 0.8380710199,
-          "epsilon": 0.000001,
-          "received": 0.008413695909277985
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {

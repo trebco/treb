@@ -2,7 +2,6 @@
 import { AddAlias } from 'treb-calculator';
 
 AddAlias([
-  ['BETADIST', 'BETA.DIST'],
   ['BETAINV', 'BETA.INV'],
   ['BINOMDIST', 'BINOM.DIST'],
   ['CHIDIST', 'CHISQ.DIST.RT'],
@@ -14,10 +13,7 @@ AddAlias([
   ['FTEST', 'F.TEST'],
   ['GAMMADIST', 'GAMMA.DIST'],
   ['GAMMAINV', 'GAMMA.INV'],
-  ['HYPGEOMDIST', 'HYPGEOM.DIST'],
   ['LOGINV', 'LOGNORM.INV'],
-  ['LOGNORMDIST', 'LOGNORM.DIST'],
-  ['NEGBINOMDIST', 'NEGBINOM.DIST'],
   ['NORMINV', 'NORM.INV'],
   ['MODE', 'MODE.SNGL'],
   ['PERCENTRANK', 'PERCENTRANK.INC'],
