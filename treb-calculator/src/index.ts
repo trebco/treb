@@ -27,4 +27,4 @@ export * from './calculator';
 export type { LeafVertex, StateLeafVertex } from './dag/graph';
 export * from './descriptors';
 export * from './function-error';
-export { AddExtendedFunction } from './function-support';
+export { AddExtendedFunction, AddAlias } from './function-support';

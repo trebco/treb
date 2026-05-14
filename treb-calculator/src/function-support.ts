@@ -39,6 +39,17 @@ export function AddExtendedFunction(name: string, descriptor: CompositeFunctionD
   Calculator.AddExtendedFunction(name, descriptor);
 }
 
-
+/**
+ * add alias. use this for functions that are identical except for the name.
+ * for example we can alias the old function 'GAMMADIST' to the modern function 'GAMMA.DIST'.
+ * 
+ * aliases will be added _after_ functions so this can be called at any time.
+ * 
+ * @param aliases - an array of [alias_name, original_function_name] pairs 
+ * 
+ */
+export function AddAlias(aliases: [string, string][]) {
+  Calculator.AddAlias(aliases);
+}
 
 

@@ -179,9 +179,14 @@ const RXX = Math.round(Math.random() * 1e8);
 export class Calculator extends Graph {
 
   protected static extended_functions: Map<string, CompositeFunctionDescriptor> = new Map();
+  protected static extended_aliases: [string, string][] = [];
 
   public static AddExtendedFunction(name: string, descriptor: CompositeFunctionDescriptor) {
     this.extended_functions.set(name, descriptor);
+  }
+
+  public static AddAlias(aliases: [string, string][]) {
+    this.extended_aliases.push(...aliases);
   }
 
   /** 
@@ -1320,6 +1325,9 @@ export class Calculator extends Graph {
 
     });
 
+    for (const pair of Calculator.extended_aliases) {
+      this.library.Alias(pair[0], pair[1]);
+    }    
 
   }
 
