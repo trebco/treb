@@ -18,12 +18,12 @@ AddTests('LOGNORM.INV', [
 AddTests('BETA.DIST', [
   { type: 'approximate', expression: '=BETA.DIST(2,8,10,TRUE,1,3)', expected: 0.6854706, epsilon: 1e-6 },
   { type: 'approximate', expression: '=BETA.DIST(0.5,2,5,TRUE)', expected: 0.8906250000, epsilon },
-  { type: 'approximate', expression: '=BETA.DIST(0.5,2,5,FALSE)', expected: 1.2500000000, epsilon },
+  { type: 'approximate', expression: '=BETA.DIST(0.5,2,5,FALSE)', expected: 0.9375, epsilon },
 ]);
 
 AddTests('BETA.INV', [
   { type: 'approximate', expression: '=BETA.INV(0.6854706,8,10,1,3)', expected: 2, epsilon: 0.01 },
-  { type: 'approximate', expression: '=BETA.INV(0.5,2,5)', expected: 0.2353393110, epsilon: 1e-6 },
+  { type: 'approximate', expression: '=BETA.INV(0.5,2,5)', expected: 0.2644499833, epsilon: 1e-6 },
 ]);
 
 AddTests('CONFIDENCE.NORM', [

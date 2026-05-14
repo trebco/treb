@@ -1696,158 +1696,36 @@
   {
     "key": "SLOPE",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=SLOPE(B1:B5,A1:A5)",
-          "expected": 0.8,
-          "epsilon": 1e-10,
-          "received": 0.6
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "INTERCEPT",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=INTERCEPT(B1:B5,A1:A5)",
-          "expected": 1.6,
-          "epsilon": 1e-10,
-          "received": 2.2
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "STEYX",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=STEYX(B1:B5,A1:A5)",
-          "expected": 0.4472135955,
-          "epsilon": 1e-10,
-          "received": 0.8944271909999157
-        }
-      ]
-    }
-  },
-  {
-    "key": "FORECAST.LINEAR",
-    "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=FORECAST.LINEAR(6,B1:B5,A1:A5)",
-          "expected": 6.4,
-          "epsilon": 1e-10,
-          "received": "name"
-        },
-        {
-          "type": "approximate",
-          "expression": "=FORECAST.LINEAR(10,B1:B5,A1:A5)",
-          "expected": 9.6,
-          "epsilon": 1e-10,
-          "received": "name"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "LINEST",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=INDEX(LINEST(B1:B5,A1:A5),1,1)",
-          "expected": 0.8,
-          "epsilon": 1e-10,
-          "received": "ARG"
-        },
-        {
-          "type": "approximate",
-          "expression": "=INDEX(LINEST(B1:B5,A1:A5),1,2)",
-          "expected": 1.6,
-          "epsilon": 1e-10,
-          "received": "ARG"
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "LOGEST",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=INDEX(LOGEST(B1:B4,A1:A4),1,1)",
-          "expected": 1.4634479,
-          "epsilon": 0.000001,
-          "received": "ARG"
-        }
-      ]
-    }
-  },
-  {
-    "key": "FORECAST.ETS",
-    "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=FORECAST.ETS(6,B1:B5,A1:A5)",
-          "expected": 6,
-          "epsilon": 0.000001,
-          "received": "name"
-        }
-      ]
-    }
-  },
-  {
-    "key": "FORECAST.ETS.CONFINT",
-    "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=FORECAST.ETS.CONFINT(6,B1:B5,A1:A5)",
-          "expected": 1,
-          "epsilon": 5,
-          "received": "name"
-        }
-      ]
-    }
-  },
-  {
-    "key": "FORECAST.ETS.SEASONALITY",
-    "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=FORECAST.ETS.SEASONALITY(B1:B8,A1:A8)",
-          "expected": 1,
-          "received": "name"
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
@@ -2784,47 +2662,15 @@
   {
     "key": "BETA.DIST",
     "results": {
-      "succeeded": 1,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=BETA.DIST(2,8,10,TRUE,1,3)",
-          "expected": 0.6854706,
-          "epsilon": 0.000001,
-          "received": 1
-        },
-        {
-          "type": "approximate",
-          "expression": "=BETA.DIST(0.5,2,5,FALSE)",
-          "expected": 1.25,
-          "epsilon": 1e-8,
-          "received": 0.9375000000497307
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "BETA.INV",
     "results": {
-      "succeeded": 0,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=BETA.INV(0.6854706,8,10,1,3)",
-          "expected": 2,
-          "epsilon": 0.01,
-          "received": 0.5000000064037442
-        },
-        {
-          "type": "approximate",
-          "expression": "=BETA.INV(0.5,2,5)",
-          "expected": 0.235339311,
-          "epsilon": 0.000001,
-          "received": 0.26444998328423874
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {

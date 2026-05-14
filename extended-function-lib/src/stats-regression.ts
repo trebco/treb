@@ -154,6 +154,49 @@ function ExtractOrDefault(v: UnionValue | undefined, n: number): number[] | null
   return nums.length === n ? nums : null;
 }
 
+AddExtendedFunction('LINEST', {
+  description: 'Returns the statistics for a least-squares linear fit',
+  arguments: [
+    { name: 'known_y', description: 'Known y values', boxed: true },
+    { name: 'known_x', description: 'Known x values', boxed: true },
+  ],
+  fn: (known_y?: UnionValue, known_x?: UnionValue): UnionValue => {
+    if (!known_y) return ValueError();
+    const ys = extractNumbers(known_y);
+    if (ys.length === 0) return ValueError();
+
+    const xs = ExtractOrDefault(known_x, ys.length);
+    if (!xs) return ValueError();
+
+    const reg = linearRegression(xs, ys);
+    return { type: ValueType.array, value: [[Box(reg.slope)], [Box(reg.intercept)]] };
+  },
+});
+
+AddExtendedFunction('LOGEST', {
+  description: 'Returns the statistics for an exponential curve fit',
+  arguments: [
+    { name: 'known_y', description: 'Known y values', boxed: true },
+    { name: 'known_x', description: 'Known x values', boxed: true },
+  ],
+  fn: (known_y?: UnionValue, known_x?: UnionValue): UnionValue => {
+    if (!known_y) return ValueError();
+    const ys = extractNumbers(known_y);
+    if (ys.length === 0) return ValueError();
+
+    for (const y of ys) {
+      if (y <= 0) return ValueError();
+    }
+
+    const xs = ExtractOrDefault(known_x, ys.length);
+    if (!xs) return ValueError();
+
+    const ln_ys = ys.map(y => Math.log(y));
+    const reg = linearRegression(xs, ln_ys);
+    return { type: ValueType.array, value: [[Box(Math.exp(reg.slope))], [Box(Math.exp(reg.intercept))]] };
+  },
+});
+
 AddExtendedFunction('TREND', {
   description: 'Returns values along a linear trend',
   arguments: [
