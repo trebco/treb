@@ -83,7 +83,7 @@ export const RegexFunctionLibrary: FunctionMap = {
         case 1:
           {
             const result = Array.from(text.matchAll(rex));
-            console.info({result});
+            // console.info({result});
 
             return {
               type: ValueType.array,
@@ -156,7 +156,7 @@ export const RegexFunctionLibrary: FunctionMap = {
       }
 
       const rex = new RegExp(pattern, args.length ? args.join('') : undefined);
-      console.info({rex});
+      // console.info({rex});
 
       if (occurrence === 0) {
         return {

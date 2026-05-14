@@ -20,7 +20,8 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import { type UnionValue, ValueType } from 'treb-base-types';
+import { Box, IsCellAddress, type UnionValue, ValueType } from 'treb-base-types';
+import { UnionIsMetadata } from '../expression-calculator';
 
 const match_arguments = [{
   name: 'Reference',
@@ -30,10 +31,60 @@ const match_arguments = [{
 
 export const InformationFunctionLibrary: FunctionMap = {
 
+  /** this one does not unroll, it tells you if you referenced a range */
+  IsRef: {
+    description: 'Returns true if the reference is a reference',
+    arguments: [{
+      name: 'Reference',
+      metadata: true,
+    }],
+    fn: (reference: UnionValue) => {
+      if (reference.type === ValueType.array) {
+
+        // logically, if the first cell in the array is a reference,
+        // then it's a reference. there has to be one, though.
+
+        if (reference.value.length && reference.value[0]?.length) {
+          const check = reference.value[0][0];
+          if (UnionIsMetadata(check) && check.type === ValueType.object) {
+            return {
+              type: ValueType.boolean, 
+              value: IsCellAddress(check.value.address),
+            };
+          }
+        }
+
+      }
+      if (UnionIsMetadata(reference)) {
+        if (reference.type === ValueType.object) {
+          return {
+            type: ValueType.boolean, 
+            value: IsCellAddress(reference.value.address),
+          };
+        }
+      }
+      return Box(false);
+    }
+  },
+
   IsBlank: {
     description: 'Returns true if the reference is blank',
-    arguments: match_arguments,
-    fn: (value: UnionValue) => ({ type: ValueType.boolean, value: value.type === ValueType.undefined }),
+    arguments:  [{
+      name: 'Reference',
+      boxed: true,
+      unroll: true,
+      metadata: true,
+    }],
+    fn: (value: UnionValue) => {
+      let result = false;
+      if (UnionIsMetadata(value) && value.type === ValueType.object) {
+        result = value.value.value === undefined;
+      }
+      return { 
+        type: ValueType.boolean, 
+        value: result,
+      };
+    },
   },
 
   IsNumber: {

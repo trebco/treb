@@ -651,50 +651,6 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
   },
 
-  YearFrac: {
-    description: 'Returns the fraction of a year between two dates',
-    arguments: [
-      { name: 'Start', }, 
-      { name: 'End', },
-      { name: 'Basis', default: 0 },
-    ],
-    fn: (start: number, end: number, basis: number): UnionValue => {
-
-      // is this in the spec? should it not be negative here? (...)
-
-      if (end < start) {
-        const temp = start;
-        start = end;
-        end = temp;
-      }
-
-      const delta = Math.max(0, end - start);
-      let divisor = 360;
-
-      if (basis && basis < 0 || basis > 4) {
-        return ArgumentError();
-      }
-
-      // console.info({start, end, basis, delta});
-
-      switch (basis) {
-        case 1:
-          break;
-        case 2:
-          break;
-        case 3:
-          divisor = 365;
-          break;
-      }
-
-      return {
-        type: ValueType.number,
-        value: delta / divisor,
-      };
-
-    },
-  },
-
   Date: {
     description: 'Constructs a date from year/month/day',
     arguments: [
@@ -715,12 +671,12 @@ export const BaseFunctionLibrary: FunctionMap = {
     description: 'Returns current day',
     volatile: true,
     fn: () => {
-      const date = new Date();
-      date.setMilliseconds(0);
-      date.setSeconds(0);
-      date.setMinutes(0);
-      date.setHours(12);
-      return { type: ValueType.number, value: UnlotusDate(date.getTime()) };
+      const now = new Date();
+      const date = ConstructDate(now.getFullYear(), now.getMonth(), now.getDate());
+      if (date === false) {
+        return ArgumentError();
+      }
+      return { type: ValueType.number, value: date };
     },
   },
 
