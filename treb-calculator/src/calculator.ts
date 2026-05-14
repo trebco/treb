@@ -761,6 +761,7 @@ export class Calculator extends Graph {
         arguments: [
           { name: 'range', },
           { name: 'criteria', },
+          { name: 'average range', },
         ],
         fn: (range: CellValue[][], criteria: CellValue, average_range?: CellValue[][]) => {
           return XIf('average', average_range||range, range, criteria);

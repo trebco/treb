@@ -156,7 +156,8 @@ export const RegexFunctionLibrary: FunctionMap = {
       }
 
       const rex = new RegExp(pattern, args.length ? args.join('') : undefined);
-      
+      console.info({rex});
+
       if (occurrence === 0) {
         return {
           type: ValueType.string,
