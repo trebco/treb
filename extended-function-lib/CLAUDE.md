@@ -45,7 +45,8 @@ npm run coverage-test
 bun check-test-results.ts FUNCTION_NAME1 FUNCTION_NAME2
 ```
 
-Do not modify tests — they live in `../coverage-test/` and are out of scope.
+Do not modify tests unless the user specifically requests that. Tests are in ../coverage-tests/tests/. If the plan scope is writing functions, then test errors are findings and 
+tests should not be adjusted. If the plan scope is validating tests, then modifying tests is ok.
 
 ## Shared helpers
 

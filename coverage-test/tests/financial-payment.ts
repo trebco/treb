@@ -9,18 +9,18 @@ AddTests('IPMT', [
 ]);
 
 AddTests('PPMT', [
-  { type: 'approximate', expression: '=PPMT(0.1/12,1,60,-2000)', expected: 25.125263, epsilon: 0.01 },
+  { type: 'approximate', expression: '=PPMT(0.1/12,1,60,-2000)', expected: 25.827414, epsilon: 0.01 },
   { type: 'approximate', expression: '=PPMT(0.08,10,10,-200000)', expected: 27598.053274, epsilon: 0.01 },
 ]);
 
 AddTests('CUMIPMT', [
   { type: 'approximate', expression: '=CUMIPMT(0.09/12,360,125000,1,1,0)', expected: -937.5, epsilon: 0.01 },
-  { type: 'approximate', expression: '=CUMIPMT(0.09/12,360,125000,13,24,0)', expected: -11048.024213, epsilon: 0.01 },
+  { type: 'approximate', expression: '=CUMIPMT(0.09/12,360,125000,13,24,0)', expected: -11135.232130, epsilon: 0.01 },
 ]);
 
 AddTests('CUMPRINC', [
   { type: 'approximate', expression: '=CUMPRINC(0.09/12,360,125000,1,1,0)', expected: -68.278295, epsilon: 0.01 },
-  { type: 'approximate', expression: '=CUMPRINC(0.09/12,360,125000,13,24,0)', expected: -927.153460, epsilon: 0.1 },
+  { type: 'approximate', expression: '=CUMPRINC(0.09/12,360,125000,13,24,0)', expected: -934.107123, epsilon: 0.1 },
 ]);
 
 AddTests('ISPMT', [

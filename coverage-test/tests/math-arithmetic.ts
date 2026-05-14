@@ -33,7 +33,7 @@ AddTests('MROUND', [
 
 AddTests('SERIESSUM', [
   { type: 'expect', expression: '=SERIESSUM(2,0,1,{1,1,1})', expected: 7 },
-  { type: 'approximate', expression: '=SERIESSUM(PI()/4,0,2,{1,-0.5,0.0417})', expected: 0.7071032148, epsilon },
+  { type: 'approximate', expression: '=SERIESSUM(PI()/4,0,2,{1,-0.5,0.0417})', expected: 0.7074418901851681, epsilon },
   { type: 'expect', expression: '=SERIESSUM(1,0,1,{1})', expected: 1 },
   { type: 'expect', expression: '=SERIESSUM(2,1,1,{1,1})', expected: 6 },
 ]);

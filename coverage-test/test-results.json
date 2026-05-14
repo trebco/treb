@@ -413,16 +413,8 @@
   {
     "key": "SERIESSUM",
     "results": {
-      "succeeded": 3,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=SERIESSUM(PI()/4,0,2,{1,-0.5,0.0417})",
-          "expected": 0.7071032148,
-          "epsilon": 1e-10
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -499,34 +491,15 @@
   {
     "key": "SUMIF",
     "results": {
-      "succeeded": 3,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=SUMIF(B1:B5,\"Sales\",A1:A5)",
-          "expected": 105
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
     "key": "SUMIFS",
     "results": {
-      "succeeded": 2,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=SUMIFS(C1:C5,B1:B5,\">30\")",
-          "expected": 120
-        },
-        {
-          "type": "expect",
-          "expression": "=SUMIFS(C1:C5,A1:A5,\"Sales\",B1:B5,\"<50\")",
-          "expected": 50
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -2636,22 +2609,8 @@
   {
     "key": "PV",
     "results": {
-      "succeeded": 1,
-      "failed": 2,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=PV(0.1,5,0,-10000)",
-          "expected": -6209.2132,
-          "epsilon": 0.01
-        },
-        {
-          "type": "approximate",
-          "expression": "=PV(0,10,-100)",
-          "expected": 1000,
-          "epsilon": 0.000001
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
@@ -2664,46 +2623,22 @@
   {
     "key": "PMT",
     "results": {
-      "succeeded": 2,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=PMT(0,10,-1000)",
-          "expected": 100,
-          "epsilon": 0.000001
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {
     "key": "NPER",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=NPER(0.1,-100,0,10000)",
-          "expected": 7.2725,
-          "epsilon": 0.01
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "RATE",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=RATE(60,-1000,50000)",
-          "expected": 0.002,
-          "epsilon": 0.001
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -2723,46 +2658,22 @@
   {
     "key": "PPMT",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=PPMT(0.1/12,1,60,-2000)",
-          "expected": 25.125263,
-          "epsilon": 0.01
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "CUMIPMT",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CUMIPMT(0.09/12,360,125000,13,24,0)",
-          "expected": -11048.024213,
-          "epsilon": 0.01
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
     "key": "CUMPRINC",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=CUMPRINC(0.09/12,360,125000,13,24,0)",
-          "expected": -927.15346,
-          "epsilon": 0.1
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -2775,16 +2686,8 @@
   {
     "key": "NPV",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=NPV(0.08,A1:A5)",
-          "expected": 1922.061551,
-          "epsilon": 0.01
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -2804,31 +2707,15 @@
   {
     "key": "XNPV",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=XNPV(0.09,A1:A3,B1:B3)",
-          "expected": 772.830705,
-          "epsilon": 0.1
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
     "key": "XIRR",
     "results": {
-      "succeeded": 0,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "approximate",
-          "expression": "=XIRR(A1:A3,B1:B3)",
-          "expected": 0.373362535,
-          "epsilon": 0.01
-        }
-      ]
+      "succeeded": 1,
+      "failed": 0
     }
   },
   {
