@@ -433,7 +433,13 @@ export const StatisticsFunctionLibrary: FunctionMap = {
   },
 
   Erf: {
-    fn: (a: number): UnionValue => {
+    fn: (a: number, upper_bound?: number): UnionValue => {
+      if (typeof upper_bound === 'number') {
+        return { 
+          type: ValueType.number, 
+          value: erf(upper_bound) - erf(a),
+        };
+      }
       return { type: ValueType.number, value: erf(a) };
     },
   },
