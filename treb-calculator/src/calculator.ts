@@ -1326,7 +1326,7 @@ export class Calculator extends Graph {
     });
 
     for (const pair of Calculator.extended_aliases) {
-      this.library.Alias(pair[0], pair[1]);
+      this.library.Alias(pair[0], pair[1], true);
     }    
 
   }

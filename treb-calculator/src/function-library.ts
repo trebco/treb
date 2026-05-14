@@ -119,10 +119,16 @@ export class FunctionLibrary {
    * create an alias. we clone the descriptor and use the alias as the
    * canonical name, so should work better than just a pointer.
    */
-  public Alias(name: string, reference: string) {
+  public Alias(name: string, reference: string, warn = false) {
     const ref = this.Get(reference);
     if (!ref) {
-      throw new Error(`referenced function ${reference} does not exist`);
+      if (warn) {
+        console.warn(`referenced function ${reference} does not exist`);
+        return;
+      }
+      else {
+        throw new Error(`referenced function ${reference} does not exist`);
+      }
     }
     this.Register({[name]: {...ref} as CompositeFunctionDescriptor});
   }
