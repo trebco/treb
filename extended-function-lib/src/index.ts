@@ -27,4 +27,5 @@ import './engineering-bitwise';
 import './datetime-parts';
 import './info-functions';
 import './text-format';
+import './array-manipulate';
 

@@ -24,6 +24,10 @@ Do not read `../coverage-test/report.html` — it is generated from the JSON rep
 - **IM* complex number functions** (IMREAL, IMABS, IMSUM, etc.) — TREB has a native complex type, so the Excel text-based complex functions are not needed. May be added later for compatibility.
 - **FORECAST.\* functions** (FORECAST.LINEAR, FORECAST.ETS, etc.) — already implemented in a separate WASM-based library. They show as unimplemented in the test report but are done.
 
+## Array layout
+
+`ArrayUnion.value` is **column-major**: `value[col][row]`. A 3-column, 5-row range is `value.length === 3` with each inner array having 5 elements.
+
 ## Adding functions
 
 1. Create or edit a file in `./src/` (see `./src/template.ts` for the pattern)
