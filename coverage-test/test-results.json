@@ -1140,34 +1140,8 @@
   {
     "key": "XMATCH",
     "results": {
-      "succeeded": 0,
-      "failed": 4,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=XMATCH(3,A1:A5)",
-          "expected": 3,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=XMATCH(1,A1:A5)",
-          "expected": 1,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=XMATCH(5,A1:A5)",
-          "expected": 5,
-          "received": "name"
-        },
-        {
-          "type": "expect",
-          "expression": "=XMATCH(\"cherry\",B1:B5,0)",
-          "expected": 3,
-          "received": "name"
-        }
-      ]
+      "succeeded": 4,
+      "failed": 0
     }
   },
   {
@@ -1397,16 +1371,8 @@
   {
     "key": "COUNTBLANK",
     "results": {
-      "succeeded": 1,
-      "failed": 1,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=COUNTBLANK(A1:A5)",
-          "expected": 2,
-          "received": 0
-        }
-      ]
+      "succeeded": 2,
+      "failed": 0
     }
   },
   {
@@ -3684,28 +3650,8 @@
   {
     "key": "CELL",
     "results": {
-      "succeeded": 0,
-      "failed": 3,
-      "failed_tests": [
-        {
-          "type": "expect",
-          "expression": "=CELL(\"col\",A1)",
-          "expected": 1,
-          "received": "NOTIMPL"
-        },
-        {
-          "type": "expect",
-          "expression": "=CELL(\"col\",C1)",
-          "expected": 3,
-          "received": "NOTIMPL"
-        },
-        {
-          "type": "expect",
-          "expression": "=CELL(\"row\",A5)",
-          "expected": 5,
-          "received": "NOTIMPL"
-        }
-      ]
+      "succeeded": 3,
+      "failed": 0
     }
   },
   {

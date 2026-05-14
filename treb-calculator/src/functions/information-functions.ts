@@ -78,7 +78,7 @@ export const InformationFunctionLibrary: FunctionMap = {
       if (reference.type === ValueType.array) {
         for (const column of reference.value) {
           for (const cell of column) {
-            if (UnionIsMetadata(cell) && cell.type === ValueType.object && cell.value === undefined) {
+            if (UnionIsMetadata(cell) && cell.type === ValueType.object && cell.value.value === undefined) {
               count++;
             }
           }

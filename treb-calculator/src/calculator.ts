@@ -716,6 +716,22 @@ export class Calculator extends Graph {
               case 'format':
                 return reference.value.format ? // || ReferenceError;
                   { type: ValueType.string, value: reference.value.format } : ReferenceError();
+              case 'row':
+                if (reference.value.address) {
+                  return {
+                    type: ValueType.number,
+                    value: reference.value.address.row + 1,
+                  };
+                }
+                break;
+              case 'col':
+                if (reference.value.address) {
+                  return {
+                    type: ValueType.number,
+                    value: reference.value.address.column + 1,
+                  };
+                }
+                break;
               case 'address': 
                 {
                   let sheet_name = '';

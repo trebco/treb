@@ -1855,28 +1855,6 @@ export const BaseFunctionLibrary: FunctionMap = {
           return ReferenceError(); 
         }
         
-        // console.info({rng});
-
-        /*
-        if (return_array.type === ValueType.array) {
-
-          // subset array. this is constructed, so we can take ownership
-          // and modify it, although it would be safer to copy. also, what's
-          // the cost of functional vs imperative loops these days?
-
-          const end_row = typeof height === 'number' ? (rows + height) : undefined;
-          const end_column = typeof width === 'number' ? (columns + width) : undefined;
-
-          const result: UnionValue = {
-            type: ValueType.array,
-            value: reference.value.slice(rows, end_row).map(row => row.slice(columns, end_column)),
-          };
-
-          return result;
-
-        }
-        */
-
         // FIXME: we could I suppose be more graceful about single values
         // if passed instead of arrays
 
@@ -2145,22 +2123,10 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
-
-    /*
-     * unsaid anywhere (that I can locate) aboud XLOOKUP is that lookup 
-     * array must be one-dimensional. it can be either a row or a column,
-     * but one dimension must be one. that simplifies things quite a bit.
-     * 
-     * there's a note in the docs about binary search over the data -- 
-     * that might explain how inexact VLOOKUP works as well. seems an odd
-     * choice but maybe back in the day it made sense
-     * /
-    XLOOKUP: {
+    XMATCH: {
       arguments: [
         { name: 'Lookup value', },
         { name: 'Lookup array',  },
-        { name: 'Return array', address: true, },
-        { name: 'Not found', boxed: true },
         { name: 'Match mode', default: 0, },
         { name: 'Search mode', default: 1, },
       ],
@@ -2169,18 +2135,17 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: (
           lookup_value: IntrinsicValue, 
           lookup_array: IntrinsicValue[][], 
-          return_array: string,
-          not_found?: UnionValue,
           match_mode = 0,
           search_mode = 1,
           ): UnionValue => {
 
-        console.info({return_array});
-            
+        ////////
 
+        let rng: Area|undefined;
+        
         // FIXME: we could I suppose be more graceful about single values
         // if passed instead of arrays
-        
+
         if (!Array.isArray(lookup_array)) {
           console.info("lookup is not an array");
           return ValueError();
@@ -2188,7 +2153,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         const first = lookup_array[0];
         if (!Array.isArray(first)) {
-          console.info("lookip is not a 2d array");
+          console.info("lookup is not a 2d array");
           return ValueError();
         }
 
@@ -2197,56 +2162,16 @@ export const BaseFunctionLibrary: FunctionMap = {
           return ValueError();
         }
 
-        // FIXME: is it required that the return array be (at least) the 
-        // same size? we can return undefineds, but maybe we should error
-
-        if (!Array.isArray(return_array)) {
-          console.info("return array is not an array");
-          return ValueError();
-        }
-
         const transpose = (lookup_array.length === 1);
         if (transpose) {
           lookup_array = Utils.TransposeArray(lookup_array);
-          return_array = Utils.TransposeArray(return_array);
         }
 
         // maybe reverse...
 
         if (search_mode < 0) {
           lookup_array.reverse();
-          return_array.reverse();
         }
-
-        //
-        // return value at index, transpose if necessary, and return
-        // an array. we might prefer to return a scalar if there's only 
-        // one value, not sure what's the intended behavior
-        // 
-        const ReturnIndex = (index: number): UnionValue => {
-
-          const values = return_array[index];
-
-          if (!values) {
-            return { type: ValueType.undefined };
-          }
-          
-          if (!Array.isArray(values)) {
-            return Box(values);
-          }
-
-          let boxes = [values.map(value => Box(value))];
-          
-          if (transpose) {
-            boxes = Utils.TransposeArray(boxes);
-          }
-
-          return {
-            type: ValueType.array,
-            value: boxes,
-          }
-
-        };
       
         // if value is not a string, then we can ignore wildcards.
         // in that case convert to exact match.
@@ -2254,6 +2179,13 @@ export const BaseFunctionLibrary: FunctionMap = {
         if (match_mode === 2 && typeof lookup_value !== 'string') {
           match_mode = 0;
         }
+
+        const ReturnIndex = (index: number): UnionValue => {
+          return {
+            type: ValueType.number,
+            value: index + 1,
+          };
+        };
 
         // what does inexact matching mean in this case if the lookup
         // value is a string or boolean? (...)
@@ -2322,6 +2254,7 @@ export const BaseFunctionLibrary: FunctionMap = {
               if (typeof value === 'string') {
                 value = value.toLowerCase();
               }
+
               if (value === lookup_value) {
                 return ReturnIndex(i);
               }
@@ -2334,11 +2267,10 @@ export const BaseFunctionLibrary: FunctionMap = {
         // FIXME: if we're expecting to return an array maybe we should
         // pack it up as an array? if it's not already an array? (...)
 
-        return (not_found && not_found.type !== ValueType.undefined) ? not_found : NAError();
+        return NAError();
 
       },
     },
-    */
 
     /**
      * copied from HLOOKUP, fix that one first
