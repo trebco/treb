@@ -67,6 +67,33 @@ export const InformationFunctionLibrary: FunctionMap = {
     }
   },
 
+  CountBlank: {
+    description: 'Returns the number of empty cells in a reference',
+    arguments: [{
+      name: 'Reference',
+      metadata: true,
+    }],
+    fn: (reference: UnionValue) => {
+      let count = 0;
+      if (reference.type === ValueType.array) {
+        for (const column of reference.value) {
+          for (const cell of column) {
+            if (UnionIsMetadata(cell) && cell.type === ValueType.object && cell.value === undefined) {
+              count++;
+            }
+          }
+        }
+      }
+      else if (UnionIsMetadata(reference) && reference.type === ValueType.object && reference.value === undefined) {
+        count++;
+      }
+      return {
+        type: ValueType.number,
+        value: count,
+      }
+    },
+  },
+
   IsBlank: {
     description: 'Returns true if the reference is blank',
     arguments:  [{
