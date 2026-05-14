@@ -125,13 +125,19 @@ import './tests/web-basic';
 */
 
 let verbose = false;
-for (const arg of process.argv) {
+let list: string[] = [];
+
+for (let i = 0; i < process.argv.length; i++) {
+  const arg = process.argv[i];
   if (arg === '--verbose') {
     verbose = true;
   }
+  else if (arg === '--function' || arg === '-f') {
+    list.push((process.argv[++i] || '').toUpperCase());
+  }
 }
 
-const results = await RunAllTests(verbose);
+const results = await RunAllTests(verbose, list);
 await fs.writeFile('test-results.json', JSON.stringify(results, undefined, 2), { encoding: 'utf-8' });
 
 await RunReport();

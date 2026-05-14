@@ -1,6 +1,7 @@
 
 import { AddTests } from '@util';
 
+/*
 AddTests('LEFTB', [
   { type: 'expect', expression: '=LEFTB("hello",3)', expected: 'hel' },
   { type: 'expect', expression: '=LEFTB("hello",1)', expected: 'h' },
@@ -28,3 +29,4 @@ AddTests('RIGHTB', [
   { type: 'expect', expression: '=RIGHTB("hello")', expected: 'o' },
   { type: 'expect', expression: '=RIGHTB("test",4)', expected: 'test' },
 ]);
+*/

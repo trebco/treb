@@ -62,6 +62,11 @@ export interface CustomTest {
 
 export type TestType = ExpectTest | ApproximateTest | CustomTest;
 
+interface EvalResponse {
+  success: boolean;
+  received?: CellValue|CellValue[][];
+}
+
 /**
  * run a function and match against an expected result.
  * only use this function if the result is known and 
@@ -72,21 +77,30 @@ export type TestType = ExpectTest | ApproximateTest | CustomTest;
  * and use dot as the decimal separator for numbers.
  * 
  */
-function Expect(spreadsheet: EmbeddedSpreadsheet, test: ExpectTest): boolean|'name' {
+function Expect(spreadsheet: EmbeddedSpreadsheet, test: ExpectTest): EvalResponse {
   
   const result = EvaluateTranspose(spreadsheet, test.expression);
   if (result === 'NAME') {
-    return 'name';
+    return { success: false, received: 'name' };
   }
 
   if (Array.isArray(result)) {
-    return JSON.stringify(result) === JSON.stringify(test.expected);
+    return {
+      success: JSON.stringify(result) === JSON.stringify(test.expected),
+      received: result,
+    };
   }
   else if (typeof result === 'object') {
-    return JSON.stringify(result) === JSON.stringify(test.expected);
+    return {
+      success: JSON.stringify(result) === JSON.stringify(test.expected),
+      received: result,
+    };
   }
 
-  return (result === test.expected);
+  return {
+    success: (result === test.expected),
+    received: result,
+  };
 
 }
 
@@ -95,29 +109,36 @@ function Expect(spreadsheet: EmbeddedSpreadsheet, test: ExpectTest): boolean|'na
  * expected bounds. this is intended for calculations that are unreliable
  * due to IEEE 754 noise.
  */
-function Approximate(spreadsheet: EmbeddedSpreadsheet, test: ApproximateTest): boolean|'name' {
+function Approximate(spreadsheet: EmbeddedSpreadsheet, test: ApproximateTest): EvalResponse {
   const result = EvaluateTranspose(spreadsheet, test.expression);
   if (result === 'NAME') {
-    return 'name';
+    return { success: false, received: 'name' };
   }
-  if (typeof result !== 'number') return false;
-  return Math.abs(result - test.expected) <= test.epsilon;
+  if (typeof result !== 'number') {
+    return { success: false, received: result };
+  }
+  return { success: Math.abs(result - test.expected) <= test.epsilon, received: result };
 }
 
 /**
  * test with a custom evaluator. we'll run the function X times
  * and call the evaluator with the returned values, as an array
  */
-function Custom(spreadsheet: EmbeddedSpreadsheet, test: CustomTest): boolean|'name' {
+function Custom(spreadsheet: EmbeddedSpreadsheet, test: CustomTest): EvalResponse {
   const results: EvaluateResultType[] = [];
   for (let i = 0; i < test.count; i++) {
     const result = EvaluateTranspose(spreadsheet, test.expression);
     if (result === 'NAME') {
-      return 'name';
+      return {
+        success: false,
+        received: 'name'
+      }
     }
     results.push(result);
   }
-  return test.validate(results);
+  return {
+    success: test.validate(results),
+  }
 }
 
 type SetRangeFunction = (address_or_range: string, data: CellValue|CellValue[][]) => void;
@@ -162,7 +183,7 @@ export interface TestResultsType {
   succeeded: number;
   failed: number;
   error?: 'name';
-  failed_tests?: TestType[];
+  failed_tests?: (TestType & {received?: CellValue|CellValue[][]})[];
 }
 
 /**
@@ -172,10 +193,10 @@ export interface TestResultsType {
 function RunTestsForKey(spreadsheet: EmbeddedSpreadsheet, key: string, tests: TestType[]): TestResultsType {
   
   const results: TestResultsType = { succeeded: 0, failed: 0 };
-  const failed_tests: TestType[] = [];
+  const failed_tests: TestResultsType['failed_tests'] = [];
 
   for (const [index, test] of tests.entries()) {
-    let result: boolean|'name' = false;
+    let result: EvalResponse|undefined;
     switch (test.type) {
       case 'custom':
         result = Custom(spreadsheet, test);
@@ -190,19 +211,11 @@ function RunTestsForKey(spreadsheet: EmbeddedSpreadsheet, key: string, tests: Te
         break;
     }
 
-    if (result === 'name') {
-      // console.info(`Tests for "${key}" returned NAME error`);
-      return {
-        succeeded: 0, failed: tests.length, error: 'name',
-      }
-    }
-
-    if (result) {
+    if (result?.success) {
       results.succeeded++;
     }
     else {
-      // console.info(`Test ${index} for "${key}" failed`);
-      failed_tests.push({ ...test });
+      failed_tests.push({ ...test, received: result.received });
     }
 
   }
@@ -228,7 +241,7 @@ function SetRangeFunctionImpl(spreadsheet: EmbeddedSpreadsheet, address_or_range
 /**
  * run all tests and return composite results
  */
-export async function RunAllTests(verbose = false) {
+export async function RunAllTests(verbose = false, list: string[] = []) {
 
   const results: KeyResultsType[] = [];
 
@@ -241,6 +254,13 @@ export async function RunAllTests(verbose = false) {
   await spreadsheet.ready;
 
   for (const [key, groups] of global_tests.entries()) {
+
+    if (list.length) {
+      const check = key.toUpperCase();
+      if (!list.includes(check)) {
+        continue;
+      }
+    }
 
     if (verbose) {
       console.info(`running tests for key ${key}`)

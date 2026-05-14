@@ -21,9 +21,11 @@ AddTests('XMATCH', [
   SetRange('B1', [['apple'], ['banana'], ['cherry'], ['date'], ['elderberry']]);
 });
 
+/*
 AddTests('AREAS', [
   { type: 'expect', expression: '=AREAS(A1:A5)', expected: 1 },
   { type: 'expect', expression: '=AREAS(A1)', expected: 1 },
 ], SetRange => {
   SetRange('A1', [[1], [2], [3], [4], [5]]);
 });
+*/

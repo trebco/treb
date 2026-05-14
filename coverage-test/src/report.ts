@@ -1,12 +1,13 @@
 
 import type { TestType } from '@util';
 import fs from 'node:fs/promises';
+import type { CellValue } from '../../dist/treb';
 
 interface TestResults {
   succeeded: number;
   failed: number;
   error?: 'name';
-  failed_tests?: TestType[];
+  failed_tests?: (TestType & {received?: CellValue|CellValue[][]})[];
 }
 
 interface TestEntry {
@@ -59,7 +60,7 @@ export async function RunReport() {
     const total = succeeded + failed;
 
     let status: Status;
-    if (error === 'name') {
+    if (failed > 0 && failed_tests?.length && failed_tests.every(test => test.received === 'name')) {
       status = 'not-implemented';
     } else if (failed > 0) {
       status = 'fail';
@@ -67,7 +68,8 @@ export async function RunReport() {
       status = 'pass';
     }
 
-    rows.push({ name: fn.name, category: fn.category, status, passed: succeeded, total, failed_tests });
+    rows.push({ name: fn.name, category: fn.category, status, passed: succeeded, total, 
+      failed_tests: status === 'fail' ? failed_tests: [] });
   }
 
   const categories = [...new Set(csvFunctions.map(f => f.category))];
