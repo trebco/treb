@@ -593,6 +593,12 @@ export const FinanceFunctionLibrary: FunctionMap = {
       { name: 'Type', default: 0 },
     ],
     fn: (rate: number, periods: number, payment: number, fv = 0, type = 0): UnionValue => {
+      if (rate === 0) {
+        return { 
+          type: ValueType.number,
+          value: -(fv + payment * periods),
+        }
+      }
       if (type) {
         payment += (fv * (1 / ((1 + rate) * ((Math.pow(1 + rate, periods) -1)/rate))));
         return {
@@ -640,6 +646,12 @@ export const FinanceFunctionLibrary: FunctionMap = {
       { name: 'Type', default: 0 },
     ],
     fn: (rate: number, periods: number, pv: number, fv = 0, type = 0): UnionValue => {
+      if (rate === 0) {
+        return {
+          type: ValueType.number,
+          value: -(pv+fv)/periods,
+        }
+      }
       return { 
         type: ValueType.number, 
         value: payment_function(rate, periods, pv, fv, type),
