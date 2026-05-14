@@ -336,51 +336,6 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     }
   },
 
-  'Z.Test': {
-    arguments: [
-      { name: 'Array', boxed: true,  },
-      { name: 'x', boxed: true, unroll: true, },
-      { name: 'Sigma', boxed: true, unroll: true, },
-    ],
-    fn: (array: UnionValue, x: UnionValue, sigma?: UnionValue) => {
-
-      const data: number[] = [];
-
-      if (array.type === ValueType.array) {
-        for (const row of array.value) {
-          for (const cell of row) { 
-            if (cell.type === ValueType.number) {
-              data.push(cell.value);
-            }
-          }
-        }
-      }
-      else if (array.type === ValueType.number) {
-        data.push(array.value);
-      }
-
-      if (data.length && x.type === ValueType.number) {
-
-        let average = 0; 
-        const n = data.length;
-        for (const value of data) { average += value; }
-        average /= n;
-
-        const s = sigma?.type === ValueType.number ? sigma.value : 
-          Math.sqrt(Variance(data, true));
-
-        return {
-          type: ValueType.number,
-          value: 1 - norm_dist((average - x.value) / (s / Math.sqrt(n)), 0, 1, true),
-        };
-
-      }
-
-      return ArgumentError();
-
-    },
-  },
-
   'Beta.Dist': {
     description: 'beta distribution',
     arguments: [
