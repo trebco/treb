@@ -48,6 +48,8 @@ import {
   Style,
 } from 'treb-base-types';
 
+import { Heuristics } from 'treb-data-model';
+
 import type { ExpressionUnit, RenderOptions, UnitAddress } from 'treb-parser';
 import { 
   DecimalMarkType, 
@@ -2063,6 +2065,31 @@ export class Grid extends GridBase {
     }
 
     this.ExecCommand(command);
+  }
+
+  /** 
+   * this version selects blocks first, if the block is already selected
+   * then it selects everything
+   */
+  public SelectAll2(): void {
+    if (this.primary_selection.empty) {
+      
+      // no primary selection, select everything
+      this.Select(this.primary_selection, new Area({ row: Infinity, column: Infinity }), undefined, true);
+    }
+    else {
+
+      // expand region. if it's different, select that. otherwise select everything
+      const expanded = Heuristics.ExpandRegion(this.primary_selection.area, this.active_sheet);
+      if (expanded.Equals(this.primary_selection.area)) {
+        this.Select(this.primary_selection, new Area({ row: Infinity, column: Infinity }), undefined, true);
+      }
+      else {
+        this.Select(this.primary_selection, expanded, undefined, true);
+      }
+      
+    }
+    this.RenderSelections();
   }
 
   public SelectAll(): void {
@@ -5283,9 +5310,7 @@ export class Grid extends GridBase {
             break;
 
           case 'a':
-            // this.Select(this.primary_selection, new Area({ row: Infinity, column: Infinity }), undefined, true);
-            // this.RenderSelections();
-            this.SelectAll();
+            this.SelectAll2();
             break;
 
           // handle Ctrl+Alt+0 = select nothing

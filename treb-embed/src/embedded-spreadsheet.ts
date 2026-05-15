@@ -92,6 +92,7 @@ import {
 import { EventSource, ValidateURI } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat, LotusDate, UnlotusDate } from 'treb-format';
 
+import { Heuristics } from 'treb-data-model';
 
 
 // --- local -------------------------------------------------------------------
@@ -1899,6 +1900,134 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
   }
 
+  public InsertChartWithHeuristics(func: string, initial_area?: Area) {
+
+    if (!initial_area) {
+      const selection = this.grid.GetSelection();
+      if (selection && !selection.empty) {
+        initial_area = selection.area.Clone();
+      }
+      else {
+        return true; // can't do anything, but we handled it
+      }
+    }
+
+    if (/(?:line.chart|column.chart|bar.chart)/i.test(func)) {
+
+      // only do the expand thing if a single cell is selected.
+      // otherwise it's probably user intent to use the selected
+      // data.
+
+      let area = (initial_area.rows > 1 || initial_area.columns > 1) ?
+        initial_area.Clone() :
+        Heuristics.ExpandRegion(initial_area, this.grid.active_sheet);
+
+      this.grid.SelectRange(area);
+      const headers = Heuristics.HasHeaders(area, this.grid.active_sheet);
+
+      let row_headers: Area|undefined;
+
+      if (headers.row_headers && /(?:column|bar)/i.test(func)) {
+
+        // for a column chart, pull out the row headers as labels
+        row_headers = area.GetColumn(area.start.column);
+        area.RemoveHeaderColumn();
+
+      }
+
+      if (headers.column_headers) {
+
+        row_headers?.RemoveHeaderRow();
+
+        // if there's one column, set a chart title
+        // if there are more than one, set series titles
+
+        if (area.columns === 1) {
+          let column = area.Clone().RemoveHeaderRow();
+          let title = area.Clone().Resize(1, 1);
+          this.InsertAnnotation(`=${func}(${column.spreadsheet_label},${row_headers?.spreadsheet_label || ''},${title.spreadsheet_label})`, undefined, undefined, ',');
+        }
+        else {
+          const series: string[] = [];
+          for (let column = area.start.column, index = 1; column <= area.end.column; column++, index++) {
+            let column_area = area.GetColumn(column);
+            const title = column_area.Clone().Resize(1,1);
+            column_area.RemoveHeaderRow();
+            const cell = this.grid.active_sheet.CellData(title.start);
+            
+            const column_label = cell.calculated_type === ValueType.string || cell.type === ValueType.string ? 
+                title.spreadsheet_label : `"Series ${index}"`;
+
+            series.push(`Series(${column_label},,${column_area.spreadsheet_label})`);
+          }
+          this.InsertAnnotation(`=${func}(Group(${series.join(', ')}),${row_headers?.spreadsheet_label || ''},"Chart Title")`, undefined, undefined, ',');
+        }
+      }
+      else {
+        if (area.columns === 1) {
+          this.InsertAnnotation(`=${func}(${area.spreadsheet_label},${row_headers?.spreadsheet_label || ''},"Chart Title")`, undefined, undefined, ',');
+        }
+        else {
+          const series: string[] = [];
+          for (let column = area.start.column, index = 1; column <= area.end.column; column++, index++) {
+            let column_area = area.GetColumn(column);
+            let column_label = ''; // "Series ${index}"
+            series.push(`Series(${column_label},,${column_area.spreadsheet_label})`);
+          }
+          this.InsertAnnotation(`=${func}(Group(${series.join(', ')}),${row_headers?.spreadsheet_label || ''},"Chart Title")`, undefined, undefined, ',');
+        }
+      }
+
+      return true; // handled
+
+    }
+    else if (/donut.chart/i.test(func)) {
+
+      let area = initial_area.Clone();
+
+      if (initial_area.count === 1) {
+        let temp = Heuristics.ExpandRegion(initial_area, this.grid.active_sheet);
+        if (temp.columns > 1) {
+          const check = Heuristics.HasHeaders(temp, this.grid.active_sheet);
+          if (check.row_headers) {
+            // limit to two columns
+            temp = new Area(temp.start, { row: temp.end.row, column: temp.start.column + 1});
+          }
+          else {
+            // limit tp one column
+            temp = new Area(temp.start, { row: temp.end.row, column: temp.start.column + 0});
+          }
+        }
+        area = temp;
+      }
+
+      this.grid.SelectRange(area);
+      const headers = Heuristics.HasHeaders(area, this.grid.active_sheet);
+
+      let row_headers: Area|undefined;
+
+      if (headers.row_headers) {
+        row_headers = area.GetColumn(area.start.column);
+        area.RemoveHeaderColumn();
+      }
+
+      let title = '';
+      if (headers.column_headers) {
+        title = area.Clone().Resize(1,1).spreadsheet_label;
+        area.RemoveHeaderRow();
+        row_headers?.RemoveHeaderRow();
+      }
+
+      this.InsertAnnotation(`=${func}(${area.spreadsheet_label},${row_headers?.spreadsheet_label||''},${title || `"Chart Title"`})`, undefined, undefined, ',');            
+
+      return true; // handled
+
+    }
+
+    return false;
+
+  }
+
   //////////////////////////////////////////////////////////////////////////////
 
   /**
@@ -1960,17 +2089,26 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     }
 
-    const insert_annotation = (func: string) => {
+    const insert_annotation = (func: string, use_heuristics = true) => {
       const selection = this.grid.GetSelection();
       if (selection && !selection.empty) {
-        const label = selection.area.spreadsheet_label;
 
+        if (use_heuristics) {
+          if (this.InsertChartWithHeuristics(func, selection.area)) {
+            return; // handled
+          }
+        }
+
+        // fall back
+
+        const label = selection.area.spreadsheet_label;
         if (func === 'Scatter.Plot' || func === 'Scatter.Line' || func === 'Box.Plot') {
           this.InsertAnnotation(`=${func}(Series(,,${label}),"${label}")`, undefined, undefined, ',');
         }
         else {
           this.InsertAnnotation(`=${func}(${label},,"${label}")`, undefined, undefined, ',');
         }
+
       }
     };
 
@@ -4594,6 +4732,20 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     return this.calculator.Evaluate(
         expression, this.grid.active_sheet, options);
    
+  }
+
+  public ExpandRegion() {
+
+    const sel = this.grid.GetSelection();
+    if (sel.empty) {
+      return;
+    }
+
+    const sheet = this.grid.active_sheet;
+    const area = Heuristics.ExpandRegion(sel.area, sheet);
+
+    this.Select(area);
+
   }
 
   /**

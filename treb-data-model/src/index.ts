@@ -36,3 +36,4 @@ export * from './data-validation';
 export * from './types';
 export * from './language-model';
 
+export * as Heuristics from './heuristics';

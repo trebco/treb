@@ -664,6 +664,42 @@ export class Area implements IArea {
     }
   }
 
+  /** utility for removing headers from dataset selection */
+  public RemoveHeaderRow() {
+    this.start_.row++;
+    return this;
+  }
+
+  /** utility for removing headers from dataset selection */
+  public RemoveHeaderColumn() {
+    this.start_.column++;
+    return this;
+  }
+
+  /** returns one column of the area */
+  public GetColumn(column: number) {
+    if (column < this.start.column || column > this.end.column) {
+      throw new Error('invalid column');
+    }
+    return new Area({ 
+      row: this.start.row, column,
+    }, {
+      row: this.end.row, column
+    });
+  }
+
+  /** returns one column of the area */
+  public GetRow(row: number) {
+    if (row < this.start.row || row > this.end.row) {
+      throw new Error('invalid row');
+    }
+    return new Area({ 
+      row, column: this.start.column,
+    }, {
+      row, column: this.end.column,
+    });
+  }
+
   /** Resizes range in place to be the requested shape */
   public Reshape(rows: number, columns: number): Area {
     this.end_.row = this.start_.row + rows - 1;
