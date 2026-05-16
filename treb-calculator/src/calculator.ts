@@ -1574,7 +1574,6 @@ export class Calculator extends Graph {
           reference.SetCalculationError('LOOP');
           return recalculate_list;
         }
-
       }
       
       const { error } = this.AttachSpillData(area, cells);

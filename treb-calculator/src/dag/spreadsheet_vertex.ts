@@ -112,10 +112,11 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
       if (entry) {
         for (const edge of entry.edges_out.values()) {
           if (edge as SpreadsheetVertex === source) {
+            console.info("== source");
             return false;
           }
           expanded.push(edge as SpreadsheetVertex);
-          queue.push(...Array.from(edge.edges_out.values()) as SpreadsheetVertex[]);
+          queue.push(edge as SpreadsheetVertex);
         }
       }
     }
