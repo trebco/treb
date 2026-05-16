@@ -73,7 +73,7 @@ export class FunctionLibrary {
         }
 
         const descriptor = map[name] as ExtendedFunctionDescriptor;
-        descriptor.canonical_name = name;
+        descriptor.canonical_name = name.toUpperCase();
 
         if (!descriptor.unrolled) {
 

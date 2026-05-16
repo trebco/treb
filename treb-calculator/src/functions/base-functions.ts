@@ -2672,6 +2672,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    /*
     HexToDec: {
       arguments: [{ description: 'hexadecimal string', unroll: true }],
       fn: (hex: string): UnionValue => {
@@ -2685,6 +2686,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         return { type: ValueType.string, value: num.toString(16) };
       },
     },
+    */
 
     Checkbox: {
       arguments: [
