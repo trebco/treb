@@ -21,6 +21,7 @@
 
 import { Area, ValueType, type IArea } from 'treb-base-types';
 import { Sheet } from './sheet';
+import { type ConstantStep, DetectConstantStep } from './timeline';
 
 /*
  * collecting various heuristics for data layout detection. not sure where
@@ -253,6 +254,43 @@ export function FindTrendValues(area: Area, timeline?: Area): Area|undefined {
   return undefined;
 }
 
+/**
+ * check if the area is all numbers. returns the array of numbers, or undefined
+ * on any non-numeric value.
+ */
+export function AllNumeric(area: Area, sheet: Sheet): number[]|undefined {
 
+  const numbers: number[] = [];
+
+  for (const cell of area) {
+    const data = sheet.CellData(cell);
+    if (data.calculated_type === ValueType.number) {
+      numbers.push(data.calculated as number);
+    }
+    else if (data.type === ValueType.number) {
+      numbers.push(data.value as number);
+    }
+    else {
+      return undefined;
+    }
+  }
+
+  return numbers;
+
+}
+
+/**
+ * this method assumes there's a single column, headers already removed
+ */
+export function IsTimeline(area: Area, sheet: Sheet): ConstantStep | undefined {
+
+  const numbers = AllNumeric(area, sheet);
+  if (numbers) {
+    return DetectConstantStep(numbers);
+  }
+
+  return undefined;
+
+}
 
 
