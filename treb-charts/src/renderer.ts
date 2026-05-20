@@ -85,6 +85,7 @@ export class ChartRenderer {
     });
     this.svg_node.style.overflow = 'hidden';
     this.svg_node.style.position = 'relative';
+    this.svg_node.style.display = 'block';
     this.svg_node.style.width = '100%';
     this.svg_node.style.height = '100%';
 
@@ -268,12 +269,18 @@ export class ChartRenderer {
   }
 
   public Resize(): void {
-    const bounds = this.svg_node.getBoundingClientRect();
-    this.svg_node.setAttribute('width', bounds.width.toString());
-    this.svg_node.setAttribute('height', bounds.height.toString());
+    
+    const width = this.svg_node.clientWidth;
+    const height = this.svg_node.clientHeight;
+    
+    // const bounds = this.svg_node.getBoundingClientRect();
+    
+    this.svg_node.setAttribute('width', width.toString());
+    this.svg_node.setAttribute('height', height.toString());
+
     this.size = {
-      width: bounds.width,
-      height: bounds.height,
+      width: width,
+      height: height,
     };
   }
 
