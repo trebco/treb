@@ -1900,7 +1900,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
   }
 
-  public InsertChartWithHeuristics(func: string, initial_area?: Area) {
+  public InsertChartWithHeuristics(func: string, initial_area?: Area, target_range?: RangeReference) {
 
     if (!initial_area) {
       const selection = this.grid.GetSelection();
@@ -1945,7 +1945,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         if (area.columns === 1) {
           let column = area.Clone().RemoveHeaderRow();
           let title = area.Clone().Resize(1, 1);
-          this.InsertAnnotation(`=${func}(${column.spreadsheet_label},${row_headers?.spreadsheet_label || ''},${title.spreadsheet_label})`, undefined, undefined, ',');
+          this.InsertAnnotation(`=${func}(${column.spreadsheet_label},${row_headers?.spreadsheet_label || ''},${title.spreadsheet_label})`, undefined, target_range, ',');
         }
         else {
           const series: string[] = [];
@@ -1960,12 +1960,12 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
             series.push(`Series(${column_label},,${column_area.spreadsheet_label})`);
           }
-          this.InsertAnnotation(`=${func}(Group(${series.join(', ')}),${row_headers?.spreadsheet_label || ''},"Chart Title")`, undefined, undefined, ',');
+          this.InsertAnnotation(`=${func}(Group(${series.join(', ')}),${row_headers?.spreadsheet_label || ''},"Chart Title")`, undefined, target_range, ',');
         }
       }
       else {
         if (area.columns === 1) {
-          this.InsertAnnotation(`=${func}(${area.spreadsheet_label},${row_headers?.spreadsheet_label || ''},"Chart Title")`, undefined, undefined, ',');
+          this.InsertAnnotation(`=${func}(${area.spreadsheet_label},${row_headers?.spreadsheet_label || ''},"Chart Title")`, undefined, target_range, ',');
         }
         else {
           const series: string[] = [];
@@ -1974,7 +1974,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             let column_label = ''; // "Series ${index}"
             series.push(`Series(${column_label},,${column_area.spreadsheet_label})`);
           }
-          this.InsertAnnotation(`=${func}(Group(${series.join(', ')}),${row_headers?.spreadsheet_label || ''},"Chart Title")`, undefined, undefined, ',');
+          this.InsertAnnotation(`=${func}(Group(${series.join(', ')}),${row_headers?.spreadsheet_label || ''},"Chart Title")`, undefined, target_range, ',');
         }
       }
 
@@ -2018,7 +2018,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         row_headers?.RemoveHeaderRow();
       }
 
-      this.InsertAnnotation(`=${func}(${area.spreadsheet_label},${row_headers?.spreadsheet_label||''},${title || `"Chart Title"`})`, undefined, undefined, ',');            
+      this.InsertAnnotation(`=${func}(${area.spreadsheet_label},${row_headers?.spreadsheet_label||''},${title || `"Chart Title"`})`, undefined, target_range, ',');            
 
       return true; // handled
 
