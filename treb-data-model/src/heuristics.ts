@@ -293,4 +293,4 @@ export function IsTimeline(area: Area, sheet: Sheet): ConstantStep | undefined {
 
 }
 
-
+export { DetectConstantStep, ProjectTimeline } from './timeline';
