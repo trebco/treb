@@ -1,10 +1,20 @@
 
 /**
- * step detected in a numeric series.
+ * Day-of-month rule for a monthly step, decided once at detection time and
+ * reused by ProjectTimeline so projection never has to re-analyze the input.
+ */
+export type MonthlyDayRule =
+  | { kind: 'eom' }
+  | { kind: 'same'; day: number }
+  | { kind: 'capped'; max_intended: number };
+
+/**
+ * step detected in a numeric series. `anchor` is the last (max-sorted) value
+ * of the input — projection extends after the anchor.
  */
 export type ConstantStep =
-  | { kind: 'numeric'; step: number }
-  | { kind: 'monthly'; months: number };
+  | { kind: 'numeric'; step: number; anchor: number }
+  | { kind: 'monthly'; months: number; anchor: number; day_rule: MonthlyDayRule };
 
 /**
  * Detect the constant step in a list of numbers.
@@ -51,7 +61,7 @@ function DetectNumeric(
     if (Math.abs(k - Math.round(k)) > tolerance) return undefined;
   }
 
-  return { kind: 'numeric', step };
+  return { kind: 'numeric', step, anchor: sorted[sorted.length - 1] };
 }
 
 function FuzzyGCD(a: number, b: number, absTol: number): number {
@@ -113,7 +123,15 @@ function DetectMonthly(sorted: number[]): ConstantStep | undefined {
   if (months === 0) return undefined;
   if (!diffs.every((d) => d % months === 0)) return undefined;
 
-  return { kind: 'monthly', months };
+  // Precedence: EOM (most specific) → same-day → capped. Matches the
+  // accept-order implied above; the projector relies on this choice.
+  const day_rule: MonthlyDayRule = allEom
+    ? { kind: 'eom' }
+    : allSameDay
+      ? { kind: 'same', day: firstDay }
+      : { kind: 'capped', max_intended: maxIntended };
+
+  return { kind: 'monthly', months, anchor: sorted[sorted.length - 1], day_rule };
 }
 
 function IntGCD(a: number, b: number): number {
@@ -129,4 +147,58 @@ function ExcelSerialToDate(serial: number): Date {
   // serials ≥ 61, which covers virtually all real-world data.
   const epoch = Date.UTC(1899, 11, 30);
   return new Date(epoch + Math.round(serial) * 86400000);
+}
+
+function DateToExcelSerial(year: number, month_index: number, day: number): number {
+  const epoch = Date.UTC(1899, 11, 30);
+  return Math.round((Date.UTC(year, month_index, day) - epoch) / 86400000);
+}
+
+// ─── Projection ─────────────────────────────────────────────────────────────
+
+/**
+ * Project the next `count` values of a detected timeline. Returns values
+ * strictly after `step.anchor` (the anchor itself is not included).
+ *
+ * The step is assumed to be a direct output of DetectConstantStep; the
+ * anchor and (for monthly) day_rule it carries are trusted as-is.
+ */
+export function ProjectTimeline(step: ConstantStep, count: number): number[] {
+  if (count <= 0) return [];
+
+  if (step.kind === 'numeric') {
+    return Array.from(
+      { length: count },
+      (_, i) => step.anchor + step.step * (i + 1),
+    );
+  }
+
+  const start = ExcelSerialToDate(step.anchor);
+  const start_year = start.getUTCFullYear();
+  const start_month = start.getUTCMonth();
+
+  const out: number[] = [];
+  for (let i = 1; i <= count; i++) {
+    const total = start_year * 12 + start_month + step.months * i;
+    const target_year = Math.floor(total / 12);
+    const target_month = total - target_year * 12;
+    const last_day = new Date(Date.UTC(target_year, target_month + 1, 0)).getUTCDate();
+
+    let day: number;
+    switch (step.day_rule.kind) {
+      case 'eom':
+        day = last_day;
+        break;
+      case 'same':
+        // Cap on overflow (e.g. day 31 in February falls back to month-end).
+        day = Math.min(step.day_rule.day, last_day);
+        break;
+      case 'capped':
+        day = Math.min(step.day_rule.max_intended, last_day);
+        break;
+    }
+
+    out.push(DateToExcelSerial(target_year, target_month, day));
+  }
+  return out;
 }
