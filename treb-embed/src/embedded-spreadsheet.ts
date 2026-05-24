@@ -1912,6 +1912,15 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       }
     }
 
+    let active_sheet = typeof initial_area.start.sheet_id === 'number' ?
+      this.model.sheets.Find(initial_area.start.sheet_id) : this.grid.active_sheet;
+
+    if (!active_sheet) {
+      throw new Error('invalid sheet id');
+    }
+
+    initial_area = active_sheet.RealArea(initial_area);
+    
     if (/(?:line.chart|column.chart|bar.chart)/i.test(func)) {
 
       // only do the expand thing if a single cell is selected.
@@ -1920,10 +1929,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       let area = (initial_area.rows > 1 || initial_area.columns > 1) ?
         initial_area.Clone() :
-        Heuristics.ExpandRegion(initial_area, this.grid.active_sheet);
+        Heuristics.ExpandRegion(initial_area, active_sheet);
 
       this.grid.SelectRange(area);
-      const headers = Heuristics.HasHeaders(area, this.grid.active_sheet);
+      const headers = Heuristics.HasHeaders(area, active_sheet);
 
       let row_headers: Area|undefined;
 
@@ -1953,7 +1962,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             let column_area = area.GetColumn(column);
             const title = column_area.Clone().Resize(1,1);
             column_area.RemoveHeaderRow();
-            const cell = this.grid.active_sheet.CellData(title.start);
+            const cell = active_sheet.CellData(title.start);
             
             const column_label = cell.calculated_type === ValueType.string || cell.type === ValueType.string ? 
                 title.spreadsheet_label : `"Series ${index}"`;
@@ -1986,9 +1995,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       let area = initial_area.Clone();
 
       if (initial_area.count === 1) {
-        let temp = Heuristics.ExpandRegion(initial_area, this.grid.active_sheet);
+        let temp = Heuristics.ExpandRegion(initial_area, active_sheet);
         if (temp.columns > 1) {
-          const check = Heuristics.HasHeaders(temp, this.grid.active_sheet);
+          const check = Heuristics.HasHeaders(temp, active_sheet);
           if (check.row_headers) {
             // limit to two columns
             temp = new Area(temp.start, { row: temp.end.row, column: temp.start.column + 1});
@@ -2002,7 +2011,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       }
 
       this.grid.SelectRange(area);
-      const headers = Heuristics.HasHeaders(area, this.grid.active_sheet);
+      const headers = Heuristics.HasHeaders(area, active_sheet);
 
       let row_headers: Area|undefined;
 
