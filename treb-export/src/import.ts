@@ -547,7 +547,7 @@ export class Importer {
     const area = this.AddressToArea(address);
     const operators = ConditionalFormatOperators;
 
-    console.info({rule});
+    // console.info({rule});
 
     switch (rule.$attributes?.type) {
       case 'duplicateValues':
