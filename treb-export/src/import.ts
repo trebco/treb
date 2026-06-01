@@ -547,7 +547,7 @@ export class Importer {
     const area = this.AddressToArea(address);
     const operators = ConditionalFormatOperators;
 
-    // console.info({rule});
+    console.info({rule});
 
     switch (rule.$attributes?.type) {
       case 'duplicateValues':
@@ -605,9 +605,12 @@ export class Importer {
             console.info('unhandled cellIs operator:', rule.$attributes.operator, {rule});
           }
           else {
+
+            const formula = Array.isArray(rule.formula) ? rule.formula[0].$text : rule.formula.$text;
+
             return {
               type: 'cell-match',
-              expression: operator + ' ' + rule.formula,
+              expression: operator + ' ' + formula,
               area,
               style,
               priority: rule.$attributes.priority,
