@@ -293,4 +293,42 @@ export function IsTimeline(area: Area, sheet: Sheet): ConstantStep | undefined {
 
 }
 
+/**
+ * trim empty cells from the range. top and bottom only, atm
+ */
+export function TrimUndefined(source: Area, sheet: Sheet): Area|undefined {
+  let area = source.Clone();
+
+  top:
+  for (let row = area.start.row; row <= area.end.row; row++) {
+    for (let column = area.start.column; column <= area.end.column; column++) {
+      const data = sheet.CellData({row, column});
+      if (data.value !== undefined) {
+        if (row > area.start.row) {
+          area = new Area({...area.start, row}, area.end);
+        }
+        break top;
+      }
+    }
+    if (row === area.end.row) {
+      return undefined;
+    }
+  }
+
+  bottom: 
+  for (let row = area.end.row; row >= area.start.row; row--) {
+    for (let column = area.start.column; column <= area.end.column; column++) {
+      const data = sheet.CellData({row, column});
+      if (data.value !== undefined) {
+        if (row < area.end.row) {
+          area = new Area(area.start, {...area.end, row});
+        }
+        break bottom;
+      }
+    }
+  }
+
+  return area;
+}
+
 export { DetectConstantStep, ProjectTimeline } from './timeline';
