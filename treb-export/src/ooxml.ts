@@ -14,6 +14,7 @@ export const ooxml_parser = new XMLParser({
   cdataPropName: '$cdata',
   parseTagValue: false,
   alwaysCreateTextNode: true,
+  trimValues: false,
 });
 
 export function EnsureArray<T>(tag?: OOXML.OneOrMany<T>) {
