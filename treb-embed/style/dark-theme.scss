@@ -117,12 +117,12 @@
 
 }
 
-.treb-dark-theme {
+.treb-dark-theme, [data-theme=dark] {
   @include dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  .treb-light-dark-theme {
+  .treb-light-dark-theme, [data-theme=system] {
     @include dark;
   }
 }
