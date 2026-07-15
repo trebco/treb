@@ -81,7 +81,14 @@ export enum CommandKey {
   TabColor,
   CreateAnnotation,
   RemoveAnnotation,
+  ShowGridlines,
 
+}
+
+export interface ShowGridLinesCommand {
+  key: CommandKey.ShowGridlines,
+  sheet: Sheet,
+  show?: boolean,
 }
 
 export interface RemoveAnnotationCommand {
@@ -534,6 +541,7 @@ export type Command =
   | InsertColumnsCommand
   | UpdateBordersCommand
   | ActivateSheetCommand
+  | ShowGridLinesCommand
   | DataValidationCommand
   | DuplicateSheetCommand
   | CreateAnnotationCommand

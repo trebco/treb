@@ -3696,6 +3696,21 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     });
   }
 
+  public ShowGridlines(sheet?: number|string, show?: boolean) {
+    const target = (typeof sheet === 'undefined') ? 
+      this.grid.active_sheet :
+      this.model.sheets.Find(sheet);
+
+    if (target) {
+      this.grid.ShowGridLines(target, show);
+      this.grid.UpdateLayout();
+      for (const entry of this.views) {
+        entry.view.grid.UpdateLayout();
+      }
+    }
+    
+  }
+
   /** 
    * Return "live" reference to selection.
    * 

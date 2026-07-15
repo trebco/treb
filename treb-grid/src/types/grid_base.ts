@@ -53,7 +53,7 @@ import { NumberFormat, ValueParser } from 'treb-format';
 
 import type { DataEvent, GridEvent, StyleEvent } from './grid_events';
 import { ErrorCode } from './grid_events';
-import type { CommandRecord, CreateAnnotationCommand, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, RemoveAnnotationCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand, SortTableCommand } from './grid_command';
+import type { CommandRecord, CreateAnnotationCommand, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, RemoveAnnotationCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowGridLinesCommand, ShowSheetCommand, SortTableCommand } from './grid_command';
 import { DefaultGridOptions, type GridOptions } from './grid_options';
 
 import { BorderConstants } from './border_constants';
@@ -572,6 +572,14 @@ export class GridBase {
     });
   }
 
+  public ShowGridLines(sheet: Sheet, show?: boolean) {
+    this.ExecCommand({
+      key: CommandKey.ShowGridlines,
+      sheet, 
+      show,
+    });
+  }
+
   /**
    * rename active sheet
    */
@@ -823,6 +831,20 @@ export class GridBase {
     else {
       console.error('auto size not supported');
     }
+
+  }
+
+  /**
+   * returns true if the visual state has changed. we can use that to 
+   * decide whether to trigger an update.
+   */
+  protected ShowGridlinesInternal(command: ShowGridLinesCommand): boolean {
+
+    const current_state = command.sheet.hide_gridlines;
+    const target_state = typeof command.show === 'boolean' ? !command.show : !current_state;
+
+    command.sheet.hide_gridlines = target_state;
+    return current_state === target_state;
 
   }
 
@@ -1957,6 +1979,7 @@ export class GridBase {
         case CommandKey.Reset:
         case CommandKey.CreateAnnotation:
         case CommandKey.RemoveAnnotation:
+        case CommandKey.ShowGridlines:
           break;
 
         /*
@@ -4288,6 +4311,12 @@ export class GridBase {
               flags.sheets = true;
               flags.structure_event = true;
             }
+          }
+          break;
+
+        case CommandKey.ShowGridlines:
+          if (this.ShowGridlinesInternal(command)) {
+            flags.structure_event = true;
           }
           break;
 

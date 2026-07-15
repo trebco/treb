@@ -108,7 +108,8 @@ import type {
   ResizeRowsCommand, ResizeColumnsCommand, 
   SelectCommand,
   CreateAnnotationCommand,
-  RemoveAnnotationCommand
+  RemoveAnnotationCommand,
+  ShowGridLinesCommand
 } from './grid_command';
 import { CommandKey
 } from './grid_command';
@@ -2728,7 +2729,6 @@ export class Grid extends GridBase {
   protected RenameSheetInternal(target: Sheet, name: string) {
     super.RenameSheetInternal(target, name);
     this.tab_bar?.Update(false);
-
   }
 
   private StyleDefaultFromTheme() {
