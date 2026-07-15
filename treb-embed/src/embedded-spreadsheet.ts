@@ -4093,7 +4093,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @public
    */
-  public LoadCSV(csv: string, source?: LoadSource): void {
+  public LoadCSV(csv: string, source?: LoadSource, path?: string): void {
 
     if (this.parent_view) {
       return this.parent_view.LoadCSV(csv, source);
@@ -4107,7 +4107,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     this.grid.FromCSV(csv);
     this.ResetInternal();
     this.grid.Update(true);
-    this.Publish({ type: 'load', source });
+    this.Publish({ type: 'load', source, path });
     this.UpdateDocumentStyles();
 
   }
@@ -6022,20 +6022,20 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         try {
           if (reader.result) {
             if (/\.csv$/i.test(file.name)) {
-              this.LoadCSV(reader.result as string, source);
+              this.LoadCSV(reader.result as string, source, file.name);
             }
             else if (process.env.XLSX_SUPPORT &&  /\.xls[xm]$/i.test(file.name)) {
               if (typeof reader.result === 'string') {
                 finalize('Unsupported file');
               }
               else {
-                this.ImportXLSX(reader.result, source).then(() => finalize()).catch(err => finalize(err));
+                this.ImportXLSX(reader.result, source, file.name).then(() => finalize()).catch(err => finalize(err));
               }
               return;
             }
             else {
               const data = JSON.parse(reader.result as string);
-              this.LoadDocument(data, { source });
+              this.LoadDocument(data, { source, path: file.name });
             }
           }
           finalize();
