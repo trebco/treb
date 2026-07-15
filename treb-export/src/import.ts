@@ -1576,6 +1576,16 @@ export class Importer {
       
     });
 
+    let hide_gridlines = false;
+    if (sheet.root.sheetViews?.sheetView) {
+      let sheetView = sheet.root.sheetViews.sheetView;
+      if (Array.isArray(sheetView)) {
+        sheetView = sheetView[0];
+      }
+      const value = sheetView.$attributes?.showGridLines;
+      hide_gridlines = (value === 0 || value === false);
+    }
+
     const result: ImportedSheetData = {
       name: sheet.options.name,
       cells: data,
@@ -1586,6 +1596,7 @@ export class Importer {
       row_styles,
       annotations,
       conditional_formats,
+      hide_gridlines,
       data_validations: validations,
       styles: this.workbook?.style_cache?.CellXfToStyles() || [],
     };

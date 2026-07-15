@@ -2292,6 +2292,16 @@ export class Exporter {
         },
       }
 
+      // gridlines
+
+      const gridlines_attributes: {
+        showGridLines?: string;
+      } = {};
+
+      if (sheet.hide_gridlines) {
+        gridlines_attributes.showGridLines = "0";
+      }
+
       //------------------------------------------------------------------------
       //
       // NOTE: order matters. that's why we define the layout here. we 
@@ -2315,6 +2325,7 @@ export class Exporter {
             sheetView: {
               a$: {
                 workbookViewId: 0,
+                ...gridlines_attributes,
               },
             },
           },

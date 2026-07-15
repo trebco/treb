@@ -144,6 +144,12 @@ export interface SerializedSheet {
   /** testing */
   background_image?: string;
 
+  /** new, per-sheet */
+  hide_gridlines?: boolean;
+
+  /** new, per-sheet (this is not a thing in Excel) */
+  grid_over_fill?: boolean;
+
 }
 
 /**

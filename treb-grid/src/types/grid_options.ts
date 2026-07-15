@@ -81,8 +81,9 @@ export type GridOptions = {
   /** enable scrolling (default true) */
   scrollbars?: boolean;
 
-  /** always show grid, even if there is background color */
+  /* * always show grid, even if there is background color * /
   grid_over_background?: boolean;
+  */
 
   /** initial scale for layout */
   initial_scale?: number;
@@ -109,5 +110,5 @@ export const DefaultGridOptions: GridOptions = {
   expand: true,
   comment_markdown: true,
   repaint_on_cell_change: true,
-  grid_over_background: false, // true,
+  // grid_over_background: false, // true,
 };

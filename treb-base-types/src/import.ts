@@ -64,6 +64,7 @@ export interface ImportedSheetData {
   styles: CellStyle[];
   conditional_formats: ConditionalFormat[];
   data_validations?: DataValidation[];
+  hide_gridlines?: boolean;
 
   // optional, for backcompat
   sheet_style?: number;

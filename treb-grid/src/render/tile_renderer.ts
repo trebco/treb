@@ -540,7 +540,6 @@ export class TileRenderer {
         context.fillStyle = this.theme.headers?.fill ? ResolveThemeColor(this.theme, this.theme.headers.fill) : '';
         context.fillRect(0, 0, tile.logical_size.width, this.layout.header_offset.y);
 
-        // context.strokeStyle = this.theme.grid_color || '';
         context.strokeStyle = this.theme.headers_grid_color || '';
 
         // this draws a line at the bottom of the header
@@ -589,7 +588,6 @@ export class TileRenderer {
 
         context.fillRect(0, 0, this.layout.header_offset.x, tile.logical_size.height);
 
-        // context.strokeStyle = this.theme.grid_color || '';
         context.strokeStyle = this.theme.headers_grid_color || '';
 
         context.beginPath();
@@ -1518,11 +1516,16 @@ export class TileRenderer {
     style: CellStyle,
     width: number, height: number, cell_left = 0, cell_top = 0): void {
 
+    
+    const resolved_background = ResolveThemeColor(this.theme, this.theme.grid_cell?.fill, 0) || '#fff';
+
     // so here we draw the background and the bottom and right grid edges.
     // fill is enclosed here, the border method has logic for border colors,
     // because it turns out to be complicated.
-    
-    context.fillStyle = this.theme.grid_color;
+
+    const hide_gridlines = !!this.view.active_sheet.hide_gridlines;
+
+    context.fillStyle = (hide_gridlines ? resolved_background : this.theme.grid_color) || '';
     context.fillRect(0, 0, width, height);
 
     if (this.view.active_sheet.image) {
@@ -1536,16 +1539,19 @@ export class TileRenderer {
     }
     else {
 
-      const fill = ResolveThemeColor(this.theme, style.fill);
+      let fill = ResolveThemeColor(this.theme, style.fill) || resolved_background;
 
-      if (fill) {
+      // if (fill) 
+      {
         context.fillStyle = fill;
         context.fillRect(0, 0, width - 1, height - 1);
       }
+      /*
       else {
         context.fillStyle = ResolveThemeColor(this.theme, this.theme.grid_cell?.fill, 0) || '#fff';
         context.fillRect(0, 0, width - 1, height - 1);
       }
+      */
 
     }
 
@@ -2010,15 +2016,23 @@ export class TileRenderer {
     for (const element of overflow_backgrounds) {
 
       if ( element.cell.style?.fill &&
-            IsDefinedColor(element.cell.style.fill) &&
+            IsDefinedColor(element.cell.style.fill) // &&
           // (element.cell.style.fill.text || element.cell.style.fill.theme || element.cell.style.fill.theme === 0) &&
-          !this.options.grid_over_background) {
-        
+          // !this.options.grid_over_background) {
+          ){
+
         context.fillStyle = ResolveThemeColor(this.theme, element.cell.style.fill, 0);
         context.fillRect(element.grid.left, element.grid.top, element.grid.width, element.grid.height);
       }
       else {
-        context.fillStyle = this.theme.grid_color || '';
+
+
+        // context.fillStyle = this.theme.grid_color || '';
+
+        const resolved_background = ResolveThemeColor(this.theme, this.theme.grid_cell?.fill, 0) || '#fff';
+        const hide_gridlines = !!this.view.active_sheet.hide_gridlines;
+        context.fillStyle = (hide_gridlines ? resolved_background : this.theme.grid_color) || '';
+
         context.fillRect(element.grid.left, element.grid.top, element.grid.width, element.grid.height);
 
         if (this.view.active_sheet.image) {

@@ -165,6 +165,13 @@ export class Sheet {
     return this._image;
   }
 
+  /** new, per-sheet */
+  public hide_gridlines = false;
+
+  /** new, per-sheet (this is not a thing in Excel) */
+  public grid_over_fill = false;
+
+
   /**
    * @internal
    */
@@ -267,7 +274,6 @@ export class Sheet {
    * update: using areas
    */
   private conditional_format_checklist: IArea[] = [];
-
 
   // --- accessors ------------------------------------------------------------
 
@@ -422,6 +428,10 @@ export class Sheet {
     if (source.background_image) {
       sheet.background_image = source.background_image;
     }
+
+    // new stuff
+    sheet.hide_gridlines = !!source.hide_gridlines;
+    sheet.grid_over_fill = !!source.grid_over_fill;
 
     // FIXME: this should only be done on load (and possibly paste).
     // we don't need to do it on every parse, which also happens on 
@@ -2870,6 +2880,11 @@ export class Sheet {
       result.visible = this.visible;
     }
 
+    // ditto
+    if (this.hide_gridlines) {
+      result.hide_gridlines = true;
+    }
+
     if (this.scroll_offset.x || this.scroll_offset.y) {
       result.scroll = this.scroll_offset;
     }
@@ -3067,6 +3082,8 @@ export class Sheet {
     if (data.hidden) {
       this.visible = false;
     }
+
+    this.hide_gridlines = !!data.hide_gridlines;
 
   }
 
