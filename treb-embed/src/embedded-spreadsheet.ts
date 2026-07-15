@@ -3653,7 +3653,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * this requires a bunch of processing -- one, we do this in a worker, and 
    * two, it's demand loaded so we don't bloat up this embed script.
    */
-  public Export(): void {
+  public Export(filename?: string): void {
 
     // this is inlined to ensure the code will be tree-shaken properly
     if (!process.env.XLSX_SUPPORT) {
@@ -3669,13 +3669,16 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     this.ExportBlob().then((blob) => {
 
-      let filename = 'export';
+      let generated_filename = 'export';
       if (this.grid.model.document_name) {
-        filename = this.grid.model.document_name.toLowerCase().replace(/\s+/g, '-');
+        generated_filename = this.grid.model.document_name.toLowerCase().replace(/\s+/g, '-');
+      }
+      if (filename) {
+        generated_filename = filename; // takes precedence
       }
 
       if (blob) {
-        this.SaveAs(blob, filename + '.xlsx');
+        this.SaveAs(blob, generated_filename + '.xlsx');
         this.last_save_version = this.file_version; // even though it's an export, consider it clean
       }
 
