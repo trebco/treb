@@ -66,6 +66,8 @@ import type { Annotation, DataModel, ConnectedElementType, ConditionalFormat } f
 
 import { ValueParser } from 'treb-format';
 
+import { ExtendedFunctions, ExtendedFunctionAliases } from 'extended-function-lib';
+
 /**
  * breaking this out so we can use it for export (TODO)
  * 
@@ -262,6 +264,10 @@ export class Calculator extends Graph {
       RegexFunctionLibrary,
       LambdaFunctionLibrary,
       FPFunctionLibrary,
+
+      // new
+      ExtendedFunctions,
+
       );
    
     // aliases
@@ -270,6 +276,10 @@ export class Calculator extends Graph {
     }
     for (const key of Object.keys(TextFunctionAliases)) {
       this.library.Alias(key, TextFunctionAliases[key]);
+    }
+
+    for (const [src, dest] of ExtendedFunctionAliases) {
+      this.library.Alias(src, dest);
     }
 
     // new
