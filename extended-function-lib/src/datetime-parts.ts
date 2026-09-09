@@ -234,7 +234,7 @@ AddExtendedFunction('YEARFRAC', {
     if (start_date === undefined || end_date === undefined) return ValueError();
     const b = basis === undefined ? 0 : Math.trunc(basis);
     if (b < 0 || b > 4) return ValueError();
-    return Box(YearFrac(Math.trunc(start_date), Math.trunc(end_date), b));
+    return Box(Math.abs(YearFrac(Math.trunc(start_date), Math.trunc(end_date), b)));
   },
 });
 
