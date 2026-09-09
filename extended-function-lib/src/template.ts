@@ -1,36 +1,36 @@
 
 import { Box, type UnionValue } from 'treb-base-types';
-import { AddExtendedFunction } from 'treb-calculator';
+import type { FunctionMap } from 'treb-calculator';
 import { ArgumentError } from 'treb-calculator';
 
-AddExtendedFunction('TEST1', {
+export default {
+  'TEST1': {
 
-  arguments: [{
-    name: 'type',
-    description: 'type of value to return'
-  }],
+    arguments: [{
+      name: 'type',
+      description: 'type of value to return'
+    }],
 
-  fn: (t?: number): UnionValue => {
+    fn: (t?: number): UnionValue => {
 
-    switch (t) {
-      case 1:
-        return Box(true);
+      switch (t) {
+        case 1:
+          return Box(true);
 
-      case 2: 
-        return Box(100);
+        case 2: 
+          return Box(100);
 
-      case 3:
-        return Box('string');
+        case 3:
+          return Box('string');
 
-      default:
+        default:
 
-        // this is an error
-        return ArgumentError();
+          // this is an error
+          return ArgumentError();
 
-    }
-    
+      }
+
+    },
+
   },
-
-});
-
-
+} satisfies FunctionMap;

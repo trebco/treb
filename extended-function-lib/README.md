@@ -31,10 +31,15 @@ Please read only the following:
 
 ## How to add functions
 
-See the file ./src/template.ts for an example. There's a function called 
-`AddExtendedFunction` which takes the function name and a function descriptor.
-Add files to the ./src/ directory with your new functions, then import them
-in the file ./src/index.ts.
+See the file ./src/template.ts for an example. Each source file has a
+**default export**: an object mapping function name to function descriptor
+(a `FunctionMap` from `treb-calculator`). Add a file to the ./src/ directory
+that default-exports such an object, then import it in ./src/index.ts and spread
+it into the `ExtendedFunctions` composite map.
+
+The library does not register functions itself — it exports data.
+./src/index.ts exports `ExtendedFunctions` (the composite map) and
+`ExtendedFunctionAliases` (the alias pairs); the consumer registers them.
 
 ## Testing/validation
 

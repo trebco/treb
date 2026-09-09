@@ -1,242 +1,9 @@
 import { Box, type UnionValue } from 'treb-base-types';
 import { ValueType } from 'treb-base-types';
-import { AddExtendedFunction } from 'treb-calculator';
+import type { FunctionMap } from 'treb-calculator';
 import { ValueError, NAError } from 'treb-calculator';
 import { DateToSerial, SerialToDate, DaysInMonth, Days360Us, Days360Eu, YearFrac } from './finance-date-utils';
 import { extractNumbers } from './stats-array-utils';
-
-AddExtendedFunction('HOUR', {
-  description: 'Returns the hour from a time value',
-  arguments: [
-    { name: 'serial_number', description: 'The time as a serial number', unroll: true },
-  ],
-  fn: (serial?: number): UnionValue => {
-    if (serial === undefined) return ValueError();
-    const fraction = serial - Math.floor(serial);
-    const total_seconds = Math.round(fraction * 86400);
-    return Box(Math.floor(total_seconds / 3600) % 24);
-  },
-});
-
-AddExtendedFunction('MINUTE', {
-  description: 'Returns the minute from a time value',
-  arguments: [
-    { name: 'serial_number', description: 'The time as a serial number', unroll: true },
-  ],
-  fn: (serial?: number): UnionValue => {
-    if (serial === undefined) return ValueError();
-    const fraction = serial - Math.floor(serial);
-    const total_seconds = Math.round(fraction * 86400);
-    return Box(Math.floor(total_seconds / 60) % 60);
-  },
-});
-
-AddExtendedFunction('SECOND', {
-  description: 'Returns the second from a time value',
-  arguments: [
-    { name: 'serial_number', description: 'The time as a serial number', unroll: true },
-  ],
-  fn: (serial?: number): UnionValue => {
-    if (serial === undefined) return ValueError();
-    const fraction = serial - Math.floor(serial);
-    const total_seconds = Math.round(fraction * 86400);
-    return Box(total_seconds % 60);
-  },
-});
-
-AddExtendedFunction('TIME', {
-  description: 'Returns the serial number for a given time',
-  arguments: [
-    { name: 'hour', description: 'The hour (0-23)', unroll: true },
-    { name: 'minute', description: 'The minute (0-59)' },
-    { name: 'second', description: 'The second (0-59)' },
-  ],
-  fn: (hour?: number, minute?: number, second?: number): UnionValue => {
-    if (hour === undefined || minute === undefined || second === undefined) return ValueError();
-    const total_seconds = Math.trunc(hour) * 3600 + Math.trunc(minute) * 60 + Math.trunc(second);
-    return Box(total_seconds / 86400);
-  },
-});
-
-AddExtendedFunction('TIMEVALUE', {
-  description: 'Converts a time in text format to a serial number',
-  arguments: [
-    { name: 'time_text', description: 'A text string representing a time', unroll: true },
-  ],
-  fn: (time_text?: string): UnionValue => {
-    if (time_text === undefined) return ValueError();
-    const text = String(time_text).trim();
-
-    const match = text.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
-    if (!match) return ValueError();
-
-    let hours = parseInt(match[1], 10);
-    const minutes = parseInt(match[2], 10);
-    const seconds = match[3] ? parseInt(match[3], 10) : 0;
-    const ampm = match[4]?.toUpperCase();
-
-    if (ampm) {
-      if (hours < 1 || hours > 12) return ValueError();
-      if (ampm === 'AM' && hours === 12) hours = 0;
-      if (ampm === 'PM' && hours !== 12) hours += 12;
-    }
-
-    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) {
-      return ValueError();
-    }
-
-    const total_seconds = hours * 3600 + minutes * 60 + seconds;
-    return Box(total_seconds / 86400);
-  },
-});
-
-AddExtendedFunction('DATEVALUE', {
-  description: 'Converts a date in text format to a serial number',
-  arguments: [
-    { name: 'date_text', description: 'A text string representing a date', unroll: true },
-  ],
-  fn: (date_text?: string): UnionValue => {
-    if (date_text === undefined) return ValueError();
-    const text = String(date_text).trim();
-    const d = new Date(text);
-    if (isNaN(d.getTime())) return ValueError();
-    return Box(DateToSerial(d.getFullYear(), d.getMonth() + 1, d.getDate()));
-  },
-});
-
-AddExtendedFunction('EDATE', {
-  description: 'Returns a date a given number of months before or after a start date',
-  arguments: [
-    { name: 'start_date', description: 'The start date', unroll: true },
-    { name: 'months', description: 'Number of months before or after' },
-  ],
-  fn: (start_date?: number, months?: number): UnionValue => {
-    if (start_date === undefined || months === undefined) return ValueError();
-    const d = SerialToDate(Math.trunc(start_date));
-    const total_months = (d.year * 12 + (d.month - 1)) + Math.trunc(months);
-    const new_year = Math.floor(total_months / 12);
-    const new_month = total_months - new_year * 12 + 1;
-    const new_day = Math.min(d.day, DaysInMonth(new_year, new_month));
-    return Box(DateToSerial(new_year, new_month, new_day));
-  },
-});
-
-AddExtendedFunction('EOMONTH', {
-  description: 'Returns the last day of the month a given number of months before or after a start date',
-  arguments: [
-    { name: 'start_date', description: 'The start date', unroll: true },
-    { name: 'months', description: 'Number of months before or after' },
-  ],
-  fn: (start_date?: number, months?: number): UnionValue => {
-    if (start_date === undefined || months === undefined) return ValueError();
-    const d = SerialToDate(Math.trunc(start_date));
-    const total_months = (d.year * 12 + (d.month - 1)) + Math.trunc(months);
-    const new_year = Math.floor(total_months / 12);
-    const new_month = total_months - new_year * 12 + 1;
-    return Box(DateToSerial(new_year, new_month, DaysInMonth(new_year, new_month)));
-  },
-});
-
-AddExtendedFunction('DAYS', {
-  description: 'Returns the number of days between two dates',
-  arguments: [
-    { name: 'end_date', description: 'The end date', unroll: true },
-    { name: 'start_date', description: 'The start date' },
-  ],
-  fn: (end_date?: number, start_date?: number): UnionValue => {
-    if (end_date === undefined || start_date === undefined) return ValueError();
-    return Box(Math.floor(end_date) - Math.floor(start_date));
-  },
-});
-
-AddExtendedFunction('DAYS360', {
-  description: 'Returns the number of days between two dates based on a 360-day year',
-  arguments: [
-    { name: 'start_date', description: 'The start date', unroll: true },
-    { name: 'end_date', description: 'The end date' },
-    { name: 'method', description: 'FALSE=US (default), TRUE=European' },
-  ],
-  fn: (start_date?: number, end_date?: number, method?: boolean): UnionValue => {
-    if (start_date === undefined || end_date === undefined) return ValueError();
-    const d1 = SerialToDate(Math.trunc(start_date));
-    const d2 = SerialToDate(Math.trunc(end_date));
-    if (method) {
-      return Box(Days360Eu(d1, d2));
-    }
-    return Box(Days360Us(d1, d2));
-  },
-});
-
-AddExtendedFunction('DATEDIF', {
-  description: 'Calculates the number of days, months, or years between two dates',
-  arguments: [
-    { name: 'start_date', description: 'The start date', unroll: true },
-    { name: 'end_date', description: 'The end date' },
-    { name: 'unit', description: 'The type of information (Y, M, D, MD, YM, YD)' },
-  ],
-  fn: (start_date?: number, end_date?: number, unit?: string): UnionValue => {
-    if (start_date === undefined || end_date === undefined || unit === undefined) return ValueError();
-    const s = Math.trunc(start_date);
-    const e = Math.trunc(end_date);
-    if (s > e) return ValueError();
-    const d1 = SerialToDate(s);
-    const d2 = SerialToDate(e);
-
-    switch (String(unit).toUpperCase()) {
-      case 'Y': {
-        let years = d2.year - d1.year;
-        if (d2.month < d1.month || (d2.month === d1.month && d2.day < d1.day)) years--;
-        return Box(years);
-      }
-      case 'M': {
-        let months = (d2.year - d1.year) * 12 + (d2.month - d1.month);
-        if (d2.day < d1.day) months--;
-        return Box(months);
-      }
-      case 'D':
-        return Box(e - s);
-      case 'MD': {
-        let days = d2.day - d1.day;
-        if (days < 0) {
-          const prev_month = d2.month === 1 ? 12 : d2.month - 1;
-          const prev_year = d2.month === 1 ? d2.year - 1 : d2.year;
-          days += DaysInMonth(prev_year, prev_month);
-        }
-        return Box(days);
-      }
-      case 'YM': {
-        let months = d2.month - d1.month;
-        if (d2.day < d1.day) months--;
-        if (months < 0) months += 12;
-        return Box(months);
-      }
-      case 'YD': {
-        let end_serial = DateToSerial(d1.year, d2.month, d2.day);
-        if (end_serial < s) {
-          end_serial = DateToSerial(d1.year + 1, d2.month, d2.day);
-        }
-        return Box(end_serial - s);
-      }
-      default:
-        return ValueError();
-    }
-  },
-});
-
-AddExtendedFunction('YEARFRAC', {
-  description: 'Returns the year fraction between two dates',
-  arguments: [
-    { name: 'start_date', description: 'The start date', unroll: true },
-    { name: 'end_date', description: 'The end date' },
-    { name: 'basis', description: 'Day count basis (0-4, default 0)' },
-  ],
-  fn: (start_date?: number, end_date?: number, basis?: number): UnionValue => {
-    if (start_date === undefined || end_date === undefined) return ValueError();
-    const b = basis === undefined ? 0 : Math.trunc(basis);
-    if (b < 0 || b > 4) return ValueError();
-    return Box(Math.abs(YearFrac(Math.trunc(start_date), Math.trunc(end_date), b)));
-  },
-});
 
 function SerialToJsDate(serial: number): Date {
   const d = SerialToDate(Math.trunc(serial));
@@ -247,68 +14,6 @@ function DayOfWeek(serial: number): number {
   const d = SerialToJsDate(serial);
   return d.getDay();
 }
-
-AddExtendedFunction('WEEKDAY', {
-  description: 'Returns the day of the week for a date',
-  arguments: [
-    { name: 'serial_number', description: 'The date', unroll: true },
-    { name: 'return_type', description: 'Numbering system (1=Sun-Sat 1-7, 2=Mon-Sun 1-7, 3=Mon-Sun 0-6)' },
-  ],
-  fn: (serial?: number, return_type?: number): UnionValue => {
-    if (serial === undefined) return ValueError();
-    const dow = DayOfWeek(Math.trunc(serial));
-    const rt = return_type === undefined ? 1 : Math.trunc(return_type);
-
-    switch (rt) {
-      case 1: return Box(dow + 1);
-      case 2: return Box(dow === 0 ? 7 : dow);
-      case 3: return Box(dow === 0 ? 6 : dow - 1);
-      default: return ValueError();
-    }
-  },
-});
-
-AddExtendedFunction('ISOWEEKNUM', {
-  description: 'Returns the ISO week number of a date',
-  arguments: [
-    { name: 'date', description: 'The date', unroll: true },
-  ],
-  fn: (serial?: number): UnionValue => {
-    if (serial === undefined) return ValueError();
-    const d = SerialToJsDate(Math.trunc(serial));
-    const temp = new Date(d.getTime());
-    temp.setDate(temp.getDate() + 3 - ((temp.getDay() + 6) % 7));
-    const jan1 = new Date(temp.getFullYear(), 0, 1);
-    const day_diff = Math.round((temp.getTime() - jan1.getTime()) / 86400000);
-    return Box(Math.floor(day_diff / 7) + 1);
-  },
-});
-
-AddExtendedFunction('WEEKNUM', {
-  description: 'Returns the week number of a date',
-  arguments: [
-    { name: 'serial_number', description: 'The date', unroll: true },
-    { name: 'return_type', description: '1=week starts Sunday (default), 2=week starts Monday' },
-  ],
-  fn: (serial?: number, return_type?: number): UnionValue => {
-    if (serial === undefined) return ValueError();
-    const rt = return_type === undefined ? 1 : Math.trunc(return_type);
-    const d = SerialToJsDate(Math.trunc(serial));
-    const jan1 = new Date(d.getFullYear(), 0, 1);
-    const day_of_year = Math.floor((d.getTime() - jan1.getTime()) / 86400000);
-
-    let week_start_offset: number;
-    if (rt === 1) {
-      week_start_offset = jan1.getDay();
-    } else if (rt === 2) {
-      week_start_offset = (jan1.getDay() + 6) % 7;
-    } else {
-      return ValueError();
-    }
-
-    return Box(Math.floor((day_of_year + week_start_offset) / 7) + 1);
-  },
-});
 
 function ParseWeekendSpec(weekend?: number | string): boolean[] {
   const result = [false, false, false, false, false, false, false];
@@ -354,112 +59,409 @@ function IsHoliday(serial: number, holidays: number[]): boolean {
   return holidays.includes(serial);
 }
 
-AddExtendedFunction('NETWORKDAYS', {
-  description: 'Returns the number of working days between two dates',
-  arguments: [
-    { name: 'start_date', description: 'The start date', unroll: true },
-    { name: 'end_date', description: 'The end date' },
-    { name: 'holidays', description: 'Optional range of holiday dates', boxed: true },
-  ],
-  fn: (start_date?: number, end_date?: number, holidays?: UnionValue): UnionValue => {
-    if (start_date === undefined || end_date === undefined) return ValueError();
-    const s = Math.trunc(start_date);
-    const e = Math.trunc(end_date);
-    const holiday_list = ExtractHolidaySerials(holidays);
-    const weekend_days = ParseWeekendSpec(1);
-
-    const direction = s <= e ? 1 : -1;
-    const from = Math.min(s, e);
-    const to = Math.max(s, e);
-    let count = 0;
-    for (let d = from; d <= to; d++) {
-      const dow = DayOfWeek(d);
-      if (!IsWeekend(dow, weekend_days) && !IsHoliday(d, holiday_list)) count++;
-    }
-    return Box(count * direction);
+export default {
+  'HOUR': {
+    description: 'Returns the hour from a time value',
+    arguments: [
+      { name: 'serial_number', description: 'The time as a serial number', unroll: true },
+    ],
+    fn: (serial?: number): UnionValue => {
+      if (serial === undefined) return ValueError();
+      const fraction = serial - Math.floor(serial);
+      const total_seconds = Math.round(fraction * 86400);
+      return Box(Math.floor(total_seconds / 3600) % 24);
+    },
   },
-});
 
-AddExtendedFunction('NETWORKDAYS.INTL', {
-  description: 'Returns the number of working days between two dates with custom weekends',
-  arguments: [
-    { name: 'start_date', description: 'The start date', unroll: true },
-    { name: 'end_date', description: 'The end date' },
-    { name: 'weekend', description: 'Weekend specification (number or 7-char string)' },
-    { name: 'holidays', description: 'Optional range of holiday dates', boxed: true },
-  ],
-  fn: (start_date?: number, end_date?: number, weekend?: number | string, holidays?: UnionValue): UnionValue => {
-    if (start_date === undefined || end_date === undefined) return ValueError();
-    const s = Math.trunc(start_date);
-    const e = Math.trunc(end_date);
-    const weekend_days = ParseWeekendSpec(weekend);
-    if (weekend_days.length === 0) return ValueError();
-    const holiday_list = ExtractHolidaySerials(holidays);
-
-    const direction = s <= e ? 1 : -1;
-    const from = Math.min(s, e);
-    const to = Math.max(s, e);
-    let count = 0;
-    for (let d = from; d <= to; d++) {
-      const dow = DayOfWeek(d);
-      if (!IsWeekend(dow, weekend_days) && !IsHoliday(d, holiday_list)) count++;
-    }
-    return Box(count * direction);
+  'MINUTE': {
+    description: 'Returns the minute from a time value',
+    arguments: [
+      { name: 'serial_number', description: 'The time as a serial number', unroll: true },
+    ],
+    fn: (serial?: number): UnionValue => {
+      if (serial === undefined) return ValueError();
+      const fraction = serial - Math.floor(serial);
+      const total_seconds = Math.round(fraction * 86400);
+      return Box(Math.floor(total_seconds / 60) % 60);
+    },
   },
-});
 
-AddExtendedFunction('WORKDAY', {
-  description: 'Returns a date that is a given number of working days from the start date',
-  arguments: [
-    { name: 'start_date', description: 'The start date', unroll: true },
-    { name: 'days', description: 'Number of working days' },
-    { name: 'holidays', description: 'Optional range of holiday dates', boxed: true },
-  ],
-  fn: (start_date?: number, days?: number, holidays?: UnionValue): UnionValue => {
-    if (start_date === undefined || days === undefined) return ValueError();
-    let current = Math.trunc(start_date);
-    let remaining = Math.trunc(days);
-    const holiday_list = ExtractHolidaySerials(holidays);
-    const weekend_days = ParseWeekendSpec(1);
-    const direction = remaining >= 0 ? 1 : -1;
-    remaining = Math.abs(remaining);
+  'SECOND': {
+    description: 'Returns the second from a time value',
+    arguments: [
+      { name: 'serial_number', description: 'The time as a serial number', unroll: true },
+    ],
+    fn: (serial?: number): UnionValue => {
+      if (serial === undefined) return ValueError();
+      const fraction = serial - Math.floor(serial);
+      const total_seconds = Math.round(fraction * 86400);
+      return Box(total_seconds % 60);
+    },
+  },
 
-    while (remaining > 0) {
-      current += direction;
-      const dow = DayOfWeek(current);
-      if (!IsWeekend(dow, weekend_days) && !IsHoliday(current, holiday_list)) {
-        remaining--;
+  'TIME': {
+    description: 'Returns the serial number for a given time',
+    arguments: [
+      { name: 'hour', description: 'The hour (0-23)', unroll: true },
+      { name: 'minute', description: 'The minute (0-59)' },
+      { name: 'second', description: 'The second (0-59)' },
+    ],
+    fn: (hour?: number, minute?: number, second?: number): UnionValue => {
+      if (hour === undefined || minute === undefined || second === undefined) return ValueError();
+      const total_seconds = Math.trunc(hour) * 3600 + Math.trunc(minute) * 60 + Math.trunc(second);
+      return Box(total_seconds / 86400);
+    },
+  },
+
+  'TIMEVALUE': {
+    description: 'Converts a time in text format to a serial number',
+    arguments: [
+      { name: 'time_text', description: 'A text string representing a time', unroll: true },
+    ],
+    fn: (time_text?: string): UnionValue => {
+      if (time_text === undefined) return ValueError();
+      const text = String(time_text).trim();
+
+      const match = text.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+      if (!match) return ValueError();
+
+      let hours = parseInt(match[1], 10);
+      const minutes = parseInt(match[2], 10);
+      const seconds = match[3] ? parseInt(match[3], 10) : 0;
+      const ampm = match[4]?.toUpperCase();
+
+      if (ampm) {
+        if (hours < 1 || hours > 12) return ValueError();
+        if (ampm === 'AM' && hours === 12) hours = 0;
+        if (ampm === 'PM' && hours !== 12) hours += 12;
       }
-    }
-    return Box(current);
-  },
-});
 
-AddExtendedFunction('WORKDAY.INTL', {
-  description: 'Returns a date that is a given number of working days from the start date with custom weekends',
-  arguments: [
-    { name: 'start_date', description: 'The start date', unroll: true },
-    { name: 'days', description: 'Number of working days' },
-    { name: 'weekend', description: 'Weekend specification (number or 7-char string)' },
-    { name: 'holidays', description: 'Optional range of holiday dates', boxed: true },
-  ],
-  fn: (start_date?: number, days?: number, weekend?: number | string, holidays?: UnionValue): UnionValue => {
-    if (start_date === undefined || days === undefined) return ValueError();
-    let current = Math.trunc(start_date);
-    let remaining = Math.trunc(days);
-    const weekend_days = ParseWeekendSpec(weekend);
-    if (weekend_days.length === 0) return ValueError();
-    const holiday_list = ExtractHolidaySerials(holidays);
-    const direction = remaining >= 0 ? 1 : -1;
-    remaining = Math.abs(remaining);
-
-    while (remaining > 0) {
-      current += direction;
-      const dow = DayOfWeek(current);
-      if (!IsWeekend(dow, weekend_days) && !IsHoliday(current, holiday_list)) {
-        remaining--;
+      if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) {
+        return ValueError();
       }
-    }
-    return Box(current);
+
+      const total_seconds = hours * 3600 + minutes * 60 + seconds;
+      return Box(total_seconds / 86400);
+    },
   },
-});
+
+  'DATEVALUE': {
+    description: 'Converts a date in text format to a serial number',
+    arguments: [
+      { name: 'date_text', description: 'A text string representing a date', unroll: true },
+    ],
+    fn: (date_text?: string): UnionValue => {
+      if (date_text === undefined) return ValueError();
+      const text = String(date_text).trim();
+      const d = new Date(text);
+      if (isNaN(d.getTime())) return ValueError();
+      return Box(DateToSerial(d.getFullYear(), d.getMonth() + 1, d.getDate()));
+    },
+  },
+
+  'EDATE': {
+    description: 'Returns a date a given number of months before or after a start date',
+    arguments: [
+      { name: 'start_date', description: 'The start date', unroll: true },
+      { name: 'months', description: 'Number of months before or after' },
+    ],
+    fn: (start_date?: number, months?: number): UnionValue => {
+      if (start_date === undefined || months === undefined) return ValueError();
+      const d = SerialToDate(Math.trunc(start_date));
+      const total_months = (d.year * 12 + (d.month - 1)) + Math.trunc(months);
+      const new_year = Math.floor(total_months / 12);
+      const new_month = total_months - new_year * 12 + 1;
+      const new_day = Math.min(d.day, DaysInMonth(new_year, new_month));
+      return Box(DateToSerial(new_year, new_month, new_day));
+    },
+  },
+
+  'EOMONTH': {
+    description: 'Returns the last day of the month a given number of months before or after a start date',
+    arguments: [
+      { name: 'start_date', description: 'The start date', unroll: true },
+      { name: 'months', description: 'Number of months before or after' },
+    ],
+    fn: (start_date?: number, months?: number): UnionValue => {
+      if (start_date === undefined || months === undefined) return ValueError();
+      const d = SerialToDate(Math.trunc(start_date));
+      const total_months = (d.year * 12 + (d.month - 1)) + Math.trunc(months);
+      const new_year = Math.floor(total_months / 12);
+      const new_month = total_months - new_year * 12 + 1;
+      return Box(DateToSerial(new_year, new_month, DaysInMonth(new_year, new_month)));
+    },
+  },
+
+  'DAYS': {
+    description: 'Returns the number of days between two dates',
+    arguments: [
+      { name: 'end_date', description: 'The end date', unroll: true },
+      { name: 'start_date', description: 'The start date' },
+    ],
+    fn: (end_date?: number, start_date?: number): UnionValue => {
+      if (end_date === undefined || start_date === undefined) return ValueError();
+      return Box(Math.floor(end_date) - Math.floor(start_date));
+    },
+  },
+
+  'DAYS360': {
+    description: 'Returns the number of days between two dates based on a 360-day year',
+    arguments: [
+      { name: 'start_date', description: 'The start date', unroll: true },
+      { name: 'end_date', description: 'The end date' },
+      { name: 'method', description: 'FALSE=US (default), TRUE=European' },
+    ],
+    fn: (start_date?: number, end_date?: number, method?: boolean): UnionValue => {
+      if (start_date === undefined || end_date === undefined) return ValueError();
+      const d1 = SerialToDate(Math.trunc(start_date));
+      const d2 = SerialToDate(Math.trunc(end_date));
+      if (method) {
+        return Box(Days360Eu(d1, d2));
+      }
+      return Box(Days360Us(d1, d2));
+    },
+  },
+
+  'DATEDIF': {
+    description: 'Calculates the number of days, months, or years between two dates',
+    arguments: [
+      { name: 'start_date', description: 'The start date', unroll: true },
+      { name: 'end_date', description: 'The end date' },
+      { name: 'unit', description: 'The type of information (Y, M, D, MD, YM, YD)' },
+    ],
+    fn: (start_date?: number, end_date?: number, unit?: string): UnionValue => {
+      if (start_date === undefined || end_date === undefined || unit === undefined) return ValueError();
+      const s = Math.trunc(start_date);
+      const e = Math.trunc(end_date);
+      if (s > e) return ValueError();
+      const d1 = SerialToDate(s);
+      const d2 = SerialToDate(e);
+
+      switch (String(unit).toUpperCase()) {
+        case 'Y': {
+          let years = d2.year - d1.year;
+          if (d2.month < d1.month || (d2.month === d1.month && d2.day < d1.day)) years--;
+          return Box(years);
+        }
+        case 'M': {
+          let months = (d2.year - d1.year) * 12 + (d2.month - d1.month);
+          if (d2.day < d1.day) months--;
+          return Box(months);
+        }
+        case 'D':
+          return Box(e - s);
+        case 'MD': {
+          let days = d2.day - d1.day;
+          if (days < 0) {
+            const prev_month = d2.month === 1 ? 12 : d2.month - 1;
+            const prev_year = d2.month === 1 ? d2.year - 1 : d2.year;
+            days += DaysInMonth(prev_year, prev_month);
+          }
+          return Box(days);
+        }
+        case 'YM': {
+          let months = d2.month - d1.month;
+          if (d2.day < d1.day) months--;
+          if (months < 0) months += 12;
+          return Box(months);
+        }
+        case 'YD': {
+          let end_serial = DateToSerial(d1.year, d2.month, d2.day);
+          if (end_serial < s) {
+            end_serial = DateToSerial(d1.year + 1, d2.month, d2.day);
+          }
+          return Box(end_serial - s);
+        }
+        default:
+          return ValueError();
+      }
+    },
+  },
+
+  'YEARFRAC': {
+    description: 'Returns the year fraction between two dates',
+    arguments: [
+      { name: 'start_date', description: 'The start date', unroll: true },
+      { name: 'end_date', description: 'The end date' },
+      { name: 'basis', description: 'Day count basis (0-4, default 0)' },
+    ],
+    fn: (start_date?: number, end_date?: number, basis?: number): UnionValue => {
+      if (start_date === undefined || end_date === undefined) return ValueError();
+      const b = basis === undefined ? 0 : Math.trunc(basis);
+      if (b < 0 || b > 4) return ValueError();
+      return Box(Math.abs(YearFrac(Math.trunc(start_date), Math.trunc(end_date), b)));
+    },
+  },
+
+  'WEEKDAY': {
+    description: 'Returns the day of the week for a date',
+    arguments: [
+      { name: 'serial_number', description: 'The date', unroll: true },
+      { name: 'return_type', description: 'Numbering system (1=Sun-Sat 1-7, 2=Mon-Sun 1-7, 3=Mon-Sun 0-6)' },
+    ],
+    fn: (serial?: number, return_type?: number): UnionValue => {
+      if (serial === undefined) return ValueError();
+      const dow = DayOfWeek(Math.trunc(serial));
+      const rt = return_type === undefined ? 1 : Math.trunc(return_type);
+
+      switch (rt) {
+        case 1: return Box(dow + 1);
+        case 2: return Box(dow === 0 ? 7 : dow);
+        case 3: return Box(dow === 0 ? 6 : dow - 1);
+        default: return ValueError();
+      }
+    },
+  },
+
+  'ISOWEEKNUM': {
+    description: 'Returns the ISO week number of a date',
+    arguments: [
+      { name: 'date', description: 'The date', unroll: true },
+    ],
+    fn: (serial?: number): UnionValue => {
+      if (serial === undefined) return ValueError();
+      const d = SerialToJsDate(Math.trunc(serial));
+      const temp = new Date(d.getTime());
+      temp.setDate(temp.getDate() + 3 - ((temp.getDay() + 6) % 7));
+      const jan1 = new Date(temp.getFullYear(), 0, 1);
+      const day_diff = Math.round((temp.getTime() - jan1.getTime()) / 86400000);
+      return Box(Math.floor(day_diff / 7) + 1);
+    },
+  },
+
+  'WEEKNUM': {
+    description: 'Returns the week number of a date',
+    arguments: [
+      { name: 'serial_number', description: 'The date', unroll: true },
+      { name: 'return_type', description: '1=week starts Sunday (default), 2=week starts Monday' },
+    ],
+    fn: (serial?: number, return_type?: number): UnionValue => {
+      if (serial === undefined) return ValueError();
+      const rt = return_type === undefined ? 1 : Math.trunc(return_type);
+      const d = SerialToJsDate(Math.trunc(serial));
+      const jan1 = new Date(d.getFullYear(), 0, 1);
+      const day_of_year = Math.floor((d.getTime() - jan1.getTime()) / 86400000);
+
+      let week_start_offset: number;
+      if (rt === 1) {
+        week_start_offset = jan1.getDay();
+      } else if (rt === 2) {
+        week_start_offset = (jan1.getDay() + 6) % 7;
+      } else {
+        return ValueError();
+      }
+
+      return Box(Math.floor((day_of_year + week_start_offset) / 7) + 1);
+    },
+  },
+
+  'NETWORKDAYS': {
+    description: 'Returns the number of working days between two dates',
+    arguments: [
+      { name: 'start_date', description: 'The start date', unroll: true },
+      { name: 'end_date', description: 'The end date' },
+      { name: 'holidays', description: 'Optional range of holiday dates', boxed: true },
+    ],
+    fn: (start_date?: number, end_date?: number, holidays?: UnionValue): UnionValue => {
+      if (start_date === undefined || end_date === undefined) return ValueError();
+      const s = Math.trunc(start_date);
+      const e = Math.trunc(end_date);
+      const holiday_list = ExtractHolidaySerials(holidays);
+      const weekend_days = ParseWeekendSpec(1);
+
+      const direction = s <= e ? 1 : -1;
+      const from = Math.min(s, e);
+      const to = Math.max(s, e);
+      let count = 0;
+      for (let d = from; d <= to; d++) {
+        const dow = DayOfWeek(d);
+        if (!IsWeekend(dow, weekend_days) && !IsHoliday(d, holiday_list)) count++;
+      }
+      return Box(count * direction);
+    },
+  },
+
+  'NETWORKDAYS.INTL': {
+    description: 'Returns the number of working days between two dates with custom weekends',
+    arguments: [
+      { name: 'start_date', description: 'The start date', unroll: true },
+      { name: 'end_date', description: 'The end date' },
+      { name: 'weekend', description: 'Weekend specification (number or 7-char string)' },
+      { name: 'holidays', description: 'Optional range of holiday dates', boxed: true },
+    ],
+    fn: (start_date?: number, end_date?: number, weekend?: number | string, holidays?: UnionValue): UnionValue => {
+      if (start_date === undefined || end_date === undefined) return ValueError();
+      const s = Math.trunc(start_date);
+      const e = Math.trunc(end_date);
+      const weekend_days = ParseWeekendSpec(weekend);
+      if (weekend_days.length === 0) return ValueError();
+      const holiday_list = ExtractHolidaySerials(holidays);
+
+      const direction = s <= e ? 1 : -1;
+      const from = Math.min(s, e);
+      const to = Math.max(s, e);
+      let count = 0;
+      for (let d = from; d <= to; d++) {
+        const dow = DayOfWeek(d);
+        if (!IsWeekend(dow, weekend_days) && !IsHoliday(d, holiday_list)) count++;
+      }
+      return Box(count * direction);
+    },
+  },
+
+  'WORKDAY': {
+    description: 'Returns a date that is a given number of working days from the start date',
+    arguments: [
+      { name: 'start_date', description: 'The start date', unroll: true },
+      { name: 'days', description: 'Number of working days' },
+      { name: 'holidays', description: 'Optional range of holiday dates', boxed: true },
+    ],
+    fn: (start_date?: number, days?: number, holidays?: UnionValue): UnionValue => {
+      if (start_date === undefined || days === undefined) return ValueError();
+      let current = Math.trunc(start_date);
+      let remaining = Math.trunc(days);
+      const holiday_list = ExtractHolidaySerials(holidays);
+      const weekend_days = ParseWeekendSpec(1);
+      const direction = remaining >= 0 ? 1 : -1;
+      remaining = Math.abs(remaining);
+
+      while (remaining > 0) {
+        current += direction;
+        const dow = DayOfWeek(current);
+        if (!IsWeekend(dow, weekend_days) && !IsHoliday(current, holiday_list)) {
+          remaining--;
+        }
+      }
+      return Box(current);
+    },
+  },
+
+  'WORKDAY.INTL': {
+    description: 'Returns a date that is a given number of working days from the start date with custom weekends',
+    arguments: [
+      { name: 'start_date', description: 'The start date', unroll: true },
+      { name: 'days', description: 'Number of working days' },
+      { name: 'weekend', description: 'Weekend specification (number or 7-char string)' },
+      { name: 'holidays', description: 'Optional range of holiday dates', boxed: true },
+    ],
+    fn: (start_date?: number, days?: number, weekend?: number | string, holidays?: UnionValue): UnionValue => {
+      if (start_date === undefined || days === undefined) return ValueError();
+      let current = Math.trunc(start_date);
+      let remaining = Math.trunc(days);
+      const weekend_days = ParseWeekendSpec(weekend);
+      if (weekend_days.length === 0) return ValueError();
+      const holiday_list = ExtractHolidaySerials(holidays);
+      const direction = remaining >= 0 ? 1 : -1;
+      remaining = Math.abs(remaining);
+
+      while (remaining > 0) {
+        current += direction;
+        const dow = DayOfWeek(current);
+        if (!IsWeekend(dow, weekend_days) && !IsHoliday(current, holiday_list)) {
+          remaining--;
+        }
+      }
+      return Box(current);
+    },
+  },
+} satisfies FunctionMap;

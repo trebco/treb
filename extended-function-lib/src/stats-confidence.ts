@@ -1,6 +1,6 @@
 
 import { Box, type UnionValue } from 'treb-base-types';
-import { AddExtendedFunction } from 'treb-calculator';
+import type { FunctionMap } from 'treb-calculator';
 import { ValueError } from 'treb-calculator';
 import { NormalInv } from './stats-special-functions';
 import { RegularizedBetaI } from './stats-special-functions';
@@ -23,34 +23,36 @@ function TDistCDF(x: number, df: number): number {
   return x >= 0 ? 1 - p / 2 : p / 2;
 }
 
-AddExtendedFunction('CONFIDENCE.NORM', {
-  description: 'Returns the confidence interval for a population mean using a normal distribution',
-  arguments: [
-    { name: 'alpha', description: 'The significance level', unroll: true },
-    { name: 'standard_dev', description: 'The population standard deviation' },
-    { name: 'size', description: 'The sample size' },
-  ],
-  fn: (alpha?: number, stdev?: number, size?: number): UnionValue => {
-    if (alpha === undefined || stdev === undefined || size === undefined) return ValueError();
-    size = Math.trunc(size);
-    if (alpha <= 0 || alpha >= 1 || stdev <= 0 || size < 1) return ValueError();
-    const z = -NormalInv(alpha / 2);
-    return Box(z * stdev / Math.sqrt(size));
+export default {
+  'CONFIDENCE.NORM': {
+    description: 'Returns the confidence interval for a population mean using a normal distribution',
+    arguments: [
+      { name: 'alpha', description: 'The significance level', unroll: true },
+      { name: 'standard_dev', description: 'The population standard deviation' },
+      { name: 'size', description: 'The sample size' },
+    ],
+    fn: (alpha?: number, stdev?: number, size?: number): UnionValue => {
+      if (alpha === undefined || stdev === undefined || size === undefined) return ValueError();
+      size = Math.trunc(size);
+      if (alpha <= 0 || alpha >= 1 || stdev <= 0 || size < 1) return ValueError();
+      const z = -NormalInv(alpha / 2);
+      return Box(z * stdev / Math.sqrt(size));
+    },
   },
-});
 
-AddExtendedFunction('CONFIDENCE.T', {
-  description: 'Returns the confidence interval for a population mean using a Student t-distribution',
-  arguments: [
-    { name: 'alpha', description: 'The significance level', unroll: true },
-    { name: 'standard_dev', description: 'The sample standard deviation' },
-    { name: 'size', description: 'The sample size' },
-  ],
-  fn: (alpha?: number, stdev?: number, size?: number): UnionValue => {
-    if (alpha === undefined || stdev === undefined || size === undefined) return ValueError();
-    size = Math.trunc(size);
-    if (alpha <= 0 || alpha >= 1 || stdev <= 0 || size < 2) return ValueError();
-    const t = TDistInv2T(alpha, size - 1);
-    return Box(t * stdev / Math.sqrt(size));
+  'CONFIDENCE.T': {
+    description: 'Returns the confidence interval for a population mean using a Student t-distribution',
+    arguments: [
+      { name: 'alpha', description: 'The significance level', unroll: true },
+      { name: 'standard_dev', description: 'The sample standard deviation' },
+      { name: 'size', description: 'The sample size' },
+    ],
+    fn: (alpha?: number, stdev?: number, size?: number): UnionValue => {
+      if (alpha === undefined || stdev === undefined || size === undefined) return ValueError();
+      size = Math.trunc(size);
+      if (alpha <= 0 || alpha >= 1 || stdev <= 0 || size < 2) return ValueError();
+      const t = TDistInv2T(alpha, size - 1);
+      return Box(t * stdev / Math.sqrt(size));
+    },
   },
-});
+} satisfies FunctionMap;

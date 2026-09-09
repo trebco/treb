@@ -1,5 +1,5 @@
 import { Box, type UnionValue } from 'treb-base-types';
-import { AddExtendedFunction } from 'treb-calculator';
+import type { FunctionMap } from 'treb-calculator';
 import { ValueError } from 'treb-calculator';
 import {
   CoupDaysBs, CoupDaysInPeriod, CoupDaysNc,
@@ -14,86 +14,88 @@ function ValidateCouponArgs(settlement?: number, maturity?: number, frequency?: 
   return true;
 }
 
-AddExtendedFunction('COUPDAYBS', {
-  description: 'Returns the number of days from the beginning of the coupon period to the settlement date',
-  arguments: [
-    { name: 'settlement', description: 'The settlement date' },
-    { name: 'maturity', description: 'The maturity date' },
-    { name: 'frequency', description: 'The number of coupon payments per year (1, 2, or 4)' },
-    { name: 'basis', description: 'The day count basis (0-4)' },
-  ],
-  fn: (settlement?: number, maturity?: number, frequency?: number, basis?: number): UnionValue => {
-    if (!ValidateCouponArgs(settlement, maturity, frequency, basis)) return ValueError();
-    return Box(CoupDaysBs(settlement!, maturity!, frequency!, basis!));
+export default {
+  'COUPDAYBS': {
+    description: 'Returns the number of days from the beginning of the coupon period to the settlement date',
+    arguments: [
+      { name: 'settlement', description: 'The settlement date' },
+      { name: 'maturity', description: 'The maturity date' },
+      { name: 'frequency', description: 'The number of coupon payments per year (1, 2, or 4)' },
+      { name: 'basis', description: 'The day count basis (0-4)' },
+    ],
+    fn: (settlement?: number, maturity?: number, frequency?: number, basis?: number): UnionValue => {
+      if (!ValidateCouponArgs(settlement, maturity, frequency, basis)) return ValueError();
+      return Box(CoupDaysBs(settlement!, maturity!, frequency!, basis!));
+    },
   },
-});
 
-AddExtendedFunction('COUPDAYS', {
-  description: 'Returns the number of days in the coupon period containing the settlement date',
-  arguments: [
-    { name: 'settlement', description: 'The settlement date' },
-    { name: 'maturity', description: 'The maturity date' },
-    { name: 'frequency', description: 'The number of coupon payments per year (1, 2, or 4)' },
-    { name: 'basis', description: 'The day count basis (0-4)' },
-  ],
-  fn: (settlement?: number, maturity?: number, frequency?: number, basis?: number): UnionValue => {
-    if (!ValidateCouponArgs(settlement, maturity, frequency, basis)) return ValueError();
-    return Box(CoupDaysInPeriod(settlement!, maturity!, frequency!, basis!));
+  'COUPDAYS': {
+    description: 'Returns the number of days in the coupon period containing the settlement date',
+    arguments: [
+      { name: 'settlement', description: 'The settlement date' },
+      { name: 'maturity', description: 'The maturity date' },
+      { name: 'frequency', description: 'The number of coupon payments per year (1, 2, or 4)' },
+      { name: 'basis', description: 'The day count basis (0-4)' },
+    ],
+    fn: (settlement?: number, maturity?: number, frequency?: number, basis?: number): UnionValue => {
+      if (!ValidateCouponArgs(settlement, maturity, frequency, basis)) return ValueError();
+      return Box(CoupDaysInPeriod(settlement!, maturity!, frequency!, basis!));
+    },
   },
-});
 
-AddExtendedFunction('COUPDAYSNC', {
-  description: 'Returns the number of days from the settlement date to the next coupon date',
-  arguments: [
-    { name: 'settlement', description: 'The settlement date' },
-    { name: 'maturity', description: 'The maturity date' },
-    { name: 'frequency', description: 'The number of coupon payments per year (1, 2, or 4)' },
-    { name: 'basis', description: 'The day count basis (0-4)' },
-  ],
-  fn: (settlement?: number, maturity?: number, frequency?: number, basis?: number): UnionValue => {
-    if (!ValidateCouponArgs(settlement, maturity, frequency, basis)) return ValueError();
-    return Box(CoupDaysNc(settlement!, maturity!, frequency!, basis!));
+  'COUPDAYSNC': {
+    description: 'Returns the number of days from the settlement date to the next coupon date',
+    arguments: [
+      { name: 'settlement', description: 'The settlement date' },
+      { name: 'maturity', description: 'The maturity date' },
+      { name: 'frequency', description: 'The number of coupon payments per year (1, 2, or 4)' },
+      { name: 'basis', description: 'The day count basis (0-4)' },
+    ],
+    fn: (settlement?: number, maturity?: number, frequency?: number, basis?: number): UnionValue => {
+      if (!ValidateCouponArgs(settlement, maturity, frequency, basis)) return ValueError();
+      return Box(CoupDaysNc(settlement!, maturity!, frequency!, basis!));
+    },
   },
-});
 
-AddExtendedFunction('COUPNCD', {
-  description: 'Returns the next coupon date after the settlement date',
-  arguments: [
-    { name: 'settlement', description: 'The settlement date' },
-    { name: 'maturity', description: 'The maturity date' },
-    { name: 'frequency', description: 'The number of coupon payments per year (1, 2, or 4)' },
-    { name: 'basis', description: 'The day count basis (0-4)' },
-  ],
-  fn: (settlement?: number, maturity?: number, frequency?: number, basis?: number): UnionValue => {
-    if (!ValidateCouponArgs(settlement, maturity, frequency, basis)) return ValueError();
-    return Box(CoupNcdDate(settlement!, maturity!, frequency!));
+  'COUPNCD': {
+    description: 'Returns the next coupon date after the settlement date',
+    arguments: [
+      { name: 'settlement', description: 'The settlement date' },
+      { name: 'maturity', description: 'The maturity date' },
+      { name: 'frequency', description: 'The number of coupon payments per year (1, 2, or 4)' },
+      { name: 'basis', description: 'The day count basis (0-4)' },
+    ],
+    fn: (settlement?: number, maturity?: number, frequency?: number, basis?: number): UnionValue => {
+      if (!ValidateCouponArgs(settlement, maturity, frequency, basis)) return ValueError();
+      return Box(CoupNcdDate(settlement!, maturity!, frequency!));
+    },
   },
-});
 
-AddExtendedFunction('COUPPCD', {
-  description: 'Returns the previous coupon date before the settlement date',
-  arguments: [
-    { name: 'settlement', description: 'The settlement date' },
-    { name: 'maturity', description: 'The maturity date' },
-    { name: 'frequency', description: 'The number of coupon payments per year (1, 2, or 4)' },
-    { name: 'basis', description: 'The day count basis (0-4)' },
-  ],
-  fn: (settlement?: number, maturity?: number, frequency?: number, basis?: number): UnionValue => {
-    if (!ValidateCouponArgs(settlement, maturity, frequency, basis)) return ValueError();
-    return Box(CoupPcdDate(settlement!, maturity!, frequency!));
+  'COUPPCD': {
+    description: 'Returns the previous coupon date before the settlement date',
+    arguments: [
+      { name: 'settlement', description: 'The settlement date' },
+      { name: 'maturity', description: 'The maturity date' },
+      { name: 'frequency', description: 'The number of coupon payments per year (1, 2, or 4)' },
+      { name: 'basis', description: 'The day count basis (0-4)' },
+    ],
+    fn: (settlement?: number, maturity?: number, frequency?: number, basis?: number): UnionValue => {
+      if (!ValidateCouponArgs(settlement, maturity, frequency, basis)) return ValueError();
+      return Box(CoupPcdDate(settlement!, maturity!, frequency!));
+    },
   },
-});
 
-AddExtendedFunction('COUPNUM', {
-  description: 'Returns the number of coupons payable between the settlement date and maturity date',
-  arguments: [
-    { name: 'settlement', description: 'The settlement date' },
-    { name: 'maturity', description: 'The maturity date' },
-    { name: 'frequency', description: 'The number of coupon payments per year (1, 2, or 4)' },
-    { name: 'basis', description: 'The day count basis (0-4)' },
-  ],
-  fn: (settlement?: number, maturity?: number, frequency?: number, basis?: number): UnionValue => {
-    if (!ValidateCouponArgs(settlement, maturity, frequency, basis)) return ValueError();
-    return Box(CoupNumValue(settlement!, maturity!, frequency!));
+  'COUPNUM': {
+    description: 'Returns the number of coupons payable between the settlement date and maturity date',
+    arguments: [
+      { name: 'settlement', description: 'The settlement date' },
+      { name: 'maturity', description: 'The maturity date' },
+      { name: 'frequency', description: 'The number of coupon payments per year (1, 2, or 4)' },
+      { name: 'basis', description: 'The day count basis (0-4)' },
+    ],
+    fn: (settlement?: number, maturity?: number, frequency?: number, basis?: number): UnionValue => {
+      if (!ValidateCouponArgs(settlement, maturity, frequency, basis)) return ValueError();
+      return Box(CoupNumValue(settlement!, maturity!, frequency!));
+    },
   },
-});
+} satisfies FunctionMap;

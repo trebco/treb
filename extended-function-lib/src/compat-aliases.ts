@@ -1,7 +1,9 @@
 
-import { AddAlias } from 'treb-calculator';
+// alias pairs: [alias_name, target_function_name]. use these for functions
+// that are identical except for the name, e.g. the older 'GAMMADIST' maps to
+// the modern 'GAMMA.DIST'. the consumer registers these after functions.
 
-AddAlias([
+const aliases: [string, string][] = [
   ['BETAINV', 'BETA.INV'],
   ['BINOMDIST', 'BINOM.DIST'],
   ['CHIDIST', 'CHISQ.DIST.RT'],
@@ -26,4 +28,6 @@ AddAlias([
   ['ZTEST', 'Z.TEST'],
   ['CONFIDENCE', 'CONFIDENCE.NORM'],
   ['EXPONDIST', 'EXPON.DIST'],
-]);
+];
+
+export default aliases;

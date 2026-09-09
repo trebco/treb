@@ -1,5 +1,5 @@
 import { Box, type UnionValue } from 'treb-base-types';
-import { AddExtendedFunction } from 'treb-calculator';
+import type { FunctionMap } from 'treb-calculator';
 import { ValueError } from 'treb-calculator';
 
 // High-precision erf using Cephes rational approximation (~15 digits)
@@ -31,118 +31,120 @@ function erf(x: number): number {
   return sign * (1 - Math.exp(-a * a) * (polevl(inv_a2, R) / polevl(inv_a2, S)) / a);
 }
 
-AddExtendedFunction('STANDARDIZE', {
-  description: 'Returns a normalized value',
-  arguments: [
-    { name: 'x', description: 'The value to normalize', unroll: true },
-    { name: 'mean', description: 'The arithmetic mean of the distribution' },
-    { name: 'standard_dev', description: 'The standard deviation of the distribution' },
-  ],
-  fn: (x?: number, mean?: number, stdev?: number): UnionValue => {
-    if (x === undefined || mean === undefined || stdev === undefined) return ValueError();
-    if (stdev <= 0) return ValueError();
-    return Box((x - mean) / stdev);
+export default {
+  'STANDARDIZE': {
+    description: 'Returns a normalized value',
+    arguments: [
+      { name: 'x', description: 'The value to normalize', unroll: true },
+      { name: 'mean', description: 'The arithmetic mean of the distribution' },
+      { name: 'standard_dev', description: 'The standard deviation of the distribution' },
+    ],
+    fn: (x?: number, mean?: number, stdev?: number): UnionValue => {
+      if (x === undefined || mean === undefined || stdev === undefined) return ValueError();
+      if (stdev <= 0) return ValueError();
+      return Box((x - mean) / stdev);
+    },
   },
-});
 
-AddExtendedFunction('FISHER', {
-  description: 'Returns the Fisher transformation',
-  arguments: [
-    { name: 'x', description: 'The value for which to compute the transformation', unroll: true },
-  ],
-  fn: (x?: number): UnionValue => {
-    if (x === undefined) return ValueError();
-    if (x <= -1 || x >= 1) return ValueError();
-    return Box(0.5 * Math.log((1 + x) / (1 - x)));
+  'FISHER': {
+    description: 'Returns the Fisher transformation',
+    arguments: [
+      { name: 'x', description: 'The value for which to compute the transformation', unroll: true },
+    ],
+    fn: (x?: number): UnionValue => {
+      if (x === undefined) return ValueError();
+      if (x <= -1 || x >= 1) return ValueError();
+      return Box(0.5 * Math.log((1 + x) / (1 - x)));
+    },
   },
-});
 
-AddExtendedFunction('FISHERINV', {
-  description: 'Returns the inverse of the Fisher transformation',
-  arguments: [
-    { name: 'y', description: 'The value for which to compute the inverse transformation', unroll: true },
-  ],
-  fn: (y?: number): UnionValue => {
-    if (y === undefined) return ValueError();
-    const e2y = Math.exp(2 * y);
-    return Box((e2y - 1) / (e2y + 1));
+  'FISHERINV': {
+    description: 'Returns the inverse of the Fisher transformation',
+    arguments: [
+      { name: 'y', description: 'The value for which to compute the inverse transformation', unroll: true },
+    ],
+    fn: (y?: number): UnionValue => {
+      if (y === undefined) return ValueError();
+      const e2y = Math.exp(2 * y);
+      return Box((e2y - 1) / (e2y + 1));
+    },
   },
-});
 
-AddExtendedFunction('PERMUT', {
-  description: 'Returns the number of permutations for a given number of objects',
-  arguments: [
-    { name: 'number', description: 'The total number of objects', unroll: true },
-    { name: 'number_chosen', description: 'The number of objects in each permutation' },
-  ],
-  fn: (n?: number, k?: number): UnionValue => {
-    if (n === undefined || k === undefined) return ValueError();
-    n = Math.trunc(n);
-    k = Math.trunc(k);
-    if (n < 0 || k < 0 || k > n) return ValueError();
-    let result = 1;
-    for (let i = 0; i < k; i++) {
-      result *= (n - i);
-    }
-    return Box(result);
+  'PERMUT': {
+    description: 'Returns the number of permutations for a given number of objects',
+    arguments: [
+      { name: 'number', description: 'The total number of objects', unroll: true },
+      { name: 'number_chosen', description: 'The number of objects in each permutation' },
+    ],
+    fn: (n?: number, k?: number): UnionValue => {
+      if (n === undefined || k === undefined) return ValueError();
+      n = Math.trunc(n);
+      k = Math.trunc(k);
+      if (n < 0 || k < 0 || k > n) return ValueError();
+      let result = 1;
+      for (let i = 0; i < k; i++) {
+        result *= (n - i);
+      }
+      return Box(result);
+    },
   },
-});
 
-AddExtendedFunction('PERMUTATIONA', {
-  description: 'Returns the number of permutations with repetitions',
-  arguments: [
-    { name: 'number', description: 'The total number of objects', unroll: true },
-    { name: 'number_chosen', description: 'The number of objects in each permutation' },
-  ],
-  fn: (n?: number, k?: number): UnionValue => {
-    if (n === undefined || k === undefined) return ValueError();
-    n = Math.trunc(n);
-    k = Math.trunc(k);
-    if (n < 0 || k < 0) return ValueError();
-    return Box(Math.pow(n, k));
+  'PERMUTATIONA': {
+    description: 'Returns the number of permutations with repetitions',
+    arguments: [
+      { name: 'number', description: 'The total number of objects', unroll: true },
+      { name: 'number_chosen', description: 'The number of objects in each permutation' },
+    ],
+    fn: (n?: number, k?: number): UnionValue => {
+      if (n === undefined || k === undefined) return ValueError();
+      n = Math.trunc(n);
+      k = Math.trunc(k);
+      if (n < 0 || k < 0) return ValueError();
+      return Box(Math.pow(n, k));
+    },
   },
-});
 
-AddExtendedFunction('ERF.PRECISE', {
-  description: 'Returns the error function integrated between 0 and a limit',
-  arguments: [
-    { name: 'x', description: 'The upper bound', unroll: true },
-  ],
-  fn: (x?: number): UnionValue => {
-    if (x === undefined) return ValueError();
-    return Box(erf(x));
+  'ERF.PRECISE': {
+    description: 'Returns the error function integrated between 0 and a limit',
+    arguments: [
+      { name: 'x', description: 'The upper bound', unroll: true },
+    ],
+    fn: (x?: number): UnionValue => {
+      if (x === undefined) return ValueError();
+      return Box(erf(x));
+    },
   },
-});
 
-AddExtendedFunction('ERFC', {
-  description: 'Returns the complementary error function',
-  arguments: [
-    { name: 'x', description: 'The lower bound', unroll: true },
-  ],
-  fn: (x?: number): UnionValue => {
-    if (x === undefined) return ValueError();
-    return Box(1 - erf(x));
+  'ERFC': {
+    description: 'Returns the complementary error function',
+    arguments: [
+      { name: 'x', description: 'The lower bound', unroll: true },
+    ],
+    fn: (x?: number): UnionValue => {
+      if (x === undefined) return ValueError();
+      return Box(1 - erf(x));
+    },
   },
-});
 
-AddExtendedFunction('ERFC.PRECISE', {
-  description: 'Returns the complementary error function',
-  arguments: [
-    { name: 'x', description: 'The lower bound', unroll: true },
-  ],
-  fn: (x?: number): UnionValue => {
-    if (x === undefined) return ValueError();
-    return Box(1 - erf(x));
+  'ERFC.PRECISE': {
+    description: 'Returns the complementary error function',
+    arguments: [
+      { name: 'x', description: 'The lower bound', unroll: true },
+    ],
+    fn: (x?: number): UnionValue => {
+      if (x === undefined) return ValueError();
+      return Box(1 - erf(x));
+    },
   },
-});
 
-AddExtendedFunction('GAUSS', {
-  description: 'Returns the probability that a standard normal population member falls between the mean and z standard deviations from the mean',
-  arguments: [
-    { name: 'z', description: 'The number of standard deviations from the mean', unroll: true },
-  ],
-  fn: (z?: number): UnionValue => {
-    if (z === undefined) return ValueError();
-    return Box(0.5 * erf(z / Math.SQRT2));
+  'GAUSS': {
+    description: 'Returns the probability that a standard normal population member falls between the mean and z standard deviations from the mean',
+    arguments: [
+      { name: 'z', description: 'The number of standard deviations from the mean', unroll: true },
+    ],
+    fn: (z?: number): UnionValue => {
+      if (z === undefined) return ValueError();
+      return Box(0.5 * erf(z / Math.SQRT2));
+    },
   },
-});
+} satisfies FunctionMap;

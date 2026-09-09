@@ -1,6 +1,6 @@
 # Extended Function Library
 
-Adds spreadsheet functions to the TREB app. Each source file registers functions via `AddExtendedFunction(name, descriptor)`.
+Adds spreadsheet functions to the TREB app. Each source file default-exports a `FunctionMap` (name → descriptor); `index.ts` merges them into the exported `ExtendedFunctions` map. The consumer registers that map — the library performs no registration side-effects.
 
 ## File whitelist
 
@@ -31,15 +31,23 @@ Do not read `../coverage-test/report.html` — it is generated from the JSON rep
 
 ## Adding functions
 
-1. Create or edit a file in `./src/` (see `./src/template.ts` for the pattern)
-2. Import it in `./src/index.ts`
+1. Create or edit a file in `./src/` (see `./src/template.ts` for the pattern). The file
+   `default`-exports one object literal (`satisfies FunctionMap`) mapping each function
+   name to its descriptor — do not call any registration function.
+2. In `./src/index.ts`, `import` the file's default export and spread it into the
+   `ExtendedFunctions` composite map. Merge order matters: on a duplicate name the later
+   spread wins.
 3. Key imports:
    - `Box`, `UnionValue` from `treb-base-types`
-   - `AddExtendedFunction`, `ValueError`, `DivideByZeroError` from `treb-calculator`
+   - `ValueError`, `DivideByZeroError` from `treb-calculator` (values); `FunctionMap` from
+     `treb-calculator` (type, for `satisfies FunctionMap`)
    - `extractNumbers` from `./stats-array-utils` for array arguments
 4. Use `boxed: true` on argument descriptors to receive raw `UnionValue` (for array args)
 5. Use `unroll: true` on argument descriptors to auto-apply the function over array elements
 6. Use `allow_error: true` on argument descriptors to receive error values instead of having the calculator short-circuit on errors (needed for functions like TYPE and ERROR.TYPE)
+
+Module-private helper functions stay as ordinary top-level declarations in the file,
+referenced from the descriptor `fn` bodies — they are not part of the exported map.
 
 ## Adding aliases
 
@@ -47,9 +55,9 @@ Aliases are names that will map to existing functions. For example we can use
 an alias to implement the older function GAMMADIST which will map to the modern
 function GAMMA.DIST.
 
-We have a method that adds aliases as [string, string] pairs. Internally, aliases
-are processed after functions so aliases can be created at any time. The file
-`./src/template.ts` includes an example of using the alias function.
+Aliases are `[alias_name, target_function_name]` pairs. Add them to the array in
+`./src/compat-aliases.ts` (default-exported), which `index.ts` re-exports as
+`ExtendedFunctionAliases`. The consumer applies aliases after registering functions.
 
 ## Testing and validation
 

@@ -1,7 +1,7 @@
 
 import { Box, type UnionValue } from 'treb-base-types';
 import { ValueType } from 'treb-base-types';
-import { AddExtendedFunction } from 'treb-calculator';
+import type { FunctionMap } from 'treb-calculator';
 import { ValueError } from 'treb-calculator';
 import { Lgamma, RegularizedGammaP } from './stats-special-functions';
 
@@ -52,96 +52,98 @@ function NormalInvApprox(p: number): number {
     / (1 + 1.432788 * t + 0.189269 * t * t + 0.001308 * t * t * t);
 }
 
-AddExtendedFunction('CHISQ.DIST', {
-  description: 'Returns the chi-squared distribution',
-  arguments: [
-    { name: 'x', description: 'The value at which to evaluate', unroll: true },
-    { name: 'deg_freedom', description: 'The degrees of freedom' },
-    { name: 'cumulative', description: 'TRUE for cumulative distribution, FALSE for probability density' },
-  ],
-  fn: (x?: number, df?: number, cumulative?: boolean): UnionValue => {
-    if (x === undefined || df === undefined || cumulative === undefined) return ValueError();
-    df = Math.trunc(df);
-    if (x < 0 || df < 1) return ValueError();
-    return Box(cumulative ? ChiSquaredCDF(x, df) : ChiSquaredPDF(x, df));
+export default {
+  'CHISQ.DIST': {
+    description: 'Returns the chi-squared distribution',
+    arguments: [
+      { name: 'x', description: 'The value at which to evaluate', unroll: true },
+      { name: 'deg_freedom', description: 'The degrees of freedom' },
+      { name: 'cumulative', description: 'TRUE for cumulative distribution, FALSE for probability density' },
+    ],
+    fn: (x?: number, df?: number, cumulative?: boolean): UnionValue => {
+      if (x === undefined || df === undefined || cumulative === undefined) return ValueError();
+      df = Math.trunc(df);
+      if (x < 0 || df < 1) return ValueError();
+      return Box(cumulative ? ChiSquaredCDF(x, df) : ChiSquaredPDF(x, df));
+    },
   },
-});
 
-AddExtendedFunction('CHISQ.DIST.RT', {
-  description: 'Returns the right-tailed probability of the chi-squared distribution',
-  arguments: [
-    { name: 'x', description: 'The value at which to evaluate', unroll: true },
-    { name: 'deg_freedom', description: 'The degrees of freedom' },
-  ],
-  fn: (x?: number, df?: number): UnionValue => {
-    if (x === undefined || df === undefined) return ValueError();
-    df = Math.trunc(df);
-    if (x < 0 || df < 1) return ValueError();
-    return Box(1 - ChiSquaredCDF(x, df));
+  'CHISQ.DIST.RT': {
+    description: 'Returns the right-tailed probability of the chi-squared distribution',
+    arguments: [
+      { name: 'x', description: 'The value at which to evaluate', unroll: true },
+      { name: 'deg_freedom', description: 'The degrees of freedom' },
+    ],
+    fn: (x?: number, df?: number): UnionValue => {
+      if (x === undefined || df === undefined) return ValueError();
+      df = Math.trunc(df);
+      if (x < 0 || df < 1) return ValueError();
+      return Box(1 - ChiSquaredCDF(x, df));
+    },
   },
-});
 
-AddExtendedFunction('CHISQ.INV', {
-  description: 'Returns the inverse of the left-tailed probability of the chi-squared distribution',
-  arguments: [
-    { name: 'probability', description: 'The probability', unroll: true },
-    { name: 'deg_freedom', description: 'The degrees of freedom' },
-  ],
-  fn: (p?: number, df?: number): UnionValue => {
-    if (p === undefined || df === undefined) return ValueError();
-    df = Math.trunc(df);
-    if (p < 0 || p > 1 || df < 1) return ValueError();
-    return Box(ChiSquaredInv(p, df));
+  'CHISQ.INV': {
+    description: 'Returns the inverse of the left-tailed probability of the chi-squared distribution',
+    arguments: [
+      { name: 'probability', description: 'The probability', unroll: true },
+      { name: 'deg_freedom', description: 'The degrees of freedom' },
+    ],
+    fn: (p?: number, df?: number): UnionValue => {
+      if (p === undefined || df === undefined) return ValueError();
+      df = Math.trunc(df);
+      if (p < 0 || p > 1 || df < 1) return ValueError();
+      return Box(ChiSquaredInv(p, df));
+    },
   },
-});
 
-AddExtendedFunction('CHISQ.INV.RT', {
-  description: 'Returns the inverse of the right-tailed probability of the chi-squared distribution',
-  arguments: [
-    { name: 'probability', description: 'The probability', unroll: true },
-    { name: 'deg_freedom', description: 'The degrees of freedom' },
-  ],
-  fn: (p?: number, df?: number): UnionValue => {
-    if (p === undefined || df === undefined) return ValueError();
-    df = Math.trunc(df);
-    if (p < 0 || p > 1 || df < 1) return ValueError();
-    return Box(ChiSquaredInv(1 - p, df));
+  'CHISQ.INV.RT': {
+    description: 'Returns the inverse of the right-tailed probability of the chi-squared distribution',
+    arguments: [
+      { name: 'probability', description: 'The probability', unroll: true },
+      { name: 'deg_freedom', description: 'The degrees of freedom' },
+    ],
+    fn: (p?: number, df?: number): UnionValue => {
+      if (p === undefined || df === undefined) return ValueError();
+      df = Math.trunc(df);
+      if (p < 0 || p > 1 || df < 1) return ValueError();
+      return Box(ChiSquaredInv(1 - p, df));
+    },
   },
-});
 
-AddExtendedFunction('CHISQ.TEST', {
-  description: 'Returns the chi-squared test for independence',
-  arguments: [
-    { name: 'actual_range', description: 'The range of observed data', boxed: true },
-    { name: 'expected_range', description: 'The range of expected values', boxed: true },
-  ],
-  fn: (actual?: UnionValue, expected?: UnionValue): UnionValue => {
-    if (!actual || !expected) return ValueError();
-    if (actual.type !== ValueType.array || expected.type !== ValueType.array) return ValueError();
+  'CHISQ.TEST': {
+    description: 'Returns the chi-squared test for independence',
+    arguments: [
+      { name: 'actual_range', description: 'The range of observed data', boxed: true },
+      { name: 'expected_range', description: 'The range of expected values', boxed: true },
+    ],
+    fn: (actual?: UnionValue, expected?: UnionValue): UnionValue => {
+      if (!actual || !expected) return ValueError();
+      if (actual.type !== ValueType.array || expected.type !== ValueType.array) return ValueError();
 
-    const a_cols = actual.value;
-    const e_cols = expected.value;
-    const num_cols = a_cols.length;
-    const num_rows = a_cols[0]?.length ?? 0;
+      const a_cols = actual.value;
+      const e_cols = expected.value;
+      const num_cols = a_cols.length;
+      const num_rows = a_cols[0]?.length ?? 0;
 
-    if (num_cols === 0 || num_rows === 0) return ValueError();
-    if (e_cols.length !== num_cols) return ValueError();
+      if (num_cols === 0 || num_rows === 0) return ValueError();
+      if (e_cols.length !== num_cols) return ValueError();
 
-    let chi_sq = 0;
-    for (let c = 0; c < num_cols; c++) {
-      if (a_cols[c].length !== num_rows || e_cols[c].length !== num_rows) return ValueError();
-      for (let r = 0; r < num_rows; r++) {
-        const o = a_cols[c][r];
-        const e = e_cols[c][r];
-        if (o.type !== ValueType.number || e.type !== ValueType.number) return ValueError();
-        if (e.value === 0) return ValueError();
-        const diff = o.value - e.value;
-        chi_sq += diff * diff / e.value;
+      let chi_sq = 0;
+      for (let c = 0; c < num_cols; c++) {
+        if (a_cols[c].length !== num_rows || e_cols[c].length !== num_rows) return ValueError();
+        for (let r = 0; r < num_rows; r++) {
+          const o = a_cols[c][r];
+          const e = e_cols[c][r];
+          if (o.type !== ValueType.number || e.type !== ValueType.number) return ValueError();
+          if (e.value === 0) return ValueError();
+          const diff = o.value - e.value;
+          chi_sq += diff * diff / e.value;
+        }
       }
-    }
 
-    const df = (num_rows - 1) * (num_cols - 1);
-    if (df < 1) return ValueError();
-    return Box(1 - ChiSquaredCDF(chi_sq, df));
+      const df = (num_rows - 1) * (num_cols - 1);
+      if (df < 1) return ValueError();
+      return Box(1 - ChiSquaredCDF(chi_sq, df));
+    },
   },
-});
+} satisfies FunctionMap;
