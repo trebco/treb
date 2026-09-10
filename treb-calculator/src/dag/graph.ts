@@ -43,15 +43,25 @@ export enum GraphStatus {
   CalculationError,
 }
 
+function PackKey(i: number, j: number, k: number): bigint {
+  return (BigInt(i) << 48n) | (BigInt(j) << 24n) | BigInt(k);
+}
+
+function AddressKey(address: ICellAddress) {
+  return PackKey(address.sheet_id || 0, address.row, address.column);
+}
+
 /**
  * graph is now abstract, as we are extending it with the calculator.
  */
 export abstract class Graph implements GraphCallbacks {
 
-  /**
+  /* *
    * list of vertices, indexed by address as [sheet id][column][row]
    */
-  public vertices: Array<Array<Array<SpreadsheetVertex|undefined>>> = [[]];
+  // public vertices: Array<Array<Array<SpreadsheetVertex|undefined>>> = [[]];
+
+  public vertex_map: Map<bigint, SpreadsheetVertex> = new Map();
 
   public volatile_list: SpreadsheetVertexBase[] = [];
 
@@ -106,13 +116,20 @@ export abstract class Graph implements GraphCallbacks {
   }
   */
 
+  public DevStats() {
+    console.info(`vertex list size`, this.vertex_map.size);
+    console.info(`leaf vertex list size`, this.leaf_vertices.size);
+  }
+
   /**
    * flush the graph, calculation tree and cells reference
    */
   public FlushTree(): void {
     this.dirty_list = [];
     this.volatile_list = [];
-    this.vertices = [[]];
+    // this.vertices = [[]];
+    this.vertex_map.clear();
+
     this.leaf_vertices.clear(); 
     // this.cells_map = {};
 
@@ -196,6 +213,16 @@ export abstract class Graph implements GraphCallbacks {
       return undefined;
     }
 
+    const key = AddressKey(address);
+    let vertex = this.vertex_map.get(key);
+    if (vertex) {
+      return vertex;
+    }
+    if (!create) {
+      return undefined;
+    }
+
+    /*
     if (!this.vertices[address.sheet_id]) {
       if (!create) {
         return undefined;
@@ -216,8 +243,10 @@ export abstract class Graph implements GraphCallbacks {
       }
       if (!create) return undefined;
     }
+    */
 
-    const vertex = new SpreadsheetVertex();
+    //const 
+    vertex = new SpreadsheetVertex();
     // vertex.address = { ...address };
 
     // because we are passing in something other than an address, we're 
@@ -267,7 +296,8 @@ export abstract class Graph implements GraphCallbacks {
 
     vertex.reference = cells.EnsureCell(address);
 
-    this.vertices[address.sheet_id][address.column][address.row] = vertex;
+    // this.vertices[address.sheet_id][address.column][address.row] = vertex;
+    this.vertex_map.set(key, vertex);
 
     // if there's an array that contains this cell, we need to create an edge
 
@@ -290,7 +320,10 @@ export abstract class Graph implements GraphCallbacks {
     if (!vertex) return;
 
     vertex.Reset();
-    this.vertices[address.sheet_id][address.column][address.row] = undefined;
+
+    this.vertex_map.delete(AddressKey(address));
+
+    // this.vertices[address.sheet_id][address.column][address.row] = undefined;
 
     // ArrayVertex2.CheckOutbound();
 
@@ -428,6 +461,11 @@ export abstract class Graph implements GraphCallbacks {
    */
   public ResetLoopState(): void {
 
+    for (const vertex of this.vertex_map.values()) {
+      vertex.color = vertex.edges_out.size ? Color.white : Color.black;
+    }
+
+    /*
     for (const l1 of this.vertices) {
       if (l1) {
         for (const l2 of l1) {
@@ -442,6 +480,7 @@ export abstract class Graph implements GraphCallbacks {
         }
       }
     }
+    */
 
     // this is unecessary
 
@@ -475,6 +514,12 @@ export abstract class Graph implements GraphCallbacks {
 
     const list: Vertex[] = [];
 
+    for (const vertex of this.vertex_map.values()) {
+      vertex.color = vertex.edges_out.size ? Color.white : Color.black;
+      list.push(vertex);
+    }
+
+    /*
     for (const l1 of this.vertices) {
       if (l1) {
         for (const l2 of l1) {
@@ -489,6 +534,7 @@ export abstract class Graph implements GraphCallbacks {
         }
       }
     }
+    */
 
     // we were having problems with large calculation loops (basically long
     // lists of x+1) using a recursive DFS. so we need to switch to a stack,
@@ -642,8 +688,10 @@ export abstract class Graph implements GraphCallbacks {
 
   /** 
    * new array vertices
-   */
+   * /
   protected CompositeAddArrayEdge(u: Area, vertex: Vertex): void {
+
+    console.info(`CompositeAddArrayEdge`);
 
     if (!u.start.sheet_id) {
       throw new Error('AddArrayEdge called without sheet ID');
@@ -665,6 +713,34 @@ export abstract class Graph implements GraphCallbacks {
 
     // now add edges from/to nodes THAT ALREADY EXIST
 
+    for (const vertex of this.vertex_map.values()) {
+
+      // malformed in some way
+
+      if (!vertex.address) {
+        return;
+      }
+
+      // wrong sheet
+
+      if (vertex.address.sheet_id !== u.start.sheet_id) {
+        continue;
+      }
+
+      // address mismatch
+
+      if (!u.entire_row && (vertex.address.column < u.start.column || vertex.address.column > u.end.column)) {
+        continue;
+      }
+      if (!u.entire_column && (vertex.address.row < u.start.row || vertex.address.row > u.end.row)) {
+        continue;
+      }
+
+      array_vertex.DependsOn(vertex);
+
+    }
+
+    / *
     // range can't span sheets, so we only need one set to look up
 
     const map = this.vertices[u.start.sheet_id];
@@ -718,24 +794,29 @@ export abstract class Graph implements GraphCallbacks {
               array_vertex.DependsOn(vertex);
             }
           }
-          /*
+          / *
           else {
             console.info("HERE", column, row);
           }
-          */
+          * /
         }
       }
     }
+    * /
 
   }
+  */
 
+  /** FIXME: this is not used -- remove/deprecate? * /
   public AddLeafVertexArrayEdge(u: Area, vertex: LeafVertex) {
     this.CompositeAddArrayEdge(u, vertex);
   }
+  */
 
   /** 
    * new array vertices
-   */
+   * FIXME: this is not used -- remove/deprecate? 
+   * /
   public AddArrayEdge(u: Area, v: ICellAddress): void {
 
     if (!u.start.sheet_id) {
@@ -748,6 +829,7 @@ export abstract class Graph implements GraphCallbacks {
     this.CompositeAddArrayEdge(u, v_v);
 
   }
+  */
 
   /** adds an edge from u -> v */
   public AddEdge(u: ICellAddress, v: ICellAddress, /* tag?: string */ ): void {
