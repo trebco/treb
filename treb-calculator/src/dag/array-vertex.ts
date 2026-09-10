@@ -80,6 +80,10 @@ export class ArrayVertex extends SpreadsheetVertexBase {
     return [new ArrayVertex(area), true];
   }
 
+  public static Size(): number {
+    return this.list.length;
+  }
+
   /**
    * this seems sloppy, does this clean up properly?
    */

@@ -43,10 +43,15 @@ export enum GraphStatus {
   CalculationError,
 }
 
+/**
+ * pack keys. we're using 24 bits per index, but this is a
+ * runtime value and can change if necessary.
+ */
 function PackKey(i: number, j: number, k: number): bigint {
   return (BigInt(i) << 48n) | (BigInt(j) << 24n) | BigInt(k);
 }
 
+/** utility to derive key directly from address */
 function AddressKey(address: ICellAddress) {
   return PackKey(address.sheet_id || 0, address.row, address.column);
 }
@@ -56,22 +61,21 @@ function AddressKey(address: ICellAddress) {
  */
 export abstract class Graph implements GraphCallbacks {
 
-  /* *
-   * list of vertices, indexed by address as [sheet id][column][row]
-   */
-  // public vertices: Array<Array<Array<SpreadsheetVertex|undefined>>> = [[]];
-
+  /** new vertex list */
   public vertex_map: Map<bigint, SpreadsheetVertex> = new Map();
 
+  /** list of vertices that are volalite (dirty on every recalc) */
   public volatile_list: SpreadsheetVertexBase[] = [];
 
+  /**
+   * this is a global list of cells that need calculation. it's initialized
+   * in the calculation loop, but then can be appended by individual vertices
+   * during the calculation. FIXME: just make this a temporary field, you 
+   * can pass it to the calculation method.
+   */
   public calculation_list: SpreadsheetVertexBase[] = [];
 
-  // list of spills we have created
-  // public spills: IArea[] = [];
   public spill_data: { area: IArea, vertex: StateLeafVertex }[] = [];
-
-  // public cells_map: {[index: number]: Cells} = {};
 
   protected abstract readonly model: DataModel;
 
@@ -81,7 +85,6 @@ export abstract class Graph implements GraphCallbacks {
   public loop_hint?: string;
 
   // special
-  // public leaf_vertices: LeafVertex[] = [];
   public leaf_vertices: Set<LeafVertex> = new Set();
 
   /** lock down access */
@@ -119,6 +122,7 @@ export abstract class Graph implements GraphCallbacks {
   public DevStats() {
     console.info(`vertex list size`, this.vertex_map.size);
     console.info(`leaf vertex list size`, this.leaf_vertices.size);
+    console.info(`array vertex list size`, ArrayVertex.Size());
   }
 
   /**
@@ -688,10 +692,10 @@ export abstract class Graph implements GraphCallbacks {
 
   /** 
    * new array vertices
-   * /
+   */
   protected CompositeAddArrayEdge(u: Area, vertex: Vertex): void {
 
-    console.info(`CompositeAddArrayEdge`);
+    // console.info(`CompositeAddArrayEdge`);
 
     if (!u.start.sheet_id) {
       throw new Error('AddArrayEdge called without sheet ID');
@@ -740,7 +744,7 @@ export abstract class Graph implements GraphCallbacks {
 
     }
 
-    / *
+    /*
     // range can't span sheets, so we only need one set to look up
 
     const map = this.vertices[u.start.sheet_id];
@@ -802,21 +806,17 @@ export abstract class Graph implements GraphCallbacks {
         }
       }
     }
-    * /
+    */
 
   }
-  */
 
-  /** FIXME: this is not used -- remove/deprecate? * /
   public AddLeafVertexArrayEdge(u: Area, vertex: LeafVertex) {
     this.CompositeAddArrayEdge(u, vertex);
   }
-  */
 
   /** 
    * new array vertices
-   * FIXME: this is not used -- remove/deprecate? 
-   * /
+   */
   public AddArrayEdge(u: Area, v: ICellAddress): void {
 
     if (!u.start.sheet_id) {
@@ -829,7 +829,6 @@ export abstract class Graph implements GraphCallbacks {
     this.CompositeAddArrayEdge(u, v_v);
 
   }
-  */
 
   /** adds an edge from u -> v */
   public AddEdge(u: ICellAddress, v: ICellAddress, /* tag?: string */ ): void {
