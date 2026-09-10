@@ -1637,40 +1637,6 @@ export class Calculator extends Graph {
 
       }
 
-      /*
-      // ok, now we can go on: copying a little from dynamic dependencies, 
-      // we're going to add vertices and check for dirty:
-      
-      const sheet_id = address.sheet_id;
-      let dirty = false;
-
-      for (const {row, column} of cells.IterateRC(area)) {
-
-        if (row === address.row && column === address.column) { continue; }
-
-        const vertex = this.GetVertex({sheet_id, row, column}, true);
-        if (vertex && vertex.dirty) {
-
-          console.info(`Adding edge from ${{row: address.row, column: address.column}} -> ${{row, column}}`)
-
-          // see comments in DynamicDependencies()
-          
-          this.AddEdge(address, {row, column, sheet_id});
-          dirty = true;
-
-        }
-
-      }
-
-      console.info("DIRTY?", dirty);
-
-      if (dirty) {
-        const current_vertex = this.GetVertex(address, true) as SpreadsheetVertex;
-        current_vertex.short_circuit = true;
-        return;
-      }
-      */
-
       //
 
 
@@ -3244,7 +3210,8 @@ export class Calculator extends Graph {
 
         if (range.entire_column || range.entire_row || range.count > 1) {
           // this.AddLeafVertexEdge(range.start, vertex);
-          this.AddLeafVertexArrayEdge(range, vertex);
+          // this.AddLeafVertexArrayEdge(range, vertex);
+          this.AddLeafVertexAreaEdge(range, vertex);
         }
         else {
           this.AddLeafVertexEdge(range.start, vertex);
@@ -3503,6 +3470,9 @@ export class Calculator extends Graph {
 
           // --- trying again... ---------------------------------------------
 
+          this.AddAreaEdge(range, address);
+
+          /*
           if (range.entire_row || range.entire_column) {
             this.AddArrayEdge(range, address);
           }
@@ -3515,7 +3485,7 @@ export class Calculator extends Graph {
             // range.Iterate((target: ICellAddress) => this.AddEdge(target, address));
             
           }
-
+          */
 
           // --- end ---------------------------------------------------------
 

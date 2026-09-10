@@ -151,7 +151,7 @@ export class ArrayVertex extends SpreadsheetVertexBase {
       return;
     }
     
-    if (this.color === Color.white && this.LoopCheck()) {
+    if (this.GetColor(graph.epoch) === Color.white && this.LoopCheck(graph.epoch)) {
 
       // console.info('LC', this);
       this.dirty = false;

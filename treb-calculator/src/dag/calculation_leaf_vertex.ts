@@ -66,7 +66,10 @@ export class CalculationLeafVertex extends SpreadsheetVertex {
    * superclass just for this purpose is not worthwhile since regular vertices 
    * should vastly outnumber leaves.
    */
-  public color = Color.black;
+  //public color = Color.black;
+  public GetColor(epoch: number) {
+    return Color.black;
+  }
 
   /** overrides calculate function */
   public Calculate(graph: GraphCallbacks): void {

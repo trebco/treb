@@ -37,6 +37,8 @@ export interface GraphCallbacks {
   SpillCallback: (vertex: SpreadsheetVertexBase, value: UnionValue) => Vertex[]|void;
   volatile_list: SpreadsheetVertexBase[];
   calculation_list: SpreadsheetVertexBase[];
+  epoch: number;
+  loop_errors: number;
 }
 
 export abstract class SpreadsheetVertexBase extends Vertex {

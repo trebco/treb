@@ -58,6 +58,11 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
 
   public type = SpreadsheetVertex.type; // for type guard
 
+  /** tryping to break any consumers */
+  private constructor() {
+    super();
+  }
+
   /** 
    * it seems like this could be cached, if it gets checked a lot 
    * also what's with the crazy return signature? [fixed]
@@ -146,7 +151,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
     // OTOH that means maintaining the internal calculation part twice (or
     // adding a method call).
 
-    if (this.color === Color.white && this.LoopCheck()) {
+    if (this.GetColor(graph.epoch) === Color.white && this.LoopCheck(graph.epoch)) {
 
       // console.info('LCB', `R${this.address?.row} C${this.address?.column}`, this);
 
@@ -169,6 +174,9 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
               this.array_head || this.reference.type === ValueType.formula )) {
             this.reference.SetCalculationError(ErrorType.Loop);
           }
+
+          graph.loop_errors++;
+
           //this.reference?.SetCalculationError('LOOP');
 
           // intuitively this seems like a good idea but I'm not sure

@@ -20,9 +20,7 @@
  */
 
 import type { Vertex} from './vertex';
-import { Color } from './vertex';
 import { SpreadsheetVertex  } from './spreadsheet_vertex';
-import { ArrayVertex  } from './array-vertex';
 import type { SpreadsheetVertexBase, CalculationResult, GraphCallbacks } from './spreadsheet_vertex_base';
 import type { StateLeafVertex } from './state_leaf_vertex';
 import type { ICellAddress, ICellAddress2, IArea, UnionValue } from 'treb-base-types';
@@ -31,6 +29,7 @@ import type { DataModel } from 'treb-data-model';
 import { CalculationLeafVertex } from './calculation_leaf_vertex';
 
 import { AreaUtils } from 'treb-base-types';
+import { IntervalVertex } from './interval-vertex';
 
 export type LeafVertex = StateLeafVertex|CalculationLeafVertex;
 export type { StateLeafVertex };
@@ -43,17 +42,27 @@ export enum GraphStatus {
   CalculationError,
 }
 
-/**
- * pack keys. we're using 24 bits per index, but this is a
- * runtime value and can change if necessary.
- */
-function PackKey(i: number, j: number, k: number): bigint {
-  return (BigInt(i) << 48n) | (BigInt(j) << 24n) | BigInt(k);
+const MAX_ROWS = 2**20;
+const MAX_COLS = 2**14;
+
+const ROOT_AREA: IArea = {
+  start: { 
+    row: 0, 
+    column: 0,
+  }, 
+  end: { 
+    row: MAX_ROWS - 1, 
+    column: MAX_COLS - 1,
+  },
+};
+
+export function IsIntervalVertex(vertex: Vertex): vertex is IntervalVertex {
+  return vertex.type === IntervalVertex.type;
 }
 
-/** utility to derive key directly from address */
-function AddressKey(address: ICellAddress) {
-  return PackKey(address.sheet_id || 0, address.row, address.column);
+export function IsSpreadsheetVertex(vertex: Vertex): vertex is SpreadsheetVertex {
+  return vertex.type === SpreadsheetVertex.type || 
+    (vertex.type === IntervalVertex.type && (vertex as IntervalVertex).is_leaf);
 }
 
 /**
@@ -61,11 +70,23 @@ function AddressKey(address: ICellAddress) {
  */
 export abstract class Graph implements GraphCallbacks {
 
-  /** new vertex list */
-  public vertex_map: Map<bigint, SpreadsheetVertex> = new Map();
+  /**
+   * root of segment tree, per sheet
+   */
+  public roots: Map<number, IntervalVertex> = new Map();
 
   /** list of vertices that are volalite (dirty on every recalc) */
   public volatile_list: SpreadsheetVertexBase[] = [];
+
+  /** epoch for managing colors, so we don't have to wipe the list */
+  public epoch = 0;
+
+  /** 
+   * temp reporting for loop errors, since we no longer have a global
+   * method to do the check. we should use a list or something so we
+   * can have some debug information
+   */
+  public loop_errors = 0;
 
   /**
    * this is a global list of cells that need calculation. it's initialized
@@ -93,62 +114,21 @@ export abstract class Graph implements GraphCallbacks {
   /** flag set on add edge */
   private loop_check_required = false;
 
-  /*
-  public IsArrayVertex(vertex: Vertex): vertex is ArrayVertex {
-    return vertex.type === ArrayVertex.type;
-  }
-  */
-
-  public IsSpreadsheetVertex(vertex: Vertex): vertex is SpreadsheetVertex {
-    return vertex.type === SpreadsheetVertex.type;
-  }
-
-  /* *
-   * we used to attach the data model here, but it's now an instance
-   * property (and readonly). we map still need to rebuild the map, 
-   * so we're retaining the method for the time being (but renamed and 
-   * reparameterized).
-   * 
-   * if model were a class we wouldn't have to do this...
-   * /
-  protected RebuildMap(): void {
-    this.cells_map = {};
-    for (const sheet of this.model.sheets.list) {
-      this.cells_map[sheet.id] = sheet.cells;
-    }
-  }
-  */
-
-  public DevStats() {
-    console.info(`vertex list size`, this.vertex_map.size);
-    console.info(`leaf vertex list size`, this.leaf_vertices.size);
-    console.info(`array vertex list size`, ArrayVertex.Size());
-  }
-
   /**
    * flush the graph, calculation tree and cells reference
    */
   public FlushTree(): void {
     this.dirty_list = [];
     this.volatile_list = [];
-    // this.vertices = [[]];
-    this.vertex_map.clear();
-
     this.leaf_vertices.clear(); 
-    // this.cells_map = {};
+    this.roots.clear();
 
     // can we flush spills here without cleaning up? (...)
-    // this.spills = [];
-
-    /** array vertex maintains its own list */
-    ArrayVertex.Clear();
-
   }
 
   public ResolveArrayHead(address: ICellAddress): ICellAddress {
 
     if (!address.sheet_id) { throw new Error('resolve array head with no sheet id'); }
-    //const cells = this.cells_map[address.sheet_id];
     const cells = this.model.sheets.Find(address.sheet_id)?.cells;
 
     if (!cells) {
@@ -172,22 +152,14 @@ export abstract class Graph implements GraphCallbacks {
 
   }
 
-  /**
-   * iterate vertices
-   * @param area 
-   */
-  public *IterateVertices(area: IArea, create = false): Generator<SpreadsheetVertex> {
-
-    // this is wasteful because it repeatedly gets the cells, but
-    // for a contiguous area we know they're in the same sheet. we
-    // cal also skip the repeated tests. FIXME
-
-    for (const address of AreaUtils.Iterate(area)) {
-      const vertex = this.GetVertex(address, create);
-      if (vertex) {
-        yield vertex;
-      }
+  /** return or create root for the given sheet, by id */
+  public EnsureRoot(sheet: number) {
+    let root = this.roots.get(sheet);
+    if (!root) {
+      root = new IntervalVertex(ROOT_AREA);
+      this.roots.set(sheet, root);
     }
+    return root;
   }
 
   /** overload */
@@ -202,55 +174,32 @@ export abstract class Graph implements GraphCallbacks {
     if (!address.sheet_id) { 
       console.info(JSON.stringify({address, create}));
       console.trace();
-
-      
       throw new Error('getvertex with no sheet id'); 
     }
 
-    // if (!this.cells) return undefined;
-
-    //const cells = this.cells_map[address.sheet_id];
     const cells = this.model.sheets.Find(address.sheet_id)?.cells;
 
     if (!cells) {
       throw new Error('no cells? sheet id ' + address.sheet_id);
-      return undefined;
     }
 
-    const key = AddressKey(address);
-    let vertex = this.vertex_map.get(key);
-    if (vertex) {
+    const intervals = this.GetIntervals(new Area(address), this.EnsureRoot(address.sheet_id));
+
+    if (intervals.length !== 1) {
+      throw new Error('invalid interval size: ' + intervals.length);
+    }
+    const vertex = intervals[0] as IntervalVertex;
+
+    if (vertex.is_leaf) {
       return vertex;
     }
+
     if (!create) {
       return undefined;
     }
+    
+    vertex.is_leaf = true;
 
-    /*
-    if (!this.vertices[address.sheet_id]) {
-      if (!create) {
-        return undefined;
-      }
-      this.vertices[address.sheet_id] = [];
-    }
-
-    if (!this.vertices[address.sheet_id][address.column]) {
-      if (!create) {
-        return undefined;
-      }
-      this.vertices[address.sheet_id][address.column] = [];
-    }
-    else {
-      const existing_vertex = this.vertices[address.sheet_id][address.column][address.row];
-      if (existing_vertex) {
-        return existing_vertex;
-      }
-      if (!create) return undefined;
-    }
-    */
-
-    //const 
-    vertex = new SpreadsheetVertex();
     // vertex.address = { ...address };
 
     // because we are passing in something other than an address, we're 
@@ -299,25 +248,30 @@ export abstract class Graph implements GraphCallbacks {
     */
 
     vertex.reference = cells.EnsureCell(address);
-
-    // this.vertices[address.sheet_id][address.column][address.row] = vertex;
-    this.vertex_map.set(key, vertex);
-
-    // if there's an array that contains this cell, we need to create an edge
-
-    // this.CreateImplicitEdgeToArrays(vertex);
-
-    // this is back, in the new form
-
-    ArrayVertex.CreateImplicitEdges(vertex, address as ICellAddress2);
-
     return vertex;
+
+  }
+
+  public RemoveVertexLeaf(vertex: Vertex) {
+    if (!IsSpreadsheetVertex(vertex)) {
+      return;
+    }
+
+    if (IsIntervalVertex(vertex)) {
+      vertex.ResetLeaf();
+    }
+    else {
+      console.warn('spreadsheet vertex type? unxpected');
+    }
 
   }
 
   /** deletes the vertex at this address. */
   public RemoveVertex(address: ICellAddress): void {
 
+    console.info("REMOVED TEMP (100)")
+
+    /*
     if (!address.sheet_id) { throw new Error('removevertex with no sheet id'); }
 
     const vertex = this.GetVertex(address, false);
@@ -326,12 +280,47 @@ export abstract class Graph implements GraphCallbacks {
     vertex.Reset();
 
     this.vertex_map.delete(AddressKey(address));
+    */
 
     // this.vertices[address.sheet_id][address.column][address.row] = undefined;
-
     // ArrayVertex2.CheckOutbound();
 
   }
+
+  /*
+  public RemoveHyperVertex(vertex: HyperVertex) {
+
+    const dependencies = Array.from(vertex.edges_in);
+    vertex.Reset();
+
+    for (const dependency of dependencies) {
+
+      // at the moment these are only spreadsheet vertices. but the whole
+      // point of this is to change that... so we'll need to handle the case
+      // eventually
+
+      if (IsHyperVertext(dependency)) {
+
+        // ...
+
+      }
+      else if (IsSpreadsheetVertex(dependency)) {
+        if (!dependency.has_inbound_edges && !dependency.has_outbound_edges) {
+          const target = (dependency as SpreadsheetVertex);
+          if (target.address) {
+            this.RemoveVertex(target.address);
+          }
+        }        
+      }
+
+    }
+
+    if (vertex.area) {
+      this.hypervertex_list.delete(AreaKey(vertex.area))
+    }
+
+  }
+  */
 
   /** removes all edges, for rebuilding. leaves value/formula as-is. */
   public ResetVertex(address: ICellAddress): void {
@@ -348,19 +337,21 @@ export abstract class Graph implements GraphCallbacks {
    */
   public ResetInbound(address: ICellAddress, set_dirty = false, create = true, remove = false): void {
 
-    this.RIBcount++;
+    this.RIBcount++; // what is this, a diagnostic?
     
     const vertex = this.GetVertex(address, create);
 
     // console.info("RIB", address.row, address.column, 'd?', set_dirty, vertex, 'R?', remove);
 
-    if (!vertex) {
+    if (!vertex || !(vertex as IntervalVertex).is_leaf) {
+      /*
       if (set_dirty) {
         const list = ArrayVertex.GetContainingArrays(address as ICellAddress2);
         for (const entry of list) {
           this.SetVertexDirty(entry);
         }
       }
+      */
       return;
     }
 
@@ -373,291 +364,51 @@ export abstract class Graph implements GraphCallbacks {
     // do this conditionally so we avoid the slice if unecessary
 
     if (remove) {
-      // dependencies = vertex.edges_in.slice(0);
       dependencies = Array.from(vertex.edges_in);
     }
+
+    // at this point we know this is a leaf, so this is safe... right?
 
     vertex.ClearDependencies();
 
     if (set_dirty) {
-      // this.dirty_list.push(vertex);
-      // vertex.SetDirty();
       this.SetVertexDirty(vertex);
     }
-
-    // vertex.expression = { type: 'missing', id: -1 };
-    // vertex.expression_error = false;
-    
+   
     // this probably should not happen unless there are no dependents/outbound edges? (...)
 
     if (remove) {
 
+      // note: this function can never get called with a hypervertex, 
+      // because it gets called from the calculator. `vertex` will always 
+      // be a spreadsheet vertex.
+
+      // there could be a hypervertex in the dependencies, though.
+
       if (!vertex.has_outbound_edges) {
-        this.RemoveVertex(address);
+        // this.RemoveVertex(address);
+        this.RemoveVertexLeaf(vertex);
       }
 
       for (const dependency of dependencies) {
         if (!dependency.has_inbound_edges && !dependency.has_outbound_edges) {
           const target = (dependency as SpreadsheetVertex);
           if (target.address) {
-            this.RemoveVertex(target.address);
+            // this.RemoveVertex(target.address);
+            this.RemoveVertexLeaf(target); 
           }
         }
       }
 
-      /*
-      if (vertex?.has_outbound_edges) {
-        console.info('(NOT) removing a vertex with outbound edges...')
-      }
-      else {
-        console.info('removing a vertex')
-        this.RemoveVertex(address);
-      }
-      */
-
     }
 
   }
-
-  /* * dev * /
-  public ForceClean() {
-    for (const l1 of this.vertices) {
-      if (l1) {
-        for (const l2 of l1) {
-          if (l2) {
-            for (const vertex of l2) {
-              if (vertex && vertex.dirty) {
-                vertex.dirty = false;
-              }
-            }
-          }
-        }
-      }
-    }
-
-  }
-
-  / * * dev, check if any vertices are dirtices * /
-  public CheckDirty() {
-
-    for (const l1 of this.vertices) {
-      if (l1) {
-        for (const l2 of l1) {
-          if (l2) {
-            for (const vertex of l2) {
-              if (vertex && vertex.dirty) {
-                console.info("DIRTY", `R${vertex.address?.row} C${vertex.address?.column}`, vertex);
-
-
-              }
-            }
-          }
-        }
-      }
-    }
-    
-  }
-  */
 
   /**
-   * reset all vertices. this method is used so we can run the loop check
-   * as part of the graph calculation, instead of requiring the separate call.
+   * update the epoch so cycle checks will run on the next calculation
    */
   public ResetLoopState(): void {
-
-    for (const vertex of this.vertex_map.values()) {
-      vertex.color = vertex.edges_out.size ? Color.white : Color.black;
-    }
-
-    /*
-    for (const l1 of this.vertices) {
-      if (l1) {
-        for (const l2 of l1) {
-          if (l2) {
-            for (const vertex of l2) {
-              if (vertex) {
-                // vertex.color = Color.white; 
-                vertex.color = vertex.edges_out.size ? Color.white : Color.black;
-              }
-            }
-          }
-        }
-      }
-    }
-    */
-
-    // this is unecessary
-
-    for (const vertex of this.leaf_vertices) {
-      vertex.color = Color.black;
-    }
-    
-  }
-
-  /**
-   * global check returns true if there is any loop. this is more efficient
-   * than detecting loops on every call to AddEdge. uses the color algorithm
-   * from CLRS.
-   * 
-   * UPDATE we switched to a stack-based check because we were hitting 
-   * recursion limits, although that seemed to only happen in workers -- 
-   * perhaps they have different stack [in the malloc sense] sizes? in any 
-   * event, I think the version below is now stable. 
-   * 
-   * @param force force a check, for dev/debug
-   */
-  public LoopCheck(force = false): boolean {
-
-    // this flag is only set on AddEdge, and only cleared when we successfully
-    // get through this function. so if there are no new edges, we can bypass.
-
-    if (!this.loop_check_required && !force) { return false; }
-
-    // vertices is array [][][]
-    // build a list so we can simplify the second loop (waste of space?)
-
-    const list: Vertex[] = [];
-
-    for (const vertex of this.vertex_map.values()) {
-      vertex.color = vertex.edges_out.size ? Color.white : Color.black;
-      list.push(vertex);
-    }
-
-    /*
-    for (const l1 of this.vertices) {
-      if (l1) {
-        for (const l2 of l1) {
-          if (l2) {
-            for (const vertex of l2) {
-              if (vertex) { 
-                vertex.color = vertex.edges_out.size ? Color.white : Color.black;
-                list.push(vertex);
-              }
-            }
-          }
-        }
-      }
-    }
-    */
-
-    // we were having problems with large calculation loops (basically long
-    // lists of x+1) using a recursive DFS. so we need to switch to a stack,
-    // just in case, hopefully it won't be too expensive.
-
-    // ---
-
-    // unwind recursion -> stack. seems to work OK. could we not just 
-    // use the list as the initial stack? (...)
-    
-    // NOTE: I think this method is bugged. I'm fixing it in the vertex
-    // version of the loop check routine (because we don't use this anymore)
-    // but if this ever comes back it needs to be fixed.
-
-    const stack: Vertex[] = [];
-
-    for (const vertex of list) {
-      if (vertex.color === Color.white) {
-
-        vertex.color = Color.gray; // testing
-        stack.push(vertex);
-
-        while (stack.length) {
-
-          // so leave it on the stack until we're done. we may "recurse", in
-          // which case we need to come back to this item when the children
-          // have been handled. we will wind up looping again, so there are 
-          // some wasted checks, although I'm not sure how to deal with that
-          // without duplicating the edge list.
-
-          // concept: stack is a list of [edge, skip = 0]
-          // when processing an entry, do
-          //
-          // const x of (skip ? v.edges_out.slice(skip) : v.edges_out)
-          //
-          // or maybe be efficient and not fancy,
-          // 
-          // for (let i = skip; i < v.edges_out.length; i++)
-          //
-          // or what you should actually do is use the stack field as the loop
-          // variable, so it persists. or put something in the vertex so it 
-          // persists and applies to things that are placed on the stack more
-          // than once. 
-
-          const v = stack[stack.length - 1];
-          let completed = true;
-
-          if (v.color !== Color.black) {
-
-            for (const edge of v.edges_out) {
-
-              if (edge.color === Color.gray) {
-                this.loop_hint = this.RenderAddress((vertex as SpreadsheetVertex).address);
-                console.info('loop detected @', this.loop_hint);
-                return true; // exit
-              }
-              else if (edge.color === Color.white) {
-
-                // here we're pushing onto the stack, so these will be handled
-                // next, but since v is still on the stack once those are done
-                // we will hit v again. 
-
-                // edge.color = Color.gray;
-                stack.push(edge);
-                completed = false;
-              }
-
-            }
-
-          }
-
-          // if we have not pushed anything onto the stack (we have not 
-          // recursed), then we can clean up; since the stack is still the 
-          // same we can pop() now.
-
-          if (completed) {
-            stack.pop();
-            v.color = Color.black; // v is complete, just in case we test it again
-          }
-
-        }
-
-        // OK, tested and complete
-
-        vertex.color = Color.black;
-
-      }
-    }
-
-    /*
-
-    const tail = (vertex: Vertex): boolean => {
-      vertex.color = Color.gray;
-      for (const edge of vertex.edges_out) {
-        if (edge.color === Color.gray) { 
-          this.loop_hint = this.RenderAddress((vertex as SpreadsheetVertex).address);
-          console.info('loop detected @', this.loop_hint);
-          return true; // loop
-        }
-        else if (edge.color === Color.white) {
-          if (tail(edge)) {
-            return true; // loop
-          }
-        }
-      }
-      vertex.color = Color.black;
-      return false;
-    };
-
-    for (const vertex of list) {
-      if (vertex.color === Color.white && tail(vertex)) { return true; }
-    }
-    */
-
-    this.loop_check_required = false;
-    this.loop_hint = undefined;
-
-    return false;
-
+    this.epoch++;
   }
 
   /**
@@ -673,16 +424,6 @@ export abstract class Graph implements GraphCallbacks {
       if (sheet) {
         sheet_name = sheet.name + '!';
       }
-
-      /*
-      for (const sheet of this.model.sheets.list) {
-        if (address.sheet_id === sheet.id) {
-          sheet_name = sheet.name + '!';
-          break;
-        }
-      }
-      */
-
     }
 
     const area = new Area(address);
@@ -690,143 +431,131 @@ export abstract class Graph implements GraphCallbacks {
     
   }
 
-  /** 
-   * new array vertices
-   */
-  protected CompositeAddArrayEdge(u: Area, vertex: Vertex): void {
-
-    // console.info(`CompositeAddArrayEdge`);
-
-    if (!u.start.sheet_id) {
-      throw new Error('AddArrayEdge called without sheet ID');
+  public GetIntervals(area: Area, current?: IntervalVertex): IntervalVertex[] {
+   
+    if (!current) {
+      current = this.EnsureRoot(area.start.sheet_id||0);
     }
 
-    // create or use existing
-    const [array_vertex, created] = ArrayVertex.GetVertex(u);
+    // console.info("GI", current.area.spreadsheet_label, current === this.root_interval ? '(root)': '');
 
-    // add an edge
-    vertex.DependsOn(array_vertex);
-
-    // force a check on next calculation pass
-    this.loop_check_required = true;
-
-    if (!created) {
-      // console.info('reusing, so not adding edges');
-      return;
+    // no overlap
+    if (current.area.end.row < area.start.row || 
+        current.area.start.row > area.end.row || 
+        current.area.end.column < area.start.column || 
+        current.area.start.column > area.end.column) {
+      return [];
     }
 
-    // now add edges from/to nodes THAT ALREADY EXIST
+    // full cover
+    if (current.area.start.row >= area.start.row && 
+        current.area.end.row <= area.end.row && 
+        current.area.start.column >= area.start.column && 
+        current.area.end.column <= area.end.column) {
 
-    for (const vertex of this.vertex_map.values()) {
+      // console.info(' full cover', current.area.spreadsheet_label, area.spreadsheet_label);
 
-      // malformed in some way
+      return [current];
+    }
 
-      if (!vertex.address) {
+    // partial cover: split down row & col midpoints
+    const mid_row = Math.floor((current.area.start.row + current.area.end.row) / 2);
+    const mid_column = Math.floor((current.area.start.column + current.area.end.column) / 2);
+
+    const result: IntervalVertex[] = [];
+
+    const ProcessQuadrant = (
+      quadrant: 0|1|2|3,
+      sub_area: IArea,
+    ) => {
+
+      if (sub_area.start.row > sub_area.end.row || sub_area.start.column > sub_area.end.column) {
         return;
       }
 
-      // wrong sheet
+      let node = current.quadrants[quadrant];
 
-      if (vertex.address.sheet_id !== u.start.sheet_id) {
-        continue;
+      if (!node) {
+        node = new IntervalVertex(sub_area);
+        current.quadrants[quadrant] = node;
+        node.edges_out.add(current);
+        current.edges_in.add(node);
       }
 
-      // address mismatch
+      const nodes = this.GetIntervals(area, node);
+      result.push(...nodes);
 
-      if (!u.entire_row && (vertex.address.column < u.start.column || vertex.address.column > u.end.column)) {
-        continue;
+    };
+
+    // recurse into valid non-empty quadrants
+
+    ProcessQuadrant(0, { 
+      start: { 
+        row: current.area.start.row, 
+        column: current.area.start.column,
+      },
+      end: { 
+        row: mid_row, 
+        column: mid_column,
       }
-      if (!u.entire_column && (vertex.address.row < u.start.row || vertex.address.row > u.end.row)) {
-        continue;
+    });
+
+    ProcessQuadrant(1, { 
+      start: { 
+        row: current.area.start.row, 
+        column: mid_column + 1,
+      },
+      end: { 
+        row: mid_row, 
+        column: current.area.end.column,
       }
+    });
 
-      array_vertex.DependsOn(vertex);
-
-    }
-
-    /*
-    // range can't span sheets, so we only need one set to look up
-
-    const map = this.vertices[u.start.sheet_id];
-
-    // console.info({u});
-
-    // this might happen on create, we can let it go because the 
-    // references will be added when the relevant sheet is added
-
-    if (!map) {
-      return;
-    }
-
-    // ...
-
-    if (u.entire_row) {
-      // console.group('entire row(s)')
-      for (let column = 0; column < map.length; column++) {
-        if (map[column]) {
-          for (let row = u.start.row; row <= u.end.row; row++ ) {
-            const vertex = map[column][row];
-            if (vertex) {
-              // console.info('add', column, row);
-              array_vertex.DependsOn(vertex);
-            }
-          }
-        }
+    ProcessQuadrant(2, { 
+      start: { 
+        row: mid_row + 1, 
+        column: current.area.start.column,
+      },
+      end: { 
+        row: current.area.end.row, 
+        column: mid_column,
       }
-      // console.groupEnd();
-    }
-    else if (u.entire_column) {
-      // console.group('entire column(s)');
-      for (let column = u.start.column; column <= u.end.column; column++) {
-        if(map[column]) {
-          for (const vertex of map[column]) {
-            if (vertex?.address) {
-              // console.info('add', vertex.address);
-              array_vertex.DependsOn(vertex);
-            }
-          }
-        }
+    });
+
+    ProcessQuadrant(3, { 
+      start: { 
+        row: mid_row + 1, 
+        column: mid_column + 1,
+      },
+      end: { 
+        row: current.area.end.row, 
+        column: current.area.end.column,
       }
-      // console.groupEnd();
-    }
-    else {
-      for (let row = u.start.row; row <= u.end.row; row++) {
-        for (let column = u.start.column; column <= u.end.column; column++) {
-          if (map[column]) {
-            const vertex = map[column][row];
-            if (vertex) {
-              array_vertex.DependsOn(vertex);
-            }
-          }
-          / *
-          else {
-            console.info("HERE", column, row);
-          }
-          * /
-        }
-      }
-    }
-    */
+    });
+    
+    return result;
 
   }
 
-  public AddLeafVertexArrayEdge(u: Area, vertex: LeafVertex) {
-    this.CompositeAddArrayEdge(u, vertex);
+  public AddLeafVertexAreaEdge(u: Area, vertex: LeafVertex) {
+    const intervals = this.GetIntervals(u);
+    for (const interval of intervals) {
+      vertex.DependsOn(interval);
+    }
   }
 
-  /** 
-   * new array vertices
-   */
-  public AddArrayEdge(u: Area, v: ICellAddress): void {
+  public AddAreaEdge(u: Area, v: ICellAddress): void {
 
-    if (!u.start.sheet_id) {
-      throw new Error('AddArrayEdge called without sheet ID');
-    }
-
-    // this should have already been added...
     const v_v = this.GetVertex(v, true);
+    const intervals = this.GetIntervals(u);
 
-    this.CompositeAddArrayEdge(u, v_v);
+    // console.info("intervals", {intervals});
+
+    for (const interval of intervals) {
+      v_v.DependsOn(interval);
+    }
+
+    this.loop_check_required = true;
 
   }
 
@@ -887,40 +616,8 @@ export abstract class Graph implements GraphCallbacks {
 
   }
 
-  /**
-   * not used? remove
-   * @deprecated
-   */
-  public SetAreaDirty(area: IArea): void {
-
-    // console.info("SAD");
-
-    if (area.start.column === Infinity
-      || area.end.column === Infinity
-      || area.start.row === Infinity
-      || area.end.row === Infinity ){
-        throw new Error('don\'t iterate over infinite area');
-    }
-
-    const sheet_id = area.start.sheet_id;
-    if (!sheet_id) {
-      throw new Error('invalid area, missing sheet id');
-    }
-
-    for (let column = area.start.column; column <= area.end.column; column++) {
-      for (let row = area.start.row; row <= area.end.row; row++) {
-        const address: ICellAddress = {row, column, sheet_id};
-        const vertex = this.GetVertex(address, false);
-        if (vertex) { this.SetDirty(address); }
-        // this.SetArraysDirty(address);
-      }
-    }
-
-  }
-
+  /** set dirty, using vertex as base interface */
   public SetVertexDirty(vertex: SpreadsheetVertexBase): void {
-
-    // console.info("SvD", vertex);
 
     // see below re: concern about relying on this
 
@@ -929,13 +626,32 @@ export abstract class Graph implements GraphCallbacks {
     this.dirty_list.push(vertex);
     vertex.dirty = true;
 
+    // this is backwards but we need to do it this way for now
+    const address = (vertex as SpreadsheetVertex).address;
+    if (address) {
+      const intervals = this.GetIntervals(new Area(address));
+      if (intervals.length !== 1) {
+
+        // console.info('intervals len', intervals.length);
+        // console.info({vertex});
+
+        // throw new Error('INVALID LEN');
+      }
+
+      for (const interval of intervals) {
+        // const first = intervals[0] as IntervalVertex;
+        // this.SetVertexDirty(first);
+        this.SetVertexDirty(interval);
+      }
+    }
+    
     for (const edge of vertex.edges_out) {
       this.SetVertexDirty(edge as SpreadsheetVertexBase);
     }
 
   }
 
-  /** sets dirty */
+  /** set dirty, using address as base interface */
   public SetDirty(address: ICellAddress): void {
 
     // console.info("SD", address);
@@ -964,6 +680,11 @@ export abstract class Graph implements GraphCallbacks {
 
   /** removes vertex */
   public RemoveLeafVertex(vertex: LeafVertex): void {
+
+    // this does not remove edges? seems sloppy
+
+    vertex.Reset(); // testing
+
     this.leaf_vertices.delete(vertex);
   }
 
@@ -1000,7 +721,7 @@ export abstract class Graph implements GraphCallbacks {
 
       // take reference values for spreadsheet vertices
 
-      if (this.IsSpreadsheetVertex(vertex)) {
+      if (IsSpreadsheetVertex(vertex)) {
         vertex.TakeReferenceValue();
         if (this.CheckVolatile(vertex)) {
           this.volatile_list.push(vertex);
@@ -1024,18 +745,9 @@ export abstract class Graph implements GraphCallbacks {
   /** runs calculation */
   public Recalculate(): void {
 
-    /*
-    if (this.GlobalLoopCheck()) {
-      return GraphStatus.Loop;
-    }
-    */
 
-    // FIXME: volatiles should proabbly be caclucated first,
+    // FIXME: volatiles should proabbly be calculated first,
     // not last, because they're probably primary.
-
-    // for (const vertex of this.volatile_list) {
-    //  vertex.SetDirty();
-    // }
 
     // we do this using the local function so we can trace back arrays.
     // be sure to do this _before_ checking spills
@@ -1093,39 +805,6 @@ export abstract class Graph implements GraphCallbacks {
       return true; // keep
     });
 
-    /*
-    this.spills = this.spills.filter(spill => {
-      let dirty = false;
-      for (const vertex of this.IterateVertices(spill)) {
-        if (vertex.dirty) {
-          console.info("spill is dirty (it)");
-          dirty = true;
-          break;
-        }
-      }
-
-      if (dirty) {
-        const cells = spill.start.sheet_id ? this.model.sheets.Find(spill.start.sheet_id)?.cells : undefined;
-        if (cells) {
-          for (const {cell, row, column} of cells.IterateRC(new Area(spill.start, spill.end))) {
-            if (cell.spill) {
-              cell.spill = undefined;
-              if (typeof cell.value === 'undefined') {
-                cell.Reset();
-              }
-              else {
-                this.SetDirty({row, column, sheet_id: spill.start.sheet_id})
-              }
-            }
-          }
-        }
-        return false; // drop
-      }
-
-      return true; // keep
-    });
-    */
-
     //////////////////////////////////////////
 
     this.calculation_list = this.dirty_list.slice(0);
@@ -1136,13 +815,11 @@ export abstract class Graph implements GraphCallbacks {
     this.dirty_list = [];
 
     if (this.loop_check_required) {
-      // console.info('reset loop state');
-
       this.ResetLoopState();
       this.loop_check_required = false;
-
     }
 
+    this.loop_errors = 0;
 
     // console.info("CL", calculation_list)
 

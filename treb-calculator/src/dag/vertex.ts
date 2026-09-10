@@ -44,7 +44,26 @@ export class Vertex {
 
   public type = Vertex.type; // for type guard
 
-  public color = Color.white; // for loop check
+  // color is now managed using epochs, so we don't have 
+  // to maintain a list. FIXME: accessors
+
+  // public color_epoch = -1;
+  // public color = Color.white; // for loop check
+
+  protected _color = Color.white;
+  protected _color_epoch = -1;
+
+  public SetColor(color: Color, epoch: number) {
+    this._color = color;
+    this._color_epoch = epoch;
+  }
+
+  public GetColor(epoch: number) {
+    if (epoch === this._color_epoch) {
+      return this._color;
+    }
+    return Color.white;
+  }
 
   /** dependencies */
   // public edges_in: Vertex[] = [];
@@ -230,7 +249,7 @@ export class Vertex {
    * 
    * [A: logically you are correct, but this works, and matching grey does not].
    */
-  public LoopCheck(): boolean {
+  public LoopCheck(epoch: number): boolean {
 
 
     const stack: Vertex[] = [this];
@@ -244,19 +263,19 @@ export class Vertex {
       let complete = true;
 
       // skip this vertex if it's clean
-      if (v.color !== Color.black) {
+      if (v.GetColor(epoch) !== Color.black) {
 
-        v.color = Color.gray; // set here, not top of function
+        v.SetColor(Color.gray, epoch); // set here, not top of function
 
         for (const edge of v.edges_out) {
 
-          if (edge.color === Color.gray) {
-            this.color = Color.white; // note: this, not v
+          if (edge.GetColor(epoch) === Color.gray) {
+            this.SetColor(Color.white, epoch); // note: this, not v
             return true; // found a loop
           }
 
           // if (edge.color === Color.white && edge.edges_out.length) {
-          if (edge.color === Color.white && edge.edges_out.size) {
+          if (edge.GetColor(epoch) === Color.white && edge.edges_out.size) {
             stack.push(edge);
             complete = false;
 
@@ -277,90 +296,16 @@ export class Vertex {
       }
 
       if (complete) {
-        v.color = Color.black;
+        v.SetColor(Color.black, epoch);
         stack.pop();
       }
 
     }
-
-
-    /*
-    this.color = Color.gray;
    
-    // switch to stack algorithm. see the method in Graph for details.
-
-    // NOTE: this is bugged. need to rewrite. it's generating false positives
-    // where the recursive version still works.
-
-    const stack: Vertex[] = [this];
-
-    while (stack.length) {
-
-      const v = stack[stack.length - 1];
-      let completed = true;
-
-      if (v.color !== Color.black) {
-
-        for (const edge of v.edges_out) {
-
-          if (edge.color === Color.gray) {
-
-            // this is different than the graph algo, here we reset the 
-            // color when we hit a loop.
-
-            this.color = Color.white; // someone else can test
-            return true; // loop
-   
-          }
-          else if (edge.color === Color.white) {
-            edge.color = Color.gray;
-            stack.push(edge);
-            completed = false;
-          }
-
-        }
-
-      }
-
-      if (completed) {
-        stack.pop();
-        v.color = Color.black;
-      }
-
-    }
-    */
-    
-    /*
-    // the old recursive version
-
-    for (const edge of this.edges_out) {
-      if (edge.color === Color.gray || (edge.color === Color.white && edge.LoopCheck())) { 
-        this.color = Color.white; // someone else can test
-        return true; // loop
-      } 
-    }
-    */
-
-    this.color = Color.black;
-    return false;
-  }
-
-  /*
-  public LoopCheck2(compare: Vertex = this): boolean {
-    this.color = Color.gray;
-
-    for (const edge of this.edges_out) {
-      if (edge.color === Color.gray || (edge.color === Color.white && edge.LoopCheck2(compare))) { 
-        this.color = Color.white; // someone else can test
-        return edge === compare; // loop
-      } 
-    }
-
-    this.color = Color.black;
+    this.SetColor(Color.black, epoch);
     return false;
     
   }
-  */
 
 }
 
