@@ -29,7 +29,7 @@ import type { DataModel } from 'treb-data-model';
 import { CalculationLeafVertex } from './calculation_leaf_vertex';
 
 import { AreaUtils } from 'treb-base-types';
-import { IntervalVertex } from './interval-vertex';
+import { SegmentVertex } from './segment-vertex';
 
 export type LeafVertex = StateLeafVertex|CalculationLeafVertex;
 export type { StateLeafVertex };
@@ -56,13 +56,45 @@ const ROOT_AREA: IArea = {
   },
 };
 
-export function IsIntervalVertex(vertex: Vertex): vertex is IntervalVertex {
-  return vertex.type === IntervalVertex.type;
+/** 
+ * special case maps for full rows, columns, and the entire sheet.
+ * 
+ * these are populated on demand, and like the segment tree, they are
+ * not cleaned up until the graph is flushed. they use the same type
+ * as the tree segments, but they can't be divided (we expressly use 
+ * one per row/column).
+ * 
+ * could we attach these to roots? I guess they're not actually used
+ * together, but it would reduce our lookup set
+ */
+interface AreaMaps {
+
+  /** full rows */
+  row_vertices: Map<number, SegmentVertex>;
+
+  /** full columns */
+  column_vertices: Map<number, SegmentVertex>;
+
+  /** the full sheet */
+  sheet_vertex?: SegmentVertex;
+
+}
+
+export function IsIntervalVertex(vertex: Vertex): vertex is SegmentVertex {
+  return vertex.type === SegmentVertex.type;
 }
 
 export function IsSpreadsheetVertex(vertex: Vertex): vertex is SpreadsheetVertex {
   return vertex.type === SpreadsheetVertex.type || 
-    (vertex.type === IntervalVertex.type && (vertex as IntervalVertex).is_leaf);
+    (vertex.type === SegmentVertex.type && (vertex as SegmentVertex).is_leaf);
+}
+
+export function PackKey(i: number, j: number, k: number): bigint {
+  return (BigInt(i) << 48n) | (BigInt(j) << 24n) | BigInt(k);
+}
+
+export function AddressKey(address: ICellAddress) {
+  return PackKey(address.sheet_id||0, address.row, address.column);
 }
 
 /**
@@ -70,10 +102,19 @@ export function IsSpreadsheetVertex(vertex: Vertex): vertex is SpreadsheetVertex
  */
 export abstract class Graph implements GraphCallbacks {
 
+  /** 
+   * adding back the vertex map, for cell leaf nodes. perf hack.
+   * FIXME: keep an eye on memory
+   */
+  public vertex_map: Map<bigint, SegmentVertex> = new Map();
+
   /**
    * root of segment tree, per sheet
    */
-  public roots: Map<number, IntervalVertex> = new Map();
+  public roots: Map<number, SegmentVertex> = new Map();
+
+  /** */
+  public area_maps: Map<number, AreaMaps> = new Map();
 
   /** list of vertices that are volalite (dirty on every recalc) */
   public volatile_list: SpreadsheetVertexBase[] = [];
@@ -122,6 +163,9 @@ export abstract class Graph implements GraphCallbacks {
     this.volatile_list = [];
     this.leaf_vertices.clear(); 
     this.roots.clear();
+    this.area_maps.clear();
+
+    this.vertex_map.clear();
 
     // can we flush spills here without cleaning up? (...)
   }
@@ -156,7 +200,7 @@ export abstract class Graph implements GraphCallbacks {
   public EnsureRoot(sheet: number) {
     let root = this.roots.get(sheet);
     if (!root) {
-      root = new IntervalVertex(ROOT_AREA);
+      root = new SegmentVertex(ROOT_AREA);
       this.roots.set(sheet, root);
     }
     return root;
@@ -177,18 +221,22 @@ export abstract class Graph implements GraphCallbacks {
       throw new Error('getvertex with no sheet id'); 
     }
 
-    const cells = this.model.sheets.Find(address.sheet_id)?.cells;
+    // fast!
 
-    if (!cells) {
-      throw new Error('no cells? sheet id ' + address.sheet_id);
+    let vertex = this.vertex_map.get(AddressKey(address));
+    if (vertex) {
+      return vertex;
     }
 
-    const intervals = this.GetIntervals(new Area(address), this.EnsureRoot(address.sheet_id));
+    // slow :(
+
+    const intervals = this.GetIntervals({ start: address, end: address }, this.EnsureRoot(address.sheet_id));
 
     if (intervals.length !== 1) {
       throw new Error('invalid interval size: ' + intervals.length);
     }
-    const vertex = intervals[0] as IntervalVertex;
+    
+    vertex = intervals[0] as SegmentVertex;
 
     if (vertex.is_leaf) {
       return vertex;
@@ -197,8 +245,17 @@ export abstract class Graph implements GraphCallbacks {
     if (!create) {
       return undefined;
     }
+
+    const cells = this.model.sheets.Find(address.sheet_id)?.cells;
+
+    if (!cells) {
+      throw new Error('no cells? sheet id ' + address.sheet_id);
+    }
     
     vertex.is_leaf = true;
+
+    // add to map
+    // this.vertex_map.set(AddressKey(address), vertex);
 
     // vertex.address = { ...address };
 
@@ -248,13 +305,21 @@ export abstract class Graph implements GraphCallbacks {
     */
 
     vertex.reference = cells.EnsureCell(address);
+    this.vertex_map.set(AddressKey(address), vertex);
+
     return vertex;
 
   }
 
   public RemoveVertexLeaf(vertex: Vertex) {
+
     if (!IsSpreadsheetVertex(vertex)) {
       return;
+    }
+
+    const address = vertex.address;
+    if (address) {
+      this.vertex_map.delete(AddressKey(address));
     }
 
     if (IsIntervalVertex(vertex)) {
@@ -287,41 +352,6 @@ export abstract class Graph implements GraphCallbacks {
 
   }
 
-  /*
-  public RemoveHyperVertex(vertex: HyperVertex) {
-
-    const dependencies = Array.from(vertex.edges_in);
-    vertex.Reset();
-
-    for (const dependency of dependencies) {
-
-      // at the moment these are only spreadsheet vertices. but the whole
-      // point of this is to change that... so we'll need to handle the case
-      // eventually
-
-      if (IsHyperVertext(dependency)) {
-
-        // ...
-
-      }
-      else if (IsSpreadsheetVertex(dependency)) {
-        if (!dependency.has_inbound_edges && !dependency.has_outbound_edges) {
-          const target = (dependency as SpreadsheetVertex);
-          if (target.address) {
-            this.RemoveVertex(target.address);
-          }
-        }        
-      }
-
-    }
-
-    if (vertex.area) {
-      this.hypervertex_list.delete(AreaKey(vertex.area))
-    }
-
-  }
-  */
-
   /** removes all edges, for rebuilding. leaves value/formula as-is. */
   public ResetVertex(address: ICellAddress): void {
     const vertex = this.GetVertex(address, false);
@@ -343,7 +373,7 @@ export abstract class Graph implements GraphCallbacks {
 
     // console.info("RIB", address.row, address.column, 'd?', set_dirty, vertex, 'R?', remove);
 
-    if (!vertex || !(vertex as IntervalVertex).is_leaf) {
+    if (!vertex || !(vertex as SegmentVertex).is_leaf) {
       /*
       if (set_dirty) {
         const list = ArrayVertex.GetContainingArrays(address as ICellAddress2);
@@ -431,38 +461,41 @@ export abstract class Graph implements GraphCallbacks {
     
   }
 
-  public GetIntervals(area: Area, current?: IntervalVertex): IntervalVertex[] {
+  public GetIntervals(area: IArea, current?: SegmentVertex): SegmentVertex[] {
    
     if (!current) {
       current = this.EnsureRoot(area.start.sheet_id||0);
     }
 
-    // console.info("GI", current.area.spreadsheet_label, current === this.root_interval ? '(root)': '');
+    // some perf issues with Area copying
+
+    const current_area_start = current.area.start;
+    const current_area_end = current.area.end;
+
+    const area_start = area.start;
+    const area_end = area.end;
 
     // no overlap
-    if (current.area.end.row < area.start.row || 
-        current.area.start.row > area.end.row || 
-        current.area.end.column < area.start.column || 
-        current.area.start.column > area.end.column) {
+    if (current_area_end.row < area_start.row || 
+        current_area_start.row > area_end.row || 
+        current_area_end.column < area_start.column || 
+        current_area_start.column > area_end.column) {
       return [];
     }
 
     // full cover
-    if (current.area.start.row >= area.start.row && 
-        current.area.end.row <= area.end.row && 
-        current.area.start.column >= area.start.column && 
-        current.area.end.column <= area.end.column) {
-
-      // console.info(' full cover', current.area.spreadsheet_label, area.spreadsheet_label);
-
+    if (current_area_start.row >= area_start.row && 
+        current_area_end.row <= area_end.row && 
+        current_area_start.column >= area_start.column && 
+        current_area_end.column <= area_end.column) {
       return [current];
     }
 
     // partial cover: split down row & col midpoints
-    const mid_row = Math.floor((current.area.start.row + current.area.end.row) / 2);
-    const mid_column = Math.floor((current.area.start.column + current.area.end.column) / 2);
+    const mid_row = Math.floor((current_area_start.row + current_area_end.row) / 2);
+    const mid_column = Math.floor((current_area_start.column + current_area_end.column) / 2);
 
-    const result: IntervalVertex[] = [];
+    const result: SegmentVertex[] = [];
 
     const ProcessQuadrant = (
       quadrant: 0|1|2|3,
@@ -476,7 +509,7 @@ export abstract class Graph implements GraphCallbacks {
       let node = current.quadrants[quadrant];
 
       if (!node) {
-        node = new IntervalVertex(sub_area);
+        node = new SegmentVertex(sub_area);
         current.quadrants[quadrant] = node;
         node.edges_out.add(current);
         current.edges_in.add(node);
@@ -491,8 +524,8 @@ export abstract class Graph implements GraphCallbacks {
 
     ProcessQuadrant(0, { 
       start: { 
-        row: current.area.start.row, 
-        column: current.area.start.column,
+        row: current_area_start.row, 
+        column: current_area_start.column,
       },
       end: { 
         row: mid_row, 
@@ -502,22 +535,22 @@ export abstract class Graph implements GraphCallbacks {
 
     ProcessQuadrant(1, { 
       start: { 
-        row: current.area.start.row, 
+        row: current_area_start.row, 
         column: mid_column + 1,
       },
       end: { 
         row: mid_row, 
-        column: current.area.end.column,
+        column: current_area_end.column,
       }
     });
 
     ProcessQuadrant(2, { 
       start: { 
         row: mid_row + 1, 
-        column: current.area.start.column,
+        column: current_area_start.column,
       },
       end: { 
-        row: current.area.end.row, 
+        row: current_area_end.row, 
         column: mid_column,
       }
     });
@@ -528,8 +561,8 @@ export abstract class Graph implements GraphCallbacks {
         column: mid_column + 1,
       },
       end: { 
-        row: current.area.end.row, 
-        column: current.area.end.column,
+        row: current_area_end.row, 
+        column: current_area_end.column,
       }
     });
     
@@ -537,26 +570,83 @@ export abstract class Graph implements GraphCallbacks {
 
   }
 
-  public AddLeafVertexAreaEdge(u: Area, vertex: LeafVertex) {
+  /**
+   * add an adge from an area/range to a vertex. the vertex
+   * could be a cell/formula or a non-cell leaf (chart, conditional
+   * formatting).
+   * 
+   * if the area includes full columns or rows, we use our special-case
+   * maps to avoid exploding the segment tree.
+   * 
+   */
+  public AddAreaEdgeInternal(u: IArea, vertex: Vertex) {
+
+    const entire_column = (u.start.row === Infinity);
+    const entire_row = (u.start.column === Infinity);
+
+    if (entire_column || entire_row) {
+
+      // step one is get the set for this sheet. these
+      // are also created on demand
+
+      const sheet_id = u.start.sheet_id || 0;
+      let area_map = this.area_maps.get(sheet_id);
+      if (!area_map) {
+        area_map = {
+          row_vertices: new Map(),
+          column_vertices: new Map(),
+        };
+        this.area_maps.set(sheet_id, area_map);
+      }
+
+      // next loop over the range and attach as appropriate
+
+      if (entire_column && entire_row) {
+        if (!area_map.sheet_vertex) {
+          area_map.sheet_vertex = new SegmentVertex(new Area({
+            row: Infinity, column: Infinity }));
+        }
+        vertex.DependsOn(area_map.sheet_vertex);
+      }
+      else if (entire_column) {
+        const verices = area_map.column_vertices;
+        for (let column = u.start.column; column <= u.end.column; column++) {
+          let target = verices.get(column);
+          if (!target) {
+            target = new SegmentVertex(new Area({row: Infinity, column}));
+            verices.set(column, target);
+          }
+          vertex.DependsOn(target);
+        }
+      }
+      else if (entire_row) {
+        const vertices = area_map.row_vertices;
+        for (let row = u.start.row; row <= u.end.row; row++) {
+          let target = vertices.get(row);
+          if (!target) {
+            target = new SegmentVertex(new Area({row, column: Infinity}));
+            vertices.set(row, target);
+          }
+          vertex.DependsOn(target);
+        }
+      }
+      return;
+    }
+
     const intervals = this.GetIntervals(u);
     for (const interval of intervals) {
       vertex.DependsOn(interval);
     }
+
   }
 
-  public AddAreaEdge(u: Area, v: ICellAddress): void {
+  public AddLeafVertexAreaEdge(u: IArea, vertex: LeafVertex) {
+    this.AddAreaEdgeInternal(u, vertex);
+  }
 
-    const v_v = this.GetVertex(v, true);
-    const intervals = this.GetIntervals(u);
-
-    // console.info("intervals", {intervals});
-
-    for (const interval of intervals) {
-      v_v.DependsOn(interval);
-    }
-
+  public AddAreaEdge(u: IArea, v: ICellAddress): void {
+    this.AddAreaEdgeInternal(u, this.GetVertex(v, true));
     this.loop_check_required = true;
-
   }
 
   /** adds an edge from u -> v */
@@ -626,39 +716,40 @@ export abstract class Graph implements GraphCallbacks {
     this.dirty_list.push(vertex);
     vertex.dirty = true;
 
-    // this is backwards but we need to do it this way for now
-    const address = (vertex as SpreadsheetVertex).address;
-    if (address) {
-      const intervals = this.GetIntervals(new Area(address));
-      if (intervals.length !== 1) {
-
-        // console.info('intervals len', intervals.length);
-        // console.info({vertex});
-
-        // throw new Error('INVALID LEN');
-      }
-
-      for (const interval of intervals) {
-        // const first = intervals[0] as IntervalVertex;
-        // this.SetVertexDirty(first);
-        this.SetVertexDirty(interval);
-      }
-    }
-    
     for (const edge of vertex.edges_out) {
       this.SetVertexDirty(edge as SpreadsheetVertexBase);
     }
 
+    // handle special cases
+
+    const address = (vertex as SpreadsheetVertex).address;
+    if (address) {
+
+      const area_map = this.area_maps.get(address.sheet_id || 0);
+      if (area_map) {
+        if (area_map.sheet_vertex) {
+          this.SetVertexDirty(area_map.sheet_vertex);
+        }
+        let target = area_map.row_vertices.get(address.row);
+        if (target) {
+          this.SetVertexDirty(target);
+        }
+        target = area_map.column_vertices.get(address.column);
+        if (target) {
+          this.SetVertexDirty(target);
+        }
+
+      }
+    }
+    
   }
 
-  /** set dirty, using address as base interface */
+  /** 
+   * set dirty, using address as base interface 
+   */
   public SetDirty(address: ICellAddress): void {
-
-    // console.info("SD", address);
-
     const vertex = this.GetVertex(address, true);
-    this.SetVertexDirty(vertex);
-
+    this.SetVertexDirty(vertex as SpreadsheetVertex);
   }
 
   // --- leaf vertex api ---

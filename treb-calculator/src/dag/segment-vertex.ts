@@ -14,20 +14,27 @@ export enum SpreadsheetError {
   CalculationError,
 }
 
-export class IntervalVertex extends SpreadsheetVertexBase {
+export class SegmentVertex extends SpreadsheetVertexBase {
 
-  public static type = 'interval';
-  public type = IntervalVertex.type;
+  public static type = 'segment';
+  public type = SegmentVertex.type;
 
-  public quadrants: (IntervalVertex|undefined)[] = [];
+  public quadrants: (SegmentVertex|undefined)[] = [];
 
-  public area: Area;
+  public area: IArea;
 
   // public leaf?: SpreadsheetVertex; // FIXME: merge
 
   public constructor(area: IArea) {
     super();
-    this.area = new Area(area.start, area.end);
+    this.area = {
+      start: {
+        ...area.start
+      }, 
+      end: {
+        ...area.end
+      }
+    };
   }
 
   // --- new flag --------------------------------------------------------------

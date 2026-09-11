@@ -58,11 +58,6 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
 
   public type = SpreadsheetVertex.type; // for type guard
 
-  /** tryping to break any consumers */
-  private constructor() {
-    super();
-  }
-
   /** 
    * it seems like this could be cached, if it gets checked a lot 
    * also what's with the crazy return signature? [fixed]
