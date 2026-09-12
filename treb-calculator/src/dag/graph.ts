@@ -214,11 +214,22 @@ export abstract class Graph implements GraphCallbacks {
 
   /** returns the vertex at this address. creates it if necessary. */
   public GetVertex(address: ICellAddress, create?: boolean): SpreadsheetVertex | undefined {
+    const vertex = this.GetVertex2(address, create);
+    if (vertex?.is_leaf) {
+      return vertex;
+    }
+    return undefined;
+  }
+
+  /**
+   * refactor the get vertex method to actually return the vertex, 
+   * even if we don't attach a leaf. this is for dirty marking
+   * cells with constants
+   */
+  public GetVertex2(address: ICellAddress, attach_leaf?: boolean): SegmentVertex {
 
     if (!address.sheet_id) { 
-      console.info(JSON.stringify({address, create}));
-      console.trace();
-      throw new Error('getvertex with no sheet id'); 
+      throw new Error('getvertex2 with no sheet id'); 
     }
 
     // fast!
@@ -238,12 +249,8 @@ export abstract class Graph implements GraphCallbacks {
     
     vertex = intervals[0] as SegmentVertex;
 
-    if (vertex.is_leaf) {
+    if (vertex.is_leaf || !attach_leaf) {
       return vertex;
-    }
-
-    if (!create) {
-      return undefined;
     }
 
     const cells = this.model.sheets.Find(address.sheet_id)?.cells;
@@ -352,11 +359,17 @@ export abstract class Graph implements GraphCallbacks {
 
   }
 
-  /** removes all edges, for rebuilding. leaves value/formula as-is. */
+  /* * removes all edges, for rebuilding. leaves value/formula as-is. * /
+
+  note we don't want to do this anymore because we need the segment
+  edges to remain. we just want to remove leaf edges. would be useful
+  if we could distinguish.
+
   public ResetVertex(address: ICellAddress): void {
     const vertex = this.GetVertex(address, false);
     if (vertex) vertex.Reset();
   }
+  */
 
   public RIBcount = 0;
 
@@ -369,11 +382,14 @@ export abstract class Graph implements GraphCallbacks {
 
     this.RIBcount++; // what is this, a diagnostic?
     
-    const vertex = this.GetVertex(address, create);
+    const vertex = this.GetVertex2(address, create);
 
     // console.info("RIB", address.row, address.column, 'd?', set_dirty, vertex, 'R?', remove);
 
     if (!vertex || !(vertex as SegmentVertex).is_leaf) {
+      if (set_dirty) {
+        this.SetVertexDirty(vertex);
+      }
       /*
       if (set_dirty) {
         const list = ArrayVertex.GetContainingArrays(address as ICellAddress2);
@@ -748,6 +764,9 @@ export abstract class Graph implements GraphCallbacks {
    * set dirty, using address as base interface 
    */
   public SetDirty(address: ICellAddress): void {
+
+    // console.info('set dirty', address);
+
     const vertex = this.GetVertex(address, true);
     this.SetVertexDirty(vertex as SpreadsheetVertex);
   }
