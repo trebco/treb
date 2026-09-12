@@ -200,7 +200,10 @@ export abstract class Graph implements GraphCallbacks {
   public EnsureRoot(sheet: number) {
     let root = this.roots.get(sheet);
     if (!root) {
-      root = new SegmentVertex(ROOT_AREA);
+      root = new SegmentVertex({
+        start: { ...ROOT_AREA.start, sheet_id: sheet },
+        end: { ...ROOT_AREA.end },
+      });
       this.roots.set(sheet, root);
     }
     return root;
@@ -542,6 +545,7 @@ export abstract class Graph implements GraphCallbacks {
       start: { 
         row: current_area_start.row, 
         column: current_area_start.column,
+        sheet_id: current_area_start.sheet_id,
       },
       end: { 
         row: mid_row, 
@@ -553,6 +557,7 @@ export abstract class Graph implements GraphCallbacks {
       start: { 
         row: current_area_start.row, 
         column: mid_column + 1,
+        sheet_id: current_area_start.sheet_id,
       },
       end: { 
         row: mid_row, 
@@ -564,6 +569,7 @@ export abstract class Graph implements GraphCallbacks {
       start: { 
         row: mid_row + 1, 
         column: current_area_start.column,
+        sheet_id: current_area_start.sheet_id,
       },
       end: { 
         row: current_area_end.row, 
@@ -575,6 +581,7 @@ export abstract class Graph implements GraphCallbacks {
       start: { 
         row: mid_row + 1, 
         column: mid_column + 1,
+        sheet_id: current_area_start.sheet_id,
       },
       end: { 
         row: current_area_end.row, 
@@ -620,7 +627,10 @@ export abstract class Graph implements GraphCallbacks {
       if (entire_column && entire_row) {
         if (!area_map.sheet_vertex) {
           area_map.sheet_vertex = new SegmentVertex(new Area({
-            row: Infinity, column: Infinity }));
+            row: Infinity, 
+            column: Infinity,
+            sheet_id: u.start.sheet_id,
+          }));
         }
         vertex.DependsOn(area_map.sheet_vertex);
       }
@@ -629,7 +639,11 @@ export abstract class Graph implements GraphCallbacks {
         for (let column = u.start.column; column <= u.end.column; column++) {
           let target = verices.get(column);
           if (!target) {
-            target = new SegmentVertex(new Area({row: Infinity, column}));
+            target = new SegmentVertex(new Area({
+              row: Infinity, 
+              column,
+              sheet_id: u.start.sheet_id,
+            }));
             verices.set(column, target);
           }
           vertex.DependsOn(target);
@@ -640,7 +654,11 @@ export abstract class Graph implements GraphCallbacks {
         for (let row = u.start.row; row <= u.end.row; row++) {
           let target = vertices.get(row);
           if (!target) {
-            target = new SegmentVertex(new Area({row, column: Infinity}));
+            target = new SegmentVertex(new Area({
+              row, 
+              column: Infinity,
+              sheet_id: u.start.sheet_id,
+            }));
             vertices.set(row, target);
           }
           vertex.DependsOn(target);
@@ -722,37 +740,56 @@ export abstract class Graph implements GraphCallbacks {
 
   }
 
-  /** set dirty, using vertex as base interface */
-  public SetVertexDirty(vertex: SpreadsheetVertexBase): void {
+  /** 
+   * set dirty, using vertex as base interface. the depth is used 
+   * to limit when we use the vertex area (for a non-leaf cell vertex)
+   * to look up large areas (full rows/columns). that should only need
+   * to happen at the cell level (I think)
+   */
+  public SetVertexDirty(vertex: SpreadsheetVertexBase, depth = 0): void {
 
     // see below re: concern about relying on this
 
     if (vertex.dirty) { return; }
 
+    // console.info("SVD", vertex);
+
     this.dirty_list.push(vertex);
     vertex.dirty = true;
 
     for (const edge of vertex.edges_out) {
-      this.SetVertexDirty(edge as SpreadsheetVertexBase);
+      this.SetVertexDirty(edge as SpreadsheetVertexBase, depth + 1);
     }
 
     // handle special cases
 
-    const address = (vertex as SpreadsheetVertex).address;
+    const segment = vertex as SegmentVertex;
+    let address: ICellAddress|undefined;
+    if (segment.is_leaf) {
+      address = segment.address;
+    }
+    else if (segment.area && depth === 0) {
+      address = segment.area?.start;
+    }
+
     if (address) {
+
+      // console.info({address});
 
       const area_map = this.area_maps.get(address.sheet_id || 0);
       if (area_map) {
         if (area_map.sheet_vertex) {
-          this.SetVertexDirty(area_map.sheet_vertex);
+          this.SetVertexDirty(area_map.sheet_vertex, depth + 1);
         }
         let target = area_map.row_vertices.get(address.row);
         if (target) {
-          this.SetVertexDirty(target);
+          // console.info("row target", target);
+          this.SetVertexDirty(target, depth + 1);
         }
         target = area_map.column_vertices.get(address.column);
         if (target) {
-          this.SetVertexDirty(target);
+          // console.info("column target", target);
+          this.SetVertexDirty(target, depth + 1);
         }
 
       }
@@ -765,7 +802,7 @@ export abstract class Graph implements GraphCallbacks {
    */
   public SetDirty(address: ICellAddress): void {
 
-    // console.info('set dirty', address);
+    console.info('set dirty', address);
 
     const vertex = this.GetVertex(address, true);
     this.SetVertexDirty(vertex as SpreadsheetVertex);
