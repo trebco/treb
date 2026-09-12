@@ -19,7 +19,7 @@ export class SegmentVertex extends SpreadsheetVertexBase {
   public static type = 'segment';
   public type = SegmentVertex.type;
 
-  public quadrants: (SegmentVertex|undefined)[] = [];
+  private _quadrants?: SegmentVertex[] = undefined;
 
   public area: IArea;
 
@@ -70,6 +70,80 @@ export class SegmentVertex extends SpreadsheetVertexBase {
     this.expression = { type: 'missing', id: -1 };
     this.expression_error = false;
     this.short_circuit = false;
+  }
+
+  public get quadrants(): SegmentVertex[] {
+
+    if (this._quadrants) {
+      return this._quadrants;
+    }
+
+    const mid_row = Math.floor((this.area.start.row + this.area.end.row) / 2);
+    const mid_column = Math.floor((this.area.start.column + this.area.end.column) / 2);
+
+    this._quadrants = [];
+
+    const start = this.area.start;
+    const end = this.area.end;
+
+    let node = new SegmentVertex({ 
+      start: { 
+        row: start.row, 
+        column: start.column,
+        sheet_id: start.sheet_id,
+      },
+      end: { 
+        row: mid_row, 
+        column: mid_column,
+      }});
+    this._quadrants[0] = node;
+    node.edges_out.add(this);
+    this.edges_in.add(node);
+
+    node = new SegmentVertex({ 
+      start: { 
+        row: start.row, 
+        column: mid_column + 1,
+        sheet_id: start.sheet_id,
+      },
+      end: { 
+        row: mid_row, 
+        column: end.column,
+      }});
+    this._quadrants[1] = node;
+    node.edges_out.add(this);
+    this.edges_in.add(node);
+
+    node = new SegmentVertex({ 
+      start: { 
+        row: mid_row + 1, 
+        column: start.column,
+        sheet_id: start.sheet_id,
+      },
+      end: { 
+        row: end.row, 
+        column: mid_column,
+      }});
+    this._quadrants[2] = node;
+    node.edges_out.add(this);
+    this.edges_in.add(node);
+
+    node = new SegmentVertex({ 
+      start: { 
+        row: mid_row + 1, 
+        column: mid_column + 1,
+        sheet_id: start.sheet_id,
+      },
+      end: { 
+        row: end.row, 
+        column: end.column,
+      }});
+    this._quadrants[3] = node;
+    node.edges_out.add(this);
+    this.edges_in.add(node);
+
+    return this._quadrants;
+
   }
 
   // --- spreadsheet vertex methods --------------------------------------------

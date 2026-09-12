@@ -250,7 +250,10 @@ export abstract class Graph implements GraphCallbacks {
 
     // slow :(
 
-    const intervals = this.GetIntervals({ start: address, end: address }, this.EnsureRoot(address.sheet_id));
+    const intervals = this.GetIntervals({ 
+      start: address, 
+      end: address,
+    });
 
     if (intervals.length !== 1) {
       throw new Error('invalid interval size: ' + intervals.length);
@@ -478,116 +481,48 @@ export abstract class Graph implements GraphCallbacks {
     
   }
 
-  public GetIntervals(area: IArea, current?: SegmentVertex): SegmentVertex[] {
-   
-    if (!current) {
-      current = this.EnsureRoot(area.start.sheet_id||0);
-    }
-
-    // some perf issues with Area copying
-
-    const current_area_start = current.area.start;
-    const current_area_end = current.area.end;
-
+  /**
+   * removing recursion (and inner functions) from the intervals 
+   * routine. we also moved quadrant creation to a method on the 
+   * segment vertex type.
+   */
+  public GetIntervals(area: IArea) {
+    
     const area_start = area.start;
     const area_end = area.end;
 
-    // no overlap
-    if (current_area_end.row < area_start.row || 
-        current_area_start.row > area_end.row || 
-        current_area_end.column < area_start.column || 
-        current_area_start.column > area_end.column) {
-      return [];
+    const worklist = [this.EnsureRoot(area.start.sheet_id||0)];
+    const vertices: SegmentVertex[] = [];
+
+    while (worklist.length > 0) {
+
+      const base = worklist.pop() as SegmentVertex; // trust me typescript
+
+      // no overlap
+      if (base.area.end.row < area_start.row || 
+          base.area.start.row > area_end.row || 
+          base.area.end.column < area_start.column || 
+          base.area.start.column > area_end.column) {
+        continue;
+      }
+
+      // full cover
+      if (base.area.start.row >= area_start.row && 
+          base.area.end.row <= area_end.row && 
+          base.area.start.column >= area_start.column && 
+          base.area.end.column <= area_end.column) {
+        vertices.push(base);
+        continue;
+      }
+      
+      // partial cover, push quadrants onto work list. the 
+      // accessor will create the quadrants if necessary
+
+      worklist.push(...base.quadrants);
+
     }
 
-    // full cover
-    if (current_area_start.row >= area_start.row && 
-        current_area_end.row <= area_end.row && 
-        current_area_start.column >= area_start.column && 
-        current_area_end.column <= area_end.column) {
-      return [current];
-    }
-
-    // partial cover: split down row & col midpoints
-    const mid_row = Math.floor((current_area_start.row + current_area_end.row) / 2);
-    const mid_column = Math.floor((current_area_start.column + current_area_end.column) / 2);
-
-    const result: SegmentVertex[] = [];
-
-    const ProcessQuadrant = (
-      quadrant: 0|1|2|3,
-      sub_area: IArea,
-    ) => {
-
-      if (sub_area.start.row > sub_area.end.row || sub_area.start.column > sub_area.end.column) {
-        return;
-      }
-
-      let node = current.quadrants[quadrant];
-
-      if (!node) {
-        node = new SegmentVertex(sub_area);
-        current.quadrants[quadrant] = node;
-        node.edges_out.add(current);
-        current.edges_in.add(node);
-      }
-
-      const nodes = this.GetIntervals(area, node);
-      result.push(...nodes);
-
-    };
-
-    // recurse into valid non-empty quadrants
-
-    ProcessQuadrant(0, { 
-      start: { 
-        row: current_area_start.row, 
-        column: current_area_start.column,
-        sheet_id: current_area_start.sheet_id,
-      },
-      end: { 
-        row: mid_row, 
-        column: mid_column,
-      }
-    });
-
-    ProcessQuadrant(1, { 
-      start: { 
-        row: current_area_start.row, 
-        column: mid_column + 1,
-        sheet_id: current_area_start.sheet_id,
-      },
-      end: { 
-        row: mid_row, 
-        column: current_area_end.column,
-      }
-    });
-
-    ProcessQuadrant(2, { 
-      start: { 
-        row: mid_row + 1, 
-        column: current_area_start.column,
-        sheet_id: current_area_start.sheet_id,
-      },
-      end: { 
-        row: current_area_end.row, 
-        column: mid_column,
-      }
-    });
-
-    ProcessQuadrant(3, { 
-      start: { 
-        row: mid_row + 1, 
-        column: mid_column + 1,
-        sheet_id: current_area_start.sheet_id,
-      },
-      end: { 
-        row: current_area_end.row, 
-        column: current_area_end.column,
-      }
-    });
-    
-    return result;
+    return vertices;
 
   }
 
@@ -800,7 +735,7 @@ export abstract class Graph implements GraphCallbacks {
    */
   public SetDirty(address: ICellAddress): void {
 
-    console.info('set dirty', address);
+    // console.info('set dirty', address);
 
     const vertex = this.GetVertex(address, true);
     this.SetVertexDirty(vertex as SpreadsheetVertex);
