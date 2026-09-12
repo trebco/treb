@@ -228,6 +228,12 @@ export abstract class Graph implements GraphCallbacks {
    * refactor the get vertex method to actually return the vertex, 
    * even if we don't attach a leaf. this is for dirty marking
    * cells with constants
+   * 
+   * the reason the old version worked is because when you created 
+   * an edge to an area, it would create vertices for every cell in
+   * the area. so we were always creating leaves for constants. we
+   * no longer do that, at least not explicitly
+   * 
    */
   public GetVertex2(address: ICellAddress, attach_leaf?: boolean): SegmentVertex {
 
@@ -390,17 +396,9 @@ export abstract class Graph implements GraphCallbacks {
     // console.info("RIB", address.row, address.column, 'd?', set_dirty, vertex, 'R?', remove);
 
     if (!vertex || !(vertex as SegmentVertex).is_leaf) {
-      if (set_dirty) {
+      if (set_dirty && vertex) {
         this.SetVertexDirty(vertex);
       }
-      /*
-      if (set_dirty) {
-        const list = ArrayVertex.GetContainingArrays(address as ICellAddress2);
-        for (const entry of list) {
-          this.SetVertexDirty(entry);
-        }
-      }
-      */
       return;
     }
 
