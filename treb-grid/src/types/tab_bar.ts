@@ -22,7 +22,7 @@
 import type { DataModel, ViewModel, Sheet } from 'treb-data-model';
 import { EventSource } from 'treb-utils';
 import type { BaseLayout } from '../layout/base_layout';
-import { MouseDrag } from './drag_mask';
+import { MouseDrag, MouseDrag2 } from './drag_mask';
 import type { GridOptions } from './grid_options';
 import { type ScaleEvent, ScaleControl } from './scale-control';
 import { DOMContext, ResolveThemeColor, type Theme } from 'treb-base-types';
@@ -348,7 +348,7 @@ export class TabBar extends EventSource<TabEvent> {
 
   }
 
-  public MouseDownTab(event: MouseEvent, tab: HTMLElement, sheet: Sheet, index: number, tabs: HTMLElement[]) {
+  public MouseDownTab(event: PointerEvent, tab: HTMLElement, sheet: Sheet, index: number, tabs: HTMLElement[]) {
 
     event.stopPropagation();
     event.preventDefault();
@@ -393,7 +393,14 @@ export class TabBar extends EventSource<TabEvent> {
     this.layout.mask.appendChild(ghost);
     */
 
-    MouseDrag(this.layout.mask, [], (move_event) => {
+    // switching to pointer capture. seems fine, the routine 
+    // shrinks the test area for reasons I can't recall, meaning
+    // you have to move within the tab bar -- moving large amounts
+    // to the left or right doesn't do anything. this seems unfriendly 
+    // to me now but there may have been a reason for it? we should 
+    // possibly have a grab cursor...
+
+    MouseDrag2(event, [], (move_event) => {
 
       const [x, y] = [move_event.clientX, move_event.clientY];
 
@@ -402,7 +409,7 @@ export class TabBar extends EventSource<TabEvent> {
       ghost.style.left = `${x}px`;
       */
 
-      if (y > top && y < bottom) {
+      { // if (y > top && y < bottom) {
         let new_order = order;
         if (x < left) { new_order = min; }
         else if (x > right) { new_order = max; }
@@ -432,10 +439,6 @@ export class TabBar extends EventSource<TabEvent> {
     }, () => {
       let current = index;
       let move_before = (order + 1) / 2;
-
-      /*
-      this.layout.mask.removeChild(ghost);
-      */
 
       // console.info('set false')
       this.dragging = false;
@@ -543,10 +546,10 @@ export class TabBar extends EventSource<TabEvent> {
 
       this.SetActive(tab, sheet === this.view.active_sheet, user);
 
-      const mousedown = (event: MouseEvent) => this.MouseDownTab(event, tab, sheet, index, tabs);
+      const mousedown = (event: PointerEvent) => this.MouseDownTab(event, tab, sheet, index, tabs);
 
       const doubleclick = (event: MouseEvent) => {
-        tab.removeEventListener('mousedown', mousedown);
+        tab.removeEventListener('pointerdown', mousedown);
         tab.removeEventListener('dblclick', doubleclick);
         this.DoubleClickTab(event, tab, sheet);
       };
@@ -557,7 +560,7 @@ export class TabBar extends EventSource<TabEvent> {
       // tab.innerHTML = `<span>${sheet.name}</span>`;
 
       tab.addEventListener('dblclick', doubleclick);
-      tab.addEventListener('mousedown', mousedown);
+      tab.addEventListener('pointerdown', mousedown);
 
       this.tab_container.appendChild(tab);
       tabs.push(tab);

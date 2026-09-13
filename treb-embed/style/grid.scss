@@ -98,6 +98,9 @@
 
     .tile-cover {
 
+      /** don't handle pinch/pan */
+      touch-action: none;
+
       /** specific layout for main grid cover */
       &.grid-cover {
         grid-area: 2/2/3/3;

@@ -20,6 +20,66 @@
  */
 
 /**
+ * new mouse drag event uses setPointerCapture, should be cleaner and 
+ * more consistent in different layouts. before we use this we need to
+ * understand how it interacts with pinch events though, I think there's 
+ * a css style we could use
+ * 
+ * touch-action: none;
+ * 
+ */
+export function MouseDrag2(
+    trigger_event: PointerEvent,
+    classes: string[] = [],
+    move?: (event: PointerEvent) => void,
+    end?: (event: PointerEvent) => void) {
+
+  const target = trigger_event.target;
+
+  if (!(target instanceof HTMLElement)) {
+    console.warn('no event target');
+    return;
+  }
+
+  function Cleanup(event: PointerEvent) {
+    if (target instanceof HTMLElement) {
+      target.releasePointerCapture(event.pointerId);
+      target.addEventListener('pointermove', HandleMove);
+      target.addEventListener('pointerup', HandleUp);
+    }
+  }
+
+  function HandleUp(event: PointerEvent) {
+    event.stopPropagation();
+    event.preventDefault();
+    Cleanup(event);
+    if (end) {
+      end(event);
+    }
+  };
+
+  function HandleMove(event: PointerEvent) {
+    event.stopPropagation();
+    event.preventDefault();
+
+    if (!event.buttons) {
+      HandleUp(event);
+    }
+    else if (move) { 
+      move(event);
+    }
+
+  }
+
+  target.setPointerCapture(trigger_event.pointerId);
+  target.addEventListener('pointermove', HandleMove);
+  target.addEventListener('pointerup', HandleUp);
+
+  // TODO: classes
+
+}
+
+/**
  * generic method for mouse drag handling. this method will insert an
  * event mask to capture mouse events over the whole window, and call
  * optional functions on events.

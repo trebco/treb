@@ -81,6 +81,8 @@
     & .treb-add-tab,
     & .treb-delete-tab {
 
+      touch-action: none;
+
       font-size: inherit;
       padding: .25em .75em;
       padding: 0 .75em;

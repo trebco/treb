@@ -98,7 +98,7 @@ import { BorderConstants } from './border_constants';
 import { UA } from '../util/ua';
 import { Autocomplete } from '../editors/autocomplete';
 
-import { MouseDrag } from './drag_mask';
+import { MouseDrag, MouseDrag2 } from './drag_mask';
 
 import type {
   Command,
@@ -4323,7 +4323,7 @@ export class Grid extends GridBase {
    * handles mouse down events on the grid area:
    * selection (click-drag) and editing (double-click)
    */
-  private MouseDown_Grid(event: MouseEvent) {
+  private MouseDown_Grid(event: PointerEvent) {
 
     if (event.button !== 0) {
       return;
@@ -4415,11 +4415,13 @@ export class Grid extends GridBase {
     // move events will be in mask (window) coordinates,
     // so we will need to offset
 
+    /*
     let bounding_rect = this.layout.grid_cover.getBoundingClientRect();
     const offset = {
       x: bounding_rect.left,
       y: bounding_rect.top,
     };
+    */
 
     const overlay_classes: string[] = [];
     
@@ -4533,13 +4535,19 @@ export class Grid extends GridBase {
           column: this.active_sheet.columns - 1,
         })).Expand(-1, -1);
 
-    MouseDrag(this.layout.mask, overlay_classes, (move_event: MouseEvent) => {
+    // the only classes we add here are "nub-select", and that actually 
+    // works because it's a style set on the grid cover, which is the 
+    // target element. I wouldn't want to rely on that, though... or 
+    // perhaps we should? remove classes from the mouse routine entirely?
+    // we should see how other cases use the overlay classes
+        
+    MouseDrag2(event, overlay_classes, (move_event: PointerEvent) => {
 
       // check if we are oob the grid
 
       const point = {
-        x: move_event.offsetX - offset.x,
-        y: move_event.offsetY - offset.y,
+        x: move_event.offsetX, // - offset.x,
+        y: move_event.offsetY, // - offset.y,
       };
       const testpoint = grid_rect.Clamp(point.x, point.y);
       const address = this.layout.PointToAddress_Grid(testpoint);
@@ -4565,9 +4573,11 @@ export class Grid extends GridBase {
           reset_offset = true;
         }
         if (reset_offset) {
+          /*
           bounding_rect = this.layout.grid_cover.getBoundingClientRect();
           offset.x = bounding_rect.left + document.body.scrollLeft;
           offset.y = bounding_rect.top + document.body.scrollTop;
+          */
         }
       }
 
@@ -7320,7 +7330,7 @@ export class Grid extends GridBase {
     this.container.addEventListener('paste', this.HandlePaste.bind(this));
 
     // mouse down events for selection
-    this.layout.grid_cover.addEventListener('mousedown', (event) => this.MouseDown_Grid(event));
+    this.layout.grid_cover.addEventListener('pointerdown', (event) => this.MouseDown_Grid(event));
     this.layout.column_header_cover.addEventListener('mousedown', (event) => this.MouseDown_ColumnHeader(event));
     this.layout.row_header_cover.addEventListener('mousedown', (event) => this.MouseDown_RowHeader(event));
 

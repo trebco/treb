@@ -39,6 +39,8 @@
     z-index: $z-index-mask;
     display: none;
 
+    background: rgba(255, 0, 0, .125);
+
     /** style is attached when drag operation is a resize */
     &.column-resize {
       cursor: col-resize;
