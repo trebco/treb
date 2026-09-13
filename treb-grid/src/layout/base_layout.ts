@@ -76,7 +76,6 @@ export abstract class BaseLayout {
 
   public annotation_container!: HTMLDivElement;
 
-  public mask!: HTMLDivElement;
   public mock_selection!: HTMLDivElement;
   public container?: HTMLElement; // reference to container
 
@@ -204,11 +203,6 @@ export abstract class BaseLayout {
     // actually if we are not in a web component, we might as well
     // use global...
 
-    // can't use global if it's inside a block because of z-stacking
-    // contexts; the mask will be under the next sheet. so either
-    // global in body, or instance local.
-
-    this.mask = DOM.Div('treb-mouse-mask');
     this.tooltip = DOM.Div('treb-tooltip');
 
     this.spill_border = DOM.SVG('svg', 'treb-spill-border');
@@ -1161,7 +1155,7 @@ export abstract class BaseLayout {
         const move_target = (element as HTMLElement).querySelector('.annotation-move-target') as HTMLElement;
         const resize_target = (element as HTMLElement).querySelector('.annotation-resize-target') as HTMLElement;
 
-        (element as HTMLElement).addEventListener('mousedown', (event: MouseEvent) => {
+        (element as HTMLElement).addEventListener('pointerdown', (event: PointerEvent) => {
           const node = view.node;
           requestAnimationFrame(() => {
             // console.info('calling focus on', node);
@@ -1290,7 +1284,6 @@ export abstract class BaseLayout {
               column: this.view.active_sheet.columns - 1,
             })).Expand(-1, -1);
 
-        //MouseDrag(this.mask, 'move', (move_event) => {
         MouseDrag(event, ['move'], (move_event) => {
 
           if (move_event.clientY <= scroll_rect.top + this.header_offset.y) {
@@ -1380,7 +1373,6 @@ export abstract class BaseLayout {
           y: bounds.top + event.offsetY - rect.height + resize_target.offsetTop,
         };
 
-        // MouseDrag(this.mask, 'nw-resize', (move_event) => {
         MouseDrag(event, ['nw-resize'], (move_event) => {
 
           const elements = [node, ...this.GetFrozenAnnotations(annotation)];
@@ -1469,10 +1461,6 @@ export abstract class BaseLayout {
 
     // this is getting stuck under the toolbar... we need better z-stacking
     // and this needs to be higher up in the node list
-
-    if (!this.mask.parentElement) {
-      container.parentElement?.parentElement?.appendChild(this.mask);
-    }
 
     //if (!this.error_highlight.parentElement) {
     //  container.appendChild(this.error_highlight);
