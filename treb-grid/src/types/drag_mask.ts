@@ -28,7 +28,7 @@
  * touch-action: none;
  * 
  */
-export function MouseDrag2(
+export function MouseDrag(
     trigger_event: PointerEvent,
     classes: string[] = [],
     move?: (event: PointerEvent) => void,
@@ -44,8 +44,8 @@ export function MouseDrag2(
   function Cleanup(event: PointerEvent) {
     if (target instanceof HTMLElement) {
       target.releasePointerCapture(event.pointerId);
-      target.addEventListener('pointermove', HandleMove);
-      target.addEventListener('pointerup', HandleUp);
+      target.removeEventListener('pointermove', HandleMove);
+      target.removeEventListener('pointerup', HandleUp);
     }
   }
 
@@ -87,8 +87,10 @@ export function MouseDrag2(
  * @param classes optional list of classes to attach to the mask node
  * @param move callback function on mouse move events
  * @param end callback function on end (mouse up or button up)
+ * 
+ * @deprecated
  */
-export function MouseDrag(
+export function MouseDrag1(
     mask_node: HTMLElement,
     classes: string|string[] = [],
     move?: (event: MouseEvent) => void,
@@ -123,6 +125,9 @@ export function MouseDrag(
   };
 
   cleanup = () => {
+
+    console.info("CLEANUP");
+
     mask_node.style.display = 'none';
     mask_node.removeEventListener('mousemove', handle_move);
     mask_node.removeEventListener('mouseup', handle_up);

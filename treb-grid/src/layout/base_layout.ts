@@ -1223,7 +1223,7 @@ export abstract class BaseLayout {
   }
 
   // testing moving this here...
-  public AnnotationMouseDown(annotation: Annotation, node: HTMLElement, event: MouseEvent, move_target: HTMLElement, resize_target: HTMLElement): Promise<GridEvent | void> {
+  public AnnotationMouseDown(annotation: Annotation, node: HTMLElement, event: PointerEvent, move_target: HTMLElement, resize_target: HTMLElement): Promise<GridEvent | void> {
 
     // console.info('annotation mousedown (in layout)', annotation);
 
@@ -1250,6 +1250,25 @@ export abstract class BaseLayout {
       // IE11 is not targeting the child nodes? why not? (...)
       // console.info('target', (event.target as HTMLElement)?.className);
 
+      const start_point = {
+        x: event.clientX,
+        y: event.clientY,
+      };
+
+      const base_scroll = {
+        x: scroll_node.scrollLeft,
+        y: scroll_node.scrollTop,
+      };
+
+      /*
+      const p = node.parentElement;
+      if (p) {
+        console.info({p})
+        p.style.overflowY = 'hidden';
+      }
+      const p_bounds = p?.getBoundingClientRect();
+      */
+
       if (event.target === move_target || (event.target !== resize_target && event.altKey)) {
 
         event.stopPropagation();
@@ -1257,12 +1276,12 @@ export abstract class BaseLayout {
         node.focus();
 
         const offset = {
-          x: bounding_rect.left + event.offsetX - rect.left,
-          y: bounding_rect.top + event.offsetY - rect.top,
+          x: 0, // bounding_rect.left + event.offsetX - rect.left,
+          y: 0, // bounding_rect.top + event.offsetY - rect.top,
         };
 
         const elements = [node, ...this.GetFrozenAnnotations(annotation)];
-        const scroll_delta = 25;
+        const scroll_delta = 12;
 
         const grid_rect =
           this.CellAddressToRectangle({ row: 0, column: 0 }).Combine(
@@ -1271,39 +1290,33 @@ export abstract class BaseLayout {
               column: this.view.active_sheet.columns - 1,
             })).Expand(-1, -1);
 
-        MouseDrag(this.mask, 'move', (move_event) => {
+        //MouseDrag(this.mask, 'move', (move_event) => {
+        MouseDrag(event, ['move'], (move_event) => {
 
-          // check if we are oob the grid
-          // FIXME: clamp annotation to cell bounds (...) this is OK for now though
-
-          if (move_event.offsetY - scroll_rect.top < this.header_offset.y) {
-            const delta = Math.min(scroll_delta, scroll_node.scrollTop);
-            scroll_node.scrollTop -= delta;
-            offset.y += delta;
+          if (move_event.clientY <= scroll_rect.top + this.header_offset.y) {
+            scroll_node.scrollTop -= scroll_delta;
           }
-          else if (move_event.offsetY - scroll_rect.top >= scroll_rect.height) {
-            if (scroll_node.scrollTop + scroll_rect.height < grid_rect.height) {
-              const delta = scroll_delta;
-              scroll_node.scrollTop += delta;
-              offset.y -= delta;
-            }
+          else if (rect.top + rect.height / 2 >= scroll_rect.height - this.header_offset.y + scroll_node.scrollTop) {
+            scroll_node.scrollTop += scroll_delta;
           }
 
-          if (move_event.offsetX - scroll_rect.left < this.header_offset.x) {
-            const delta = Math.min(scroll_delta, scroll_node.scrollLeft);
-            scroll_node.scrollLeft -= delta;
-            offset.x += delta;
+          if (move_event.clientX <= scroll_rect.left + this.header_offset.x) {
+            scroll_node.scrollLeft -= scroll_delta;
           }
-          else if (move_event.offsetX - scroll_rect.left >= scroll_rect.width) {
-            if (scroll_node.scrollLeft + scroll_rect.width < grid_rect.width) {
-              const delta = scroll_delta;
-              scroll_node.scrollLeft += delta;
-              offset.x -= delta;
-            }
+          else if (rect.left + rect.width / 2 >= scroll_rect.width - this.header_offset.x + scroll_node.scrollLeft) {
+            scroll_node.scrollLeft += scroll_delta;
           }
 
-          rect.top = move_event.offsetY - offset.y;
-          rect.left = move_event.offsetX - offset.x;
+          const d = {
+            x: move_event.clientX - start_point.x + scroll_node.scrollLeft - base_scroll.x,
+            y: move_event.clientY - start_point.y + scroll_node.scrollTop - base_scroll.y,
+          };
+
+          rect.left = origin.left + d.x;
+          rect.top = origin.top + d.y;
+
+          // rect.top = move_event.offsetY ; // - offset.y;
+          // rect.left = move_event.offsetX ; // - offset.x;
 
           if (move_event.shiftKey) {
 
@@ -1334,9 +1347,7 @@ export abstract class BaseLayout {
 
         }, () => {
           annotation.data.extent = undefined; // reset
-          // annotation.rect = rect.Scale(1/this.scale);
           annotation.data.layout = this.RectToAnnotationLayout(rect);
-          // this.grid_events.Publish({ type: 'annotation', annotation, event: 'move' });
           resolve({ type: 'annotation', annotation, event: 'move' })
         });
 
@@ -1369,12 +1380,18 @@ export abstract class BaseLayout {
           y: bounds.top + event.offsetY - rect.height + resize_target.offsetTop,
         };
 
-        MouseDrag(this.mask, 'nw-resize', (move_event) => {
+        // MouseDrag(this.mask, 'nw-resize', (move_event) => {
+        MouseDrag(event, ['nw-resize'], (move_event) => {
 
           const elements = [node, ...this.GetFrozenAnnotations(annotation)];
 
-          rect.height = move_event.offsetY - offset.y;
-          rect.width = move_event.offsetX - offset.x;
+          const d = {
+            x: move_event.clientX - start_point.x + scroll_node.scrollLeft - base_scroll.x,
+            y: move_event.clientY - start_point.y + scroll_node.scrollTop - base_scroll.y,
+          };
+
+          rect.height = origin.height + d.y; // move_event.offsetY - offset.y;
+          rect.width = origin.width + d.x; // move_event.offsetX - offset.x;
 
           if (move_event.shiftKey && move_event.ctrlKey) {
             if (aspect) {
@@ -1417,10 +1434,7 @@ export abstract class BaseLayout {
 
         }, () => {
           annotation.data.extent = undefined; // reset
-          // annotation.rect = rect.Scale(1/this.scale);
           annotation.data.layout = this.RectToAnnotationLayout(rect);
-
-          // this.grid_events.Publish({ type: 'annotation', annotation, event: 'resize' });
           resolve({ type: 'annotation', annotation, event: 'resize' });
 
         });

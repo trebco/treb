@@ -98,7 +98,7 @@ import { BorderConstants } from './border_constants';
 import { UA } from '../util/ua';
 import { Autocomplete } from '../editors/autocomplete';
 
-import { MouseDrag, MouseDrag2 } from './drag_mask';
+import { MouseDrag } from './drag_mask';
 
 import type {
   Command,
@@ -852,7 +852,7 @@ export class Grid extends GridBase {
         attrs: { tabindex: '-1', },
         events: {
 
-          mousedown: (event) => {
+          pointerdown: (event) => {
 
             if (event.button !== 0) {
               return;
@@ -3546,7 +3546,7 @@ export class Grid extends GridBase {
    *
    * FIXME: argument selection
    */
-  private MouseDown_RowHeader(event: MouseEvent) {
+  private MouseDown_RowHeader(event: PointerEvent) {
 
     if (event.button !== 0) {
       return;
@@ -3566,6 +3566,8 @@ export class Grid extends GridBase {
     if (this.cell_resize.row >= 0) {
       const row = this.cell_resize.row;
       const base = offset.y + event.offsetY;
+
+      const base2 = event.clientY;
 
       this.layout.HideDropdownCaret();
 
@@ -3636,8 +3638,10 @@ export class Grid extends GridBase {
 
       }
 
-      MouseDrag(this.layout.mask, 'row-resize', (move_event: MouseEvent) => {
-        const delta = Math.max(-original_height, Math.round(move_event.offsetY - base));
+      MouseDrag(event, ['row-resize'], (move_event: PointerEvent) => {
+
+        const delta = Math.max(-original_height, Math.round(move_event.clientY - base2));
+        
         if (delta + original_height !== height) {
 
           height = delta + original_height;
@@ -3793,17 +3797,15 @@ export class Grid extends GridBase {
       }
       this.RenderSelections();
 
-      MouseDrag(this.layout.mask, [], (move_event: MouseEvent) => {
-        const address = this.layout.CoordinateToRowHeader(move_event.offsetY - offset.y);
+      MouseDrag(event, [], (move_event: MouseEvent) => {
+
+        const address = this.layout.CoordinateToRowHeader(move_event.clientY - offset.y);
         const area = new Area(address, base_address, true);
 
         if (selection.empty || !area.Equals(selection.area)) {
           this.Select(selection, area, undefined, true);
           this.RenderSelections();
         }
-      }, () => {
-        // console.info('end');
-
       });
     }
   }
@@ -3814,7 +3816,7 @@ export class Grid extends GridBase {
    *
    * FIXME: argument selection
    */
-  private MouseDown_ColumnHeader(event: MouseEvent) {
+  private MouseDown_ColumnHeader(event: PointerEvent) {
 
     if (event.button !== 0) {
       return;
@@ -3834,6 +3836,8 @@ export class Grid extends GridBase {
     if (this.cell_resize.column >= 0) {
       const column = this.cell_resize.column;
       const base = offset.x + event.offsetX;
+
+      const base2 = event.clientX;
 
       this.layout.HideDropdownCaret();
 
@@ -3908,8 +3912,9 @@ export class Grid extends GridBase {
         }
       }
 
-      MouseDrag(this.layout.mask, 'column-resize', (move_event: MouseEvent) => {
-        const delta = Math.max(-original_width, Math.round(move_event.offsetX - base));
+      MouseDrag(event, ['column-resize'], (move_event: MouseEvent) => {
+
+        const delta = Math.max(-original_width, Math.round(move_event.clientX - base2));
 
         if (delta + original_width !== width) {
 
@@ -4058,9 +4063,11 @@ export class Grid extends GridBase {
       }
       this.RenderSelections();
 
-      MouseDrag(this.layout.mask, [], (move_event: MouseEvent) => {
-        const address = this.layout.CoordinateToColumnHeader(move_event.offsetX - offset.x);
+      MouseDrag(event, [], (move_event: MouseEvent) => {
+
+        const address = this.layout.CoordinateToColumnHeader(move_event.clientX - offset.x);
         const area = new Area(address, base_address, true);
+
         if (selection.empty || !area.Equals(selection.area)) {
           this.Select(selection, area, undefined, true);
           this.RenderSelections();
@@ -4541,7 +4548,7 @@ export class Grid extends GridBase {
     // perhaps we should? remove classes from the mouse routine entirely?
     // we should see how other cases use the overlay classes
         
-    MouseDrag2(event, overlay_classes, (move_event: PointerEvent) => {
+    MouseDrag(event, overlay_classes, (move_event: PointerEvent) => {
 
       // check if we are oob the grid
 
@@ -7331,8 +7338,8 @@ export class Grid extends GridBase {
 
     // mouse down events for selection
     this.layout.grid_cover.addEventListener('pointerdown', (event) => this.MouseDown_Grid(event));
-    this.layout.column_header_cover.addEventListener('mousedown', (event) => this.MouseDown_ColumnHeader(event));
-    this.layout.row_header_cover.addEventListener('mousedown', (event) => this.MouseDown_RowHeader(event));
+    this.layout.column_header_cover.addEventListener('pointerdown', (event) => this.MouseDown_ColumnHeader(event));
+    this.layout.row_header_cover.addEventListener('pointerdown', (event) => this.MouseDown_RowHeader(event));
 
     // move events on headers, to show column/row resize cursors where appropriate
     this.layout.column_header_cover.addEventListener('mousemove', (event) => this.MouseMove_ColumnHeader(event));

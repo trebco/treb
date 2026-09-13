@@ -22,7 +22,7 @@
 import type { DataModel, ViewModel, Sheet } from 'treb-data-model';
 import { EventSource } from 'treb-utils';
 import type { BaseLayout } from '../layout/base_layout';
-import { MouseDrag, MouseDrag2 } from './drag_mask';
+import { MouseDrag } from './drag_mask';
 import type { GridOptions } from './grid_options';
 import { type ScaleEvent, ScaleControl } from './scale-control';
 import { DOMContext, ResolveThemeColor, type Theme } from 'treb-base-types';
@@ -400,7 +400,7 @@ export class TabBar extends EventSource<TabEvent> {
     // to me now but there may have been a reason for it? we should 
     // possibly have a grab cursor...
 
-    MouseDrag2(event, [], (move_event) => {
+    MouseDrag(event, [], (move_event) => {
 
       const [x, y] = [move_event.clientX, move_event.clientY];
 

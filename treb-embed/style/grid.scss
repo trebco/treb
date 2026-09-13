@@ -241,6 +241,8 @@
     .treb-annotation-container,
     .frozen-annotation-container {
       position: absolute;
+      overflow: hidden;
+
       top: 0px;
       left: 0px;
 
@@ -248,6 +250,7 @@
       pointer-events: none;
 
       .annotation {
+
         position: absolute;
         overflow: hidden;
         pointer-events: auto;
@@ -267,6 +270,7 @@
         }
 
         .annotation-move-target {
+          touch-action: none;
           position: absolute;
           z-index: 2;
           cursor: move;
@@ -278,6 +282,7 @@
         }
 
         .annotation-resize-target {
+          touch-action: none;
           position: absolute;
           z-index: 3;
           cursor: nwse-resize;
