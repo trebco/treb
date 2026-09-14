@@ -2625,12 +2625,15 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   // --- public API methods ----------------------------------------------------
 
   /** dynamically load language module */
-  public async LoadLanguage(language = '') {
-
+  public async LoadLanguage(language = '', override_decimal_separator?: '.'|',') {
+  
     if (!language || language === 'locale') {
       const locale = Localization.locale || '';
       const parts = locale.split(/-/).map(part => part.toLowerCase());
       language = parts[0];
+    }
+    else {
+      Localization.UpdateLocale(language, override_decimal_separator);
     }
 
     language = language.toLowerCase();

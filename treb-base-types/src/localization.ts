@@ -69,7 +69,7 @@ export class Localization {
    *
    * @param locale explicitly set locale
    */
-  public static UpdateLocale(locale?: string): void {
+  public static UpdateLocale(locale?: string, override_decimal_separator?: '.' | ','): void {
 
     if (locale) {
       this.locale = locale; // 1
@@ -104,8 +104,10 @@ export class Localization {
       this.locale = 'en-us';
     }
    
-    const decimal_separator = new Intl.NumberFormat(this.locale,
-      {minimumFractionDigits: 1}).format(3.3).replace(/\d/g, '');
+    const decimal_separator = override_decimal_separator ? 
+      override_decimal_separator :
+        new Intl.NumberFormat(this.locale,
+        {minimumFractionDigits: 1}).format(3.3).replace(/\d/g, '');
 
     this.decimal_separator = (decimal_separator === ',') ? ',' : '.';
 
