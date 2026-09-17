@@ -3131,7 +3131,9 @@ export const BaseFunctionLibrary: FunctionMap = {
     TanH: TrigFunction(Math.tanh, ComplexMath.TanH),
     ATan: TrigFunction(Math.atan, ComplexMath.ATan),
 
-    E: { fn: () => { return { type: ValueType.number, value: Math.E } } },
+    // removed. use EXP(1)
+    // E: { fn: () => { return { type: ValueType.number, value: Math.E } } },
+
     PI: { fn: () => { return { type: ValueType.number, value: Math.PI } } },
     SQRT2: { fn: () => { return { type: ValueType.number, value: Math.SQRT2 } } },
     SQRT1_2: { fn: () => { return { type: ValueType.number, value: Math.SQRT1_2 } } },

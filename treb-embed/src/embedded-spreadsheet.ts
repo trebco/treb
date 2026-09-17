@@ -123,6 +123,7 @@ import { CreateWorker, type WorkerProxy } from 'treb-base-types';
 // --- types -------------------------------------------------------------------
 
 import type { CustomGridFactory } from './custom-grid-factory';
+import { default_ui_strings } from './ui-strings';
 
 /**
  * options for saving files. we add the option for JSON formatting.
@@ -2620,6 +2621,25 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
 
     return new Chart();
+  }
+
+  public GetUIStrings() {
+
+    const titles: Record<string, string> = {
+      ...default_ui_strings
+    };
+
+    const strings = this.model.language_model?.ui_strings;
+    if (strings) {
+      for (const key of Object.keys(titles)) {
+        if (strings[key]) {
+          titles[key] = strings[key];
+        }
+      }
+    }
+
+    return titles;
+
   }
 
   // --- public API methods ----------------------------------------------------

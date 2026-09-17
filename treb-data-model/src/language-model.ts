@@ -49,5 +49,9 @@ export interface LanguageModel {
   
   boolean_true?: string;
   boolean_false?: string;
+
+  /** NEW: ui strings included in language model */
+  ui_strings?: Record<string, string>;
+
 }
 

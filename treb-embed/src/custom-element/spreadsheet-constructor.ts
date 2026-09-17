@@ -39,22 +39,7 @@ import type { ToolbarMessage } from '../toolbar-message';
 import { DOMContext } from 'treb-base-types';
 import { font_stack_labels, type FontStackType } from 'treb-base-types/src/font-stack';
 
-/** with a view towards i18n */
-const default_titles: Record<string, string> = {
 
-  close_dialog: 'Close dialog',
-  insert_function: 'Insert function...',
-  delete_sheet: 'Delete current sheet',
-  add_sheet: 'Add sheet',
-  document_modified: 'This document has been modified from the original version.',
-  recalculate: 'Recalculate',
-  toggle_toolbar: 'Toggle toolbar',
-  export: 'Export as XLSX',
-  revert: 'Revert to original version',
-  about: `What's this?`,
-  toggle_sidebar: 'Toggle sidebar',
-
-};
 
 /** @internal */
 export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
@@ -590,6 +575,7 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
 
     // --- titles --------------------------------------------------------------
 
+    /*
     const elements = Array.from(this.layout_element.querySelectorAll('[data-title]'));
     for (const element of elements) {
       if (element instanceof HTMLElement) {
@@ -605,13 +591,45 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
 
       }
     }
+    */
+
+    this.UpdateTitles(sheet.GetUIStrings() || {});
+    sheet.Subscribe(event => {
+      if (event.type === 'language-change') {
+        queueMicrotask(() => {
+          this.UpdateTitles(sheet?.GetUIStrings() || {});
+        });
+      }
+    });
 
     // --- animated ------------------------------------------------------------
 
     // requestAnimationFrame(() => {
     setTimeout(() => this.layout_element?.setAttribute('animate', ''), 250);
-
+    
   } 
+
+  public UpdateTitles(titles: Record<string, string>) {
+    const elements = Array.from(this.layout_element?.querySelectorAll('[data-title]') || []);
+    for (const element of elements) {
+      if (element instanceof HTMLElement) {
+
+        // the "active titles" are all in toolbar, so we can punt on 
+        // these for now, at least for containers that don't use the toolbar
+
+        // temp workaround
+        if (element.dataset.activeTitle) {
+          continue;
+        }
+
+        const key = element.dataset.title;
+        if (key) {
+          element.title = titles[key] || '';
+        }
+
+      }
+    }
+  }
 
   public ToggleToolbar() {
 
