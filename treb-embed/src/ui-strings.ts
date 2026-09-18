@@ -38,26 +38,26 @@ export const default_error_messages = {
  * externally)
  */
 export const default_formula_errors = {
-  Argument:    'ARG',
-  Reference:   'REF',
-  Name:        'NAME',
-  Expression:  'EXPR',
-  Value:       'VALUE',
-  Div0:        'DIV/0',
-  NA:          'N/A',
-  Spill:       'SPILL',
+  Argument:    '#ARG!',
+  Reference:   '#REF!',
+  Name:        '#NAME?',
+  Expression:  '#EXPR!',
+  Value:       '#VALUE!',
+  Div0:        '#DIV/0!',
+  NA:          '#N/A',
+  Spill:       '#SPILL!',
 
   /** local error: missing data */
-  Data:        'DATA',
+  Data:        '#DATA!',
 
   /** local error: unknown */
-  Unknown:     'UNK',
+  Unknown:     '#UNK!',
 
   /** local error: not implemented */
-  NotImpl:     'NOTIMPL',
+  NotImpl:     '#NOTIMPL!',
 
   /** local error: circular reference in graph */  
-  Loop:        'LOOP', 
+  Loop:        '#LOOP!', 
 }
 
 /**
