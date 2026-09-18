@@ -644,7 +644,7 @@ export const BaseFunctionLibrary: FunctionMap = {
   */
 
   Now: {
-    description: 'Returns current time',
+    description: 'Returns current date and time',
     volatile: true,
     fn: () => {
       return { type: ValueType.number, value: UnlotusDate(new Date().getTime()) };
@@ -668,7 +668,7 @@ export const BaseFunctionLibrary: FunctionMap = {
   },
 
   Today: {
-    description: 'Returns current day',
+    description: 'Returns current date',
     volatile: true,
     fn: () => {
       const now = new Date();
@@ -3191,6 +3191,7 @@ for (const key of Object.keys(BaseFunctionLibrary)) {
 // block these names from auto-import from Math
 
 const block_list = [
+  'e',
   'ceil',
   'pow', 
   'ln10', 

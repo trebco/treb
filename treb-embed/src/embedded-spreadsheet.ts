@@ -123,7 +123,7 @@ import { CreateWorker, type WorkerProxy } from 'treb-base-types';
 // --- types -------------------------------------------------------------------
 
 import type { CustomGridFactory } from './custom-grid-factory';
-import { default_ui_strings } from './ui-strings';
+import { default_error_messages, default_ui_strings } from './ui-strings';
 
 /**
  * options for saving files. we add the option for JSON formatting.
@@ -1549,6 +1549,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       title?: string,
     } {
 
+    const messages: typeof default_error_messages = {
+      ...default_error_messages,
+      ...this.model.language_model?.error_strings 
+    };
+
     switch (code) {
       case ErrorCode.none:
         return {
@@ -1557,27 +1562,32 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       case ErrorCode.array:
         return {
-          message: `You can't change part of an array`,
+          // message: `You can't change part of an array`,
+          message: messages.array,
         }
 
       case ErrorCode.invalid_area_for_paste:
         return {
-          message: 'Invalid area for paste',
+          // message: 'Invalid area for paste',
+          message: messages.invalid_area_for_paste,
         }
 
       case ErrorCode.invalid_area_for_table:
         return {
-          message: `Invalid area for table`,
+          // message: `Invalid area for table`,
+          message: messages.invalid_area_for_table,
         }
 
       case ErrorCode.data_validation:
         return {
-          message: `Invalid value (data validation)`,
+          // message: `Invalid value (data validation)`,
+          message: messages.data_validation,
         }
 
       default:
         return {
-          message: `Unknown error (${code})`,
+          // message: `Unknown error (${code})`,
+          message: messages.unknown.replace(/\{code\}/, `(${code})`),
         };
     }
 

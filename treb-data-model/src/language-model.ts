@@ -42,6 +42,7 @@ export interface TranslatedFunctionDescriptor {
 }
 
 export interface LanguageModel {
+
   name: string;
   version?: string;
   locale?: string;
@@ -50,8 +51,16 @@ export interface LanguageModel {
   boolean_true?: string;
   boolean_false?: string;
 
-  /** NEW: ui strings included in language model */
+  /** 
+   * NEW: ui strings included in language model 
+   * FIXME: strongly typed
+   */
   ui_strings?: Record<string, string>;
+
+  /**
+   * FIXME: strongly typed
+   */
+  error_strings?: Record<string, string>;
 
 }
 

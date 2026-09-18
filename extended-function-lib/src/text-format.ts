@@ -335,7 +335,7 @@ export default {
   },
 
   'ARRAYTOTEXT': {
-    description: 'Returns an array of text values from any specified range',
+    description: 'Returns a text representation of an array',
     arguments: [
       { name: 'array', description: 'The array to convert', boxed: true },
       { name: 'format', description: '0 = concise (default), 1 = strict' },

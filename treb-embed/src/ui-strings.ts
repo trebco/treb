@@ -15,5 +15,13 @@ export const default_ui_strings = {
   revert: 'Revert to original version',
   about: `What's this?`,
   toggle_sidebar: 'Toggle sidebar',
-};
+} as const;
+
+export const default_error_messages = {
+  array: `You can't change part of an array`,
+  invalid_area_for_paste: 'Invalid area for paste',
+  invalid_area_for_table: `Invalid area for table`,
+  data_validation: `Invalid value (data validation)`,
+  unknown: `Unknown error {code}`,
+} as const;
 
