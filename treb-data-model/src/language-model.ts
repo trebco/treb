@@ -62,5 +62,15 @@ export interface LanguageModel {
    */
   error_messages?: Record<string, string>;
 
+  /**
+   * formula/cell errors
+   */
+  formula_errors?: Record<string, string>;
+
+  /**
+   * symbolic number formats
+   */
+  symbolic_number_formats?: Record<string, string>;
+
 }
 
