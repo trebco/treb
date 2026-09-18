@@ -60,7 +60,7 @@ export interface LanguageModel {
   /**
    * FIXME: strongly typed
    */
-  error_strings?: Record<string, string>;
+  error_messages?: Record<string, string>;
 
 }
 

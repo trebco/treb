@@ -1551,7 +1551,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     const messages: typeof default_error_messages = {
       ...default_error_messages,
-      ...this.model.language_model?.error_strings 
+      ...this.model.language_model?.error_messages 
     };
 
     switch (code) {
