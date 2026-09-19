@@ -64,6 +64,7 @@ import type { Command, ActivateSheetCommand,
 import type { UpdateFlags } from './update_flags';
 import type { FreezePane, LegacySerializedSheet } from 'treb-data-model';
 import type { ClipboardCellData } from './clipboard_data';
+import { default_ui_strings } from '../../../treb-embed/src/ui-strings';
 
 interface PatchOptions extends PatchAreaOptions {
   sheet: Sheet;
@@ -716,7 +717,12 @@ export class GridBase {
     // ensure we have a sheets[0] so we can set active
 
     if (sheets.length === 0) {
-      sheets.push(Sheet.Blank(this.model.theme_style_properties));
+
+      const first = Sheet.Blank(this.model.theme_style_properties);
+      const template = this.model.language_model?.ui_strings?.new_sheet_name || default_ui_strings.new_sheet_name;
+      first.name = template.replace(/\{#\}/, '1');
+      sheets.push(first);
+
     }
 
     // now assign sheets
@@ -2087,14 +2093,19 @@ export class GridBase {
   /**
    * add sheet. data only.
    */
-  protected AddSheetInternal(name = Sheet.default_sheet_name, insert_index = -1): number|undefined {
+  protected AddSheetInternal(name = '', insert_index = -1): number|undefined {
 
     if (!this.options.add_tab) {
       console.warn('add tab option not set or false');
       return;
     }
 
+    const template = this.model.language_model?.ui_strings?.new_sheet_name || default_ui_strings.new_sheet_name;
+
     // validate name...
+
+    name = template.replace(/\{#\}/, '1');
+
 
     while (this.model.sheets.list.some((test) => test.name === name)) {
 

@@ -70,7 +70,7 @@ export interface LanguageModel {
   /**
    * symbolic number formats
    */
-  symbolic_number_formats?: Record<string, string>;
+  number_formats?: Record<string, string>;
 
 }
 
