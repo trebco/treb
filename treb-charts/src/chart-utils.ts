@@ -433,7 +433,15 @@ const AutoFormat = (scale: RangeScale): string => {
 };
 
 /** get a unified scale, and formats */
-export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: number, x_floor?: number, x_ceiling?: number, auto_number_format?: boolean) => {
+export const CommonData = (
+      series: SeriesType[], 
+      y_floor?: number, 
+      y_ceiling?: number, 
+      x_floor?: number, 
+      x_ceiling?: number, 
+      auto_number_format?: boolean,
+      heuristic_floor?: boolean,
+    ) => {
 
   let x_format = '';
   let y_format = '';
@@ -520,6 +528,28 @@ export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: n
   if (typeof y_floor !== 'undefined') {
     y_min = Math.min(y_min, y_floor);
   }
+  else if (heuristic_floor) {
+      const y_range = y_max - y_min;
+      
+      // Prevent division by zero if all values in the series are identical
+      if (y_range === 0) {
+          y_min = y_min < 0 ? y_min * 1.1 : (y_min === 0 ? -1 : y_min * 0.9);
+      } else {
+          // Evaluate relative variation against the dominant magnitude of the dataset
+          const max_magnitude = Math.max(Math.abs(y_max), Math.abs(y_min));
+          const relative_variation = y_range / max_magnitude;
+
+          if (relative_variation < 0.25) {
+              // Tight variance relative to overall scale -> Zoom in around data
+              const padding = y_range * 0.10;
+              y_min = y_min - padding;
+          } else {
+              // Significant variation -> Anchor positive lower bound to zero
+              y_min = y_min < 0 ? y_min - (y_range * 0.05) : 0;
+          }
+      }
+  }
+
   if (typeof y_ceiling !== 'undefined') {
     y_max = Math.max(y_max, y_ceiling);
   }
@@ -1131,10 +1161,12 @@ export const CreateColumnChart = (
 export const CreateLineChart = (args: [UnionValue, UnionValue, string, string], type: 'line' | 'area'): ChartData => {
 
   const series: SeriesType[] = TransformSeriesData(args[0], args[1]);
-  const common = CommonData(series, 0, 0);
+  const common = CommonData(series, undefined, undefined, undefined, undefined, undefined, true); // , 0, 0);
 
   const title = args[2]?.toString() || undefined;
   const options = args[3]?.toString() || undefined;
+
+  // console.info('LC', {common, series});
 
   const chart_data: ChartData = {
     legend: common.legend,
