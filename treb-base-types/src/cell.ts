@@ -29,6 +29,7 @@ import { ValueType, GetValueType } from './value-type';
 import type { CellValue, UnionValue } from './union';
 import type { PreparedText } from './render_text';
 import type { Table } from './table';
+import type { ErrorValue } from './error-value';
 
 export interface RenderFunctionOptions {
   height: number;
@@ -542,7 +543,7 @@ export class Cell {
   }
 
   /** sets error (FIXME: error type) */
-  public SetCalculationError(err = 'ERR'): void {
+  public SetCalculationError(err: ErrorValue): void {
     this.SetCalculatedValue(err, ValueType.error);
   }
 

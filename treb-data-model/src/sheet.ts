@@ -75,6 +75,9 @@ export class Sheet {
 
   public static readonly default_sheet_name = 'Sheet1';
 
+  /** we need to inject this (I think) */
+  public static error_labels: Record<number, string> = {};
+
   // FIXME: use the external measurement object (from utils)
   // private static measurement_canvas?: HTMLCanvasElement;
 
@@ -1570,7 +1573,7 @@ export class Sheet {
       cell.rendered_type = ValueType.number;
     }
     else if (type === ValueType.error) {
-      cell.formatted = '#' + (value || 'ERR?');
+      cell.formatted = Sheet.error_labels[value as number] || '#ERR?';
       cell.rendered_type = ValueType.error;
     }
     else if (type === ValueType.boolean) {

@@ -23,7 +23,7 @@ import type { FunctionMap } from '../descriptors';
 import { type CellValue, type UnionValue, ValueType } from 'treb-base-types';
 import { FlattenCellValues } from '../utilities';
 
-import { ArgumentError, ValueError } from '../function-error';
+import { ArgumentError, NumError, ValueError } from '../function-error';
 
 // use a single, static object for base functions
 
@@ -423,10 +423,8 @@ export const FinanceFunctionLibrary: FunctionMap = {
 
       }
 
-      return {
-        type: ValueType.error,
-        value: 'NUM',
-      }
+      return NumError();
+
     },
   },
 

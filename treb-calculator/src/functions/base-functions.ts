@@ -27,7 +27,7 @@ import type { UnionValue,
          RenderFunctionResult, RenderFunctionOptions, Complex, CellValue, 
         // ICellAddress
         } from 'treb-base-types';
-import { Box, ValueType, GetValueType, ComplexOrReal, IsComplex, Area } from 'treb-base-types';
+import { Box, ValueType, GetValueType, ComplexOrReal, IsComplex, Area, Errors } from 'treb-base-types';
 import { Sparkline } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
@@ -694,10 +694,10 @@ export const BaseFunctionLibrary: FunctionMap = {
   },
 
   IfNA: {
-    description: 'Returns the original value, or the alternate value if the original value is #NA',
+    description: 'Returns the original value, or the alternate value if the original value is #N/A!',
     arguments: [{ name: 'original value', allow_error: true, boxed: true, unroll: true }, { name: 'alternate value' }],
     fn: (ref: UnionValue, value_if_error: unknown = 0): UnionValue => {
-      if (ref && ref.type === ValueType.error && ref.value === 'NA') {
+      if (ref && ref.type === ValueType.error && ref.value === Errors.NA) { // ref.value === 'NA') {
         return { value: value_if_error, type: GetValueType(value_if_error) } as UnionValue;
       }
       return ref;
@@ -705,14 +705,14 @@ export const BaseFunctionLibrary: FunctionMap = {
   },
 
   IsNA: {
-    description: 'Checks if another cell contains a #NA error',
+    description: 'Checks if another cell contains a #N/A! error',
     arguments: [{ name: 'reference', allow_error: true, boxed: true }],
     fn: (...args: UnionValue[]): UnionValue => {
 
       const values = Utils.FlattenBoxed(args);
       for (const value of values) {
         if (value.type === ValueType.error) {
-          if (value.value === 'N/A') {
+          if (value.value === Errors.NA ) { 
             return { type: ValueType.boolean, value: true };
           }
         }
@@ -730,7 +730,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       const values = Utils.FlattenBoxed(args);
       for (const value of values) {
-        if (value.type === ValueType.error && value.value !== 'N/A') {
+        if (value.type === ValueType.error &&  value.value !== Errors.NA ) { 
           return { type: ValueType.boolean, value: true };
         }
       }

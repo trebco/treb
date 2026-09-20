@@ -19,16 +19,17 @@
  * 
  */
 
-import type { Sheet } from './sheet';
+import { Sheet } from './sheet';
 import { SheetCollection } from './sheet_collection';
 import { type UnitAddress, type UnitStructuredReference, type UnitRange, Parser, QuotedSheetNameRegex, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import type { IArea, ICellAddress, Table, CellStyle, CellValue } from 'treb-base-types';
-import { Is2DArray } from 'treb-base-types';
+import { Errors, Is2DArray } from 'treb-base-types';
 import { Area, IsCellAddress, Style } from 'treb-base-types';
 import type { SerializedNamed } from './named';
 import { NamedRangeManager } from './named';
 import type { ConnectedElementType, MacroFunction } from './types';
 import type { LanguageModel } from './language-model';
+import { default_error_messages, default_formula_errors } from '../../treb-embed/src/ui-strings';
 
 /**
  * 
@@ -760,6 +761,17 @@ export class DataModel {
   public SetLanguage(model?: LanguageModel): void {
 
     this.language_model = model;
+
+    // error strings -> map for sheet, which handles the rendering
+
+    const errors = model?.formula_errors || default_formula_errors;
+    const error_map: Record<number, string> = {};
+    for (const [key, value] of Object.entries(errors)) {
+      error_map[Errors[key as keyof typeof Errors]] = value;
+    }
+    Sheet.error_labels = error_map;
+
+    //
 
     if (!model) {
       this.SetLanguageMap(); // clear

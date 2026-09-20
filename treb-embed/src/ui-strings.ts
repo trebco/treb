@@ -1,4 +1,6 @@
 
+import type { Errors } from 'treb-base-types';
+
 /**
  * default UI strings, in english. language files can override using 
  * the ui_strings field in language model. 
@@ -37,7 +39,7 @@ export const default_error_messages = {
  * these, as there is no reason not to (they are not exported or used
  * externally)
  */
-export const default_formula_errors = {
+export const default_formula_errors: Record<keyof typeof Errors, string> = {
   Argument:    '#ARG!',
   Reference:   '#REF!',
   Name:        '#NAME?',
@@ -46,6 +48,7 @@ export const default_formula_errors = {
   Div0:        '#DIV/0!',
   NA:          '#N/A',
   Spill:       '#SPILL!',
+  Num:         '#NUM!',
 
   /** local error: missing data */
   Data:        '#DATA!',

@@ -1,7 +1,7 @@
-import { Box, type UnionValue } from 'treb-base-types';
+import { Box, Errors, type UnionValue } from 'treb-base-types';
 import { ValueType } from 'treb-base-types';
 import type { FunctionMap } from 'treb-calculator';
-import { ValueError } from 'treb-calculator';
+import { NAError, ValueError } from 'treb-calculator';
 
 export default {
   'ISEVEN': {
@@ -82,16 +82,16 @@ export default {
     ],
     fn: (value?: UnionValue): UnionValue => {
       if (!value || value.type !== ValueType.error) {
-        return { type: ValueType.error, value: 'N/A' };
+        return NAError();
       }
       switch (value.value) {
-        case 'VALUE': return Box(3);
-        case 'REF': return Box(4);
-        case 'NAME': return Box(5);
-        case 'DIV/0': return Box(2);
-        case 'N/A': return Box(7);
-        case 'DATA': return Box(3);
-        default: return { type: ValueType.error, value: 'N/A' };
+        case Errors.Value: return Box(3);
+        case Errors.Reference: return Box(4);
+        case Errors.Name: return Box(5);
+        case Errors.Div0: return Box(2);
+        case Errors.NA: return Box(7);
+        case Errors.Data: return Box(3);
+        default: return NAError();
       }
     },
   },

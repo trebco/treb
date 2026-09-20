@@ -22,7 +22,7 @@
 import type { Cell, ICellAddress, ICellAddress2, UnionValue, EvaluateOptions,
          ArrayUnion, IArea, CellDataWithAddress, CellValue,
          Cells} from 'treb-base-types';
-import { Localization, Area, ValueType, IsCellAddress} from 'treb-base-types';
+import { Localization, Area, ValueType, IsCellAddress, Errors} from 'treb-base-types';
          
 import type { ExpressionUnit, DependencyList, UnitRange, UnitAddress, UnitIdentifier, ParseResult } from 'treb-parser';
 import { Parser, DecimalMarkType, QuotedSheetNameRegex } from 'treb-parser';
@@ -1581,7 +1581,7 @@ export class Calculator extends Graph {
         const edge = this.GetVertex(test, false); 
         if (edge?.SearchOutEdges(vertex)) {
           // console.info("loop detected in spill array")
-          reference.SetCalculationError('LOOP');
+          reference.SetCalculationError(Errors.Loop);
           return recalculate_list;
         }
       }
@@ -1590,7 +1590,7 @@ export class Calculator extends Graph {
 
       if (error) {
         // console.info("returning spill error");
-        reference.SetCalculationError('SPILL');
+        reference.SetCalculationError(Errors.Spill);
         return recalculate_list;
       }
 
@@ -1693,7 +1693,7 @@ export class Calculator extends Graph {
     // 
 
     console.error("invalid cell reference in spill callback");
-    reference.SetCalculationError('SPILL');
+    reference.SetCalculationError(Errors.Spill);
 
     return [];
     

@@ -1,5 +1,5 @@
 
-import { Area, type IArea } from 'treb-base-types';
+import { Area, Errors, type IArea } from 'treb-base-types';
 import { type GraphCallbacks, SpreadsheetVertexBase } from './spreadsheet_vertex_base';
 import { SpreadsheetVertex } from './spreadsheet_vertex';
 import { Color } from './vertex';
@@ -7,7 +7,7 @@ import { Color } from './vertex';
 import type { Cell, CellValue, ICellAddress, UnionValue } from 'treb-base-types';
 import { Box, ValueType } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
-import { ErrorType } from '../function-error';
+// import { ErrorType } from '../function-error';
 
 export enum SpreadsheetError {
   None,
@@ -231,7 +231,7 @@ export class SegmentVertex extends SpreadsheetVertexBase {
         if (this.is_leaf && 
             this.reference && (
             this.array_head || this.reference.type === ValueType.formula )) {
-          this.reference.SetCalculationError(ErrorType.Loop);
+          this.reference.SetCalculationError(Errors.Loop);
         }
 
         graph.loop_errors++;

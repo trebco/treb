@@ -20,6 +20,7 @@
  */
 
 import type { Complex, DimensionedQuantity } from './value-type';
+import type { ErrorValue } from './error-value';
 import { ValueType, GetValueType } from './value-type';
 
 export type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
@@ -45,7 +46,7 @@ export interface StringUnion {
 
 export interface ErrorUnion {
   type: ValueType.error;
-  value: string;
+  value: ErrorValue;
 }
 
 export interface FormulaUnion {

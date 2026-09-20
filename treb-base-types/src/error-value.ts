@@ -19,31 +19,32 @@
  * 
  */
 
-export * from './area';
-export * from './cell';
-export * from './cells';
-export * from './localization';
-export * from './basic_types';
-export * from './rectangle';
-export * from './style';
-export * from './text_part';
-export * from './import';
-export * from './union';
-export * from './value-type';
-export * from './theme';
-export * from './color';
-export * from './layout';
-export * from './render_text';
-export * from './api_types';
-export * from './table';
-export * from './gradient';
-export * from './evaluate-options';
-export * from './dom-utilities';
-export * from './worker-proxy';
-export * from './error-value';
+declare const ErrorBrand: unique symbol;
 
-export * as AreaUtils from './area-utils';
+const raw_errors = {
+  Argument:   1,
+  Data:       2,
+  Reference:  3,
+  Name:       4,
+  Expression: 5,
+  Value:      6,
+  Unknown:    7,
+  NotImpl:    8,
+  Div0:       9,
+  NA:         10,
+  Loop:       11,
+  Spill:      12,
+  Num:        13,
+} as const;
 
-// import * as Style from './style';
-// export { Style };
+// map each property key to its branded literal type
+type Branded<T extends Record<string, number>> = {
+  readonly [K in keyof T]: T[K] & { readonly [ErrorBrand]: K };
+};
+
+// export the single object with the branded shape cast
+export const Errors = raw_errors as Branded<typeof raw_errors>;
+
+// union type of all branded error values
+export type ErrorValue = typeof Errors[keyof typeof Errors];
 
