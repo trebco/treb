@@ -78,6 +78,10 @@ export class DataModel {
    */
   public tables: Map<string, Table> = new Map();
 
+  public constructor() {
+    this.UpdateErrorLabels();
+  }
+
   /** 
    * we're wrapping up the get name method so we can check for a sheet
    * name -- we have the list of sheet names. we could pass that to the 
@@ -775,6 +779,16 @@ export class DataModel {
  
     }
 
+  public UpdateErrorLabels() {
+
+    const errors = this.language_map?.formula_errors || default_formula_errors;
+    const error_map: Record<number, string> = {};
+    for (const [key, value] of Object.entries(errors)) {
+      error_map[Errors[key as keyof typeof Errors]] = value;
+    }
+    Sheet.error_labels = error_map;
+
+  }
 
   /** 
    * this is not public _yet_ 
@@ -786,13 +800,7 @@ export class DataModel {
     this.language_model = model;
 
     // error strings -> map for sheet, which handles the rendering
-
-    const errors = model?.formula_errors || default_formula_errors;
-    const error_map: Record<number, string> = {};
-    for (const [key, value] of Object.entries(errors)) {
-      error_map[Errors[key as keyof typeof Errors]] = value;
-    }
-    Sheet.error_labels = error_map;
+    this.UpdateErrorLabels();
 
     //
 
