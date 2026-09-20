@@ -36,11 +36,12 @@ export type { StateLeafVertex };
 
 // FIXME: this is a bad habit if you're testing on falsy for OK.
 
-export enum GraphStatus {
-  OK = 0,
-  Loop,
-  CalculationError,
-}
+export const GraphStatus = {
+  OK: 0,
+  Loop: 1,
+  CalculationError: 2,
+} as const;
+export type GraphStatus = (typeof GraphStatus)[keyof typeof GraphStatus];
 
 const MAX_ROWS = 2**20;
 const MAX_COLS = 2**14;

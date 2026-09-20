@@ -26,15 +26,15 @@ import type {
   SerializedMacroFunction,
   SerializedNamed } from 'treb-data-model';
 
-export enum SaveFileType {
-  json = 'json',
-  treb = 'treb',
-  trebjson = 'treb.json', 
-  csv = 'csv', 
-  tsv = 'tsv', 
-  xlsx = 'xlsx',
-}
-
+export const SaveFileType = {
+  json: 'json',
+  treb: 'treb',
+  trebjson: 'treb.json', 
+  csv: 'csv', 
+  tsv: 'tsv', 
+  xlsx: 'xlsx',
+} as const;
+export type SaveFileType = (typeof SaveFileType)[keyof typeof SaveFileType];
 
 //
 // FIXME: bring back document_id, move dirty flag into this class;
@@ -115,21 +115,23 @@ export interface ResizeEvent {
   type: 'resize';
 }
 
-export enum LoadSource {
-  DRAG_AND_DROP = 'drag-and-drop',
-  LOCAL_FILE = 'local-file',
-  NETWORK_FILE = 'network-file',
-  LOCAL_STORAGE = 'local-storage',
-  INLINE_DOCUMENT = 'inline-document',
-  LANGUAGE_CHANGE = 'language-change',
-  UNDO = 'undo',
-}
+export const LoadSource = {
+  DRAG_AND_DROP: 'drag-and-drop',
+  LOCAL_FILE: 'local-file',
+  NETWORK_FILE: 'network-file',
+  LOCAL_STORAGE: 'local-storage',
+  INLINE_DOCUMENT: 'inline-document',
+  LANGUAGE_CHANGE: 'language-change',
+  UNDO: 'undo',
+} as const;
+export type LoadSource = (typeof LoadSource)[keyof typeof LoadSource];
 
-export enum LoadType {
-  TREB = 'treb',
-  CSV = 'csv',
-  XLSX = 'xlsx',
-}
+export const LoadType = {
+  TREB: 'treb',
+  CSV: 'csv',
+  XLSX: 'xlsx',
+} as const;
+export type LoadType = (typeof LoadType)[keyof typeof LoadType];
 
 /**
  * This event is sent when the view changes -- at the moment, that only

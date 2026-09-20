@@ -33,14 +33,6 @@ export interface FunctionContext {
   apply?: (fn: FunctionUnion, args: UnionValue[]) => UnionValue;
 }
 
-// FIXME: at least some of this could move to base types
-
-/*
-export enum ReturnType {
-  value, reference
-}
-*/
-
 /**
  * descriptor for an individual argument
  */
