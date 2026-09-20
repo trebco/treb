@@ -247,11 +247,6 @@ export class Calculator extends Graph {
 
     }
 
-    // FIXME: why is this called here, if model now owns it?
-    // TODO: move to model
-
-    this.UpdateLocale(); // for parser
-
     // base functions
     this.library.Register(
       BaseFunctionLibrary,
@@ -1964,34 +1959,6 @@ export class Calculator extends Graph {
 //    }
 
     return { dirty, area };
-
-  }
-
-  /**
-   * if locale has changed in Localization, update local resources.
-   * this is necessary because (in chrome) worker doesn't get the system
-   * locale properly (also, we might change it via parameter). we used to
-   * just drop and reconstruct calculator, but we want to stop doing that
-   * as part of supporting dynamic extension.
-   */
-  public UpdateLocale(): void {
-
-    // don't assume default, always set
-
-    if (Localization.decimal_separator === ',') {
-      this.parser.SetLocaleSettings(DecimalMarkType.Comma);
-
-      // this.parser.decimal_mark = DecimalMarkType.Comma;
-      // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
-    }
-    else {
-      this.parser.SetLocaleSettings(DecimalMarkType.Period);
-
-      // this.parser.decimal_mark = DecimalMarkType.Period;
-      // this.parser.argument_separator = ArgumentSeparatorType.Comma;
-    }
-
-    // this.expression_calculator.UpdateLocale();
 
   }
 

@@ -2657,6 +2657,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   /** dynamically load language module */
   public async LoadLanguage(language = '', override_decimal_separator?: '.'|',') {
   
+    const data_cache = {
+      decimal_mark: this.parser.decimal_mark,
+      data: this.SerializeDocument(),
+      file_version: this.file_version,
+      last_saved_version: this.last_save_version,
+    };
+
     if (!language || language === 'locale') {
       const locale = Localization.locale || '';
       const parts = locale.split(/-/).map(part => part.toLowerCase());
@@ -2703,6 +2710,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
     else {
       this.model.SetLanguage();
+    }
+
+    if (this.parser.decimal_mark !== data_cache.decimal_mark) {
+      console.info("Decimal mark changed, need rebuild [1]", {data_cache});
+      this.RetranslateSheet(data_cache);
     }
 
     this.grid.Reselect();
@@ -6765,6 +6777,21 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // console.info(number_format_map, color_map);
     */
 
+  }
+
+  protected RetranslateSheet(cache: {
+    decimal_mark: DecimalMarkType,
+    data: TREBDocument,
+    file_version: number,
+    last_saved_version: number,
+  }) {
+
+    if (cache.decimal_mark !== this.parser.decimal_mark) {
+      // this.ConvertLocale(cache.data);
+      this.LoadDocument(cache.data, { source: LoadSource.LANGUAGE_CHANGE });
+      this.file_version = cache.file_version;
+      this.last_save_version = cache.last_saved_version;
+    }
   }
 
   /**

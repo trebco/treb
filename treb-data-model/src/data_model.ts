@@ -23,7 +23,7 @@ import { Sheet } from './sheet';
 import { SheetCollection } from './sheet_collection';
 import { type UnitAddress, type UnitStructuredReference, type UnitRange, Parser, QuotedSheetNameRegex, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import type { IArea, ICellAddress, Table, CellStyle, CellValue } from 'treb-base-types';
-import { Errors, Is2DArray } from 'treb-base-types';
+import { Errors, Is2DArray, Localization } from 'treb-base-types';
 import { Area, IsCellAddress, Style } from 'treb-base-types';
 import type { SerializedNamed } from './named';
 import { NamedRangeManager } from './named';
@@ -752,6 +752,29 @@ export class DataModel {
 
   }
   
+  
+    /**
+     * if locale has changed in Localization, update local resources.
+     * this is necessary because (in chrome) worker doesn't get the system
+     * locale properly (also, we might change it via parameter). we used to
+     * just drop and reconstruct calculator, but we want to stop doing that
+     * as part of supporting dynamic extension.
+     * 
+     * moved from calculator
+     * 
+     */
+    public UpdateLocale(): void {
+ 
+      // don't assume default, always set
+      if (Localization.decimal_separator === ',') {
+        this.parser.SetLocaleSettings(DecimalMarkType.Comma);
+      }
+      else {
+        this.parser.SetLocaleSettings(DecimalMarkType.Period);
+      }
+ 
+    }
+
 
   /** 
    * this is not public _yet_ 
@@ -813,6 +836,8 @@ export class DataModel {
       // console.info("booleans:", this.model.parser.flags.boolean_true, ",", this.model.parser.flags.boolean_false)
 
     }
+
+    this.UpdateLocale();
 
     for (const sheet of this.sheets.list) {
       sheet.FlushCellStyles();

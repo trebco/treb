@@ -121,6 +121,7 @@ export enum LoadSource {
   NETWORK_FILE = 'network-file',
   LOCAL_STORAGE = 'local-storage',
   INLINE_DOCUMENT = 'inline-document',
+  LANGUAGE_CHANGE = 'language-change',
   UNDO = 'undo',
 }
 
