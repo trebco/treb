@@ -405,42 +405,6 @@ export class Cells {
     return type ? ValueTypeList[type] : undefined;
   }
 
-
-
-  /* *
-   * this method is used for importing legacy data validation types. in those
-   * those we used a numeric enum. we're just dropping that altogether (c.f.
-   * ValueType, which we're keeping) so we need to translate for backcompat. 
-   * it's ugly, but it gets us to a better place. we can probably drop at some
-   * point in the future.
-   * 
-   * export enum ValidationType {
-   *   List = 'list',
-   *   Date = 'date',
-   *   Range = 'range',
-   *   Number = 'number',
-   *   Boolean = 'boolean',
-   * }
-   * 
-   * OK, removed
-   * /
-  public ImportDataValidation(value: DataValidation): DataValidation|undefined {
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const type: DataValidation['type']|number = (value as any).type;
-
-    if (typeof type === 'number') {
-      const types: Array<DataValidation['type']> = ['list', 'date', 'range', 'number', 'boolean'];
-      value.type = types[type];
-      if (!value.type) {
-        return undefined;
-      }
-    }
-
-    return value;
-  }
-  */
-
   /**
    * UPDATE: adding optional style refs, for export
    */

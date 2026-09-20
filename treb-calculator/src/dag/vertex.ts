@@ -27,9 +27,10 @@
  * might be easier to conceptualize with descriptive labels like "untested" 
  * (white), "being tested", (gray) and "testing complete" (black).
  */
-export enum Color {
-  white, gray, black
-}
+export const Color = {
+  white: 0, gray: 1, black: 2
+} as const;
+export type Color = (typeof Color)[keyof typeof Color];
 
 export class Vertex {
 
@@ -50,7 +51,7 @@ export class Vertex {
   // public color_epoch = -1;
   // public color = Color.white; // for loop check
 
-  protected _color = Color.white;
+  protected _color: Color = Color.white;
   protected _color_epoch = -1;
 
   public SetColor(color: Color, epoch: number) {

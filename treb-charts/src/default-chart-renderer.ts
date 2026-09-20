@@ -90,7 +90,7 @@ export class DefaultChartRenderer implements ChartRendererType {
 
     if (chart_data.legend && chart_data.legend.length) {
 
-      let default_position = LegendPosition.top;
+      let default_position: LegendPosition = LegendPosition.top;
       if (chart_data.title) {
         if (!chart_data.title_layout || chart_data.title_layout === 'top') {
           default_position = LegendPosition.bottom;

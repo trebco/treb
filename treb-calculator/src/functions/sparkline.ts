@@ -39,10 +39,11 @@ export interface SparklineRenderOptions {
   cell: Cell;
 }
 
-enum LineOperation {
-  move,
-  line,
-}
+const LineOperation = {
+  move: 0,
+  line: 1,
+} as const;
+export type LineOperation = (typeof LineOperation)[keyof typeof LineOperation];
 
 export class Sparkline {
 
@@ -200,7 +201,7 @@ export class Sparkline {
 
       context.beginPath();
 
-      let op = LineOperation.move;
+      let op: LineOperation = LineOperation.move;
 
       for (let i = first_index; i < values.length; i++) {
         const value = values[i];

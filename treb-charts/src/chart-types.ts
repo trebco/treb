@@ -297,17 +297,20 @@ export type ChartData
   | BoxPlotData
   ;
 
-export enum LegendLayout {
-  horizontal, vertical
-}
+export const LegendLayout = {
+  horizontal: 0, vertical: 1,
+} as const;
+export type LegendLayout = (typeof LegendLayout)[keyof typeof LegendLayout];
 
-export enum LegendPosition {
-  top, bottom, left, right,
-}
+export const LegendPosition = {
+  top: 0, bottom: 1, left: 2, right: 3,
+} as const;
+export type LegendPosition = (typeof LegendPosition)[keyof typeof LegendPosition];
 
-export enum LegendStyle {
-  line, marker, bubble
-}
+export const LegendStyle = {
+  line: 0, marker: 1, bubble: 2,
+} as const;
+export type LegendStyle = (typeof LegendStyle)[keyof typeof LegendStyle];
 
 export interface LegendOptions {
   // labels: string[];
