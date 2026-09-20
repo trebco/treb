@@ -9,10 +9,11 @@ import { Box, ValueType } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 // import { ErrorType } from '../function-error';
 
-export enum SpreadsheetError {
-  None,
-  CalculationError,
-}
+export const SpreadsheetError = {
+  None: 0,
+  CalculationError: 1,
+} as const;
+export type SpreadsheetError = (typeof SpreadsheetError)[keyof typeof SpreadsheetError];
 
 export class SegmentVertex extends SpreadsheetVertexBase {
 

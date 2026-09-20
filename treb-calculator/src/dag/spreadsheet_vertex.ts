@@ -27,10 +27,11 @@ import type { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
 // import { ErrorType } from '../function-error';
 
-export enum SpreadsheetError {
-  None,
-  CalculationError,
-}
+export const SpreadsheetError = {
+  None: 0,
+  CalculationError: 1,
+} as const;
+export type SpreadsheetError = (typeof SpreadsheetError)[keyof typeof SpreadsheetError];
 
 /**
  * specialization of vertex with attached data and calculation metadata

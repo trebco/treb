@@ -19,10 +19,11 @@
  * 
  */
 
-enum ParseState {
-  default = 0,
-  quoted = 1,
-}
+const ParseState = {
+  default: 0,
+  quoted: 1,
+} as const;
+type ParseState = (typeof ParseState)[keyof typeof ParseState];
 
 /**
  * csv parser, following (largely) RFC4180 rules, with some extensions.

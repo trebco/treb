@@ -41,12 +41,6 @@ export interface ArgumentDescriptor {
   name?: string;
 }
 
-/*
-export enum DescriptorType {
-  Function, Token
-}
-*/
-
 export interface FunctionDescriptor {
   name: string;
   description?: string;

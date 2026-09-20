@@ -306,18 +306,20 @@ export interface DependencyList {
 /**
  * argument separator type for i18n
  */
-export enum ArgumentSeparatorType {
-  Comma = ',',
-  Semicolon = ';',
-}
+export const ArgumentSeparatorType = {
+  Comma: ',',
+  Semicolon: ';',
+} as const;
+export type ArgumentSeparatorType = (typeof ArgumentSeparatorType)[keyof typeof ArgumentSeparatorType];
 
 /**
  * decimal mark for i18n
  */
-export enum DecimalMarkType {
-  Period = '.',
-  Comma = ',',
-}
+export const DecimalMarkType = {
+  Period: '.',
+  Comma: ',',
+} as const;
+export type DecimalMarkType = (typeof DecimalMarkType)[keyof typeof DecimalMarkType];
 
 /**
  * compound result of a parse operation includes dependency list

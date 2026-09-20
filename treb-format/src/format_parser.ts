@@ -58,10 +58,11 @@ const LOWERCASE_Y = 0x79;
 const UPPERCASE_A = 0x41;
 const LOWERCASE_A = 0x61;
 
-enum NumberPart {
-  Integer = 0,
-  Decimal = 1,
-}
+const NumberPart = {
+  Integer: 0,
+  Decimal: 1,
+} as const;
+type NumberPart = (typeof NumberPart)[keyof typeof NumberPart];
 
 export class FormatParser {
 
@@ -230,7 +231,7 @@ export class FormatParser {
    */
   protected static ConsumeNumberFormat(): void {
 
-    let number_part = NumberPart.Integer;
+    let number_part: NumberPart = NumberPart.Integer;
 
     for (this.char_index; this.char_index < this.characters.length; this.char_index++) {
       const char = this.characters[this.char_index];

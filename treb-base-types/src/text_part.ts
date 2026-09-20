@@ -19,28 +19,28 @@
  * 
  */
 
-export enum TextPartFlag {
+export const TextPartFlag = {
 
   /** just render */
-  default = 0,
+  default: 0,
 
   /** not rendered, but included in layout (spacing) */
-  hidden = 1,
+  hidden: 1,
 
   /** takes up all available space */
-  padded = 2,
+  padded: 2,
 
   /** date component, needs to be filled */
-  date_component = 3,
+  date_component: 3,
 
   /** special flag for minutes (instead of months), which is contextual */
-  date_component_minutes = 4,
+  date_component_minutes: 4,
 
   /** literal (@): reflect the original */
-  literal = 5,
+  literal: 5,
 
   /** formatting (e.g. [red]) */
-  formatting = 6,
+  formatting: 6,
 
   /* * testing, for complex 
   italic = 7,
@@ -51,9 +51,10 @@ export enum TextPartFlag {
    * so we don't add it more than once if we're indenting dynamically.
    * maybe this is not the way to indent.
    */
-  indent = 8,
+  indent: 8,
 
-}
+} as const;
+export type TextPartFlag = (typeof TextPartFlag)[keyof typeof TextPartFlag];
 
 export interface TextPart {
   text: string;
