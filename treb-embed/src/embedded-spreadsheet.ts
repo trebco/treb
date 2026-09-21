@@ -100,7 +100,7 @@ import { Heuristics } from 'treb-data-model';
 import { Dialog, DialogType } from './progress-dialog';
 import { Spinner } from './spinner';
 import { type EmbeddedSpreadsheetOptions, DefaultOptions, type ExportOptions } from './options';
-import { type TREBDocument, SaveFileType, LoadSource, type EmbeddedSheetEvent, type InsertTableOptions, type SelectionEvent } from './types';
+import { type TREBDocument, SaveFileType, type LoadSource, type EmbeddedSheetEvent, type InsertTableOptions, type SelectionEvent } from './types';
 
 import type { SelectionState } from './selection-state';
 import type { BorderToolbarMessage, ToolbarMessage } from './toolbar-message';
@@ -637,7 +637,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // of this state check we only care about the initial load, so we can
     // store that.
 
-    if (this.initial_load_source === LoadSource.LOCAL_STORAGE) {
+    if (this.initial_load_source === 'local-storage') {
       return true;
     }
 
@@ -722,7 +722,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     if (this.options.local_storage && !this.options.toll_initial_load && !options.model) {
       data = localStorage.getItem(this.options.local_storage) || undefined;
       if (data) {
-        source = LoadSource.LOCAL_STORAGE;
+        source = 'local-storage'; // LoadSource.LOCAL_STORAGE;
       }
     }
 
@@ -731,7 +731,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     if (!data && !this.options.toll_initial_load && !options.model && options.inline_document) {
       data = options.inline_document;
-      source = LoadSource.INLINE_DOCUMENT;
+      source = 'inline-document'; // LoadSource.INLINE_DOCUMENT;
     }
 
     // this one should not be done for a split view, but we should still
@@ -1913,6 +1913,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   public InsertChartWithHeuristics(func: string, initial_area?: Area, target_range?: RangeReference) {
 
+    // localized default for chart title ('Chart Title')
+    const chart_title = this.model.language_model?.ui_strings?.chart_title || default_ui_strings.chart_title;
+
     if (!initial_area) {
       const selection = this.grid.GetSelection();
       if (selection && !selection.empty) {
@@ -1980,12 +1983,12 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
             series.push(`Series(${column_label},,${column_area.spreadsheet_label})`);
           }
-          this.InsertAnnotation(`=${func}(Group(${series.join(', ')}),${row_headers?.spreadsheet_label || ''},"Chart Title")`, undefined, target_range, ',');
+          this.InsertAnnotation(`=${func}(Group(${series.join(', ')}),${row_headers?.spreadsheet_label || ''},"${chart_title}")`, undefined, target_range, ',');
         }
       }
       else {
         if (area.columns === 1) {
-          this.InsertAnnotation(`=${func}(${area.spreadsheet_label},${row_headers?.spreadsheet_label || ''},"Chart Title")`, undefined, target_range, ',');
+          this.InsertAnnotation(`=${func}(${area.spreadsheet_label},${row_headers?.spreadsheet_label || ''},"${chart_title}")`, undefined, target_range, ',');
         }
         else {
           const series: string[] = [];
@@ -1994,7 +1997,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             let column_label = ''; // "Series ${index}"
             series.push(`Series(${column_label},,${column_area.spreadsheet_label})`);
           }
-          this.InsertAnnotation(`=${func}(Group(${series.join(', ')}),${row_headers?.spreadsheet_label || ''},"Chart Title")`, undefined, target_range, ',');
+          this.InsertAnnotation(`=${func}(Group(${series.join(', ')}),${row_headers?.spreadsheet_label || ''},"${chart_title}")`, undefined, target_range, ',');
         }
       }
 
@@ -2038,7 +2041,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         row_headers?.RemoveHeaderRow();
       }
 
-      this.InsertAnnotation(`=${func}(${area.spreadsheet_label},${row_headers?.spreadsheet_label||''},${title || `"Chart Title"`})`, undefined, target_range, ',');            
+      this.InsertAnnotation(`=${func}(${area.spreadsheet_label},${row_headers?.spreadsheet_label||''},${title || `"${chart_title}"`})`, undefined, target_range, ',');            
 
       return true; // handled
 
@@ -3643,7 +3646,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     if (this.options.inline_document) {
       this.LoadDocument(this.options.inline_document);
-      this.initial_load_source = LoadSource.INLINE_DOCUMENT; // update this flag, even though it's not "initial"
+      this.initial_load_source = 'inline-document'; // update this flag, even though it's not "initial"
 
       if (this.options.local_storage) {
         this.SaveLocalStorage('reverted_backup');
@@ -3666,7 +3669,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       */
 
       this.LoadNetworkDocument(canonical);
-      this.initial_load_source = LoadSource.NETWORK_FILE; // update this flag, even though it's not "initial"
+      this.initial_load_source = 'network-file'; // update this flag, even though it's not "initial"
 
       // flush storage? what about mistakes? maybe we should 
       // back it up somewhere? (...)
@@ -3848,7 +3851,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     if (json) {
       try {
         const data = JSON.parse(json);
-        this.LoadDocument(data, { source: LoadSource.LOCAL_STORAGE });
+        this.LoadDocument(data, { source: 'local-storage' });
         return true;
       }
       catch (err) {
@@ -3892,7 +3895,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       if (typeof text === 'string') {
         if (csv) {
-          this.LoadCSV(text, LoadSource.NETWORK_FILE);
+          this.LoadCSV(text, 'network-file');
         }
         else if (tsv) {
           // ...
@@ -3914,7 +3917,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           }
 
           const json = JSON.parse(text);
-          this.LoadDocument(json, { scroll, recalculate, override_sheet, source: LoadSource.NETWORK_FILE });
+          this.LoadDocument(json, { scroll, recalculate, override_sheet, source: 'network-file' });
 
         }
       }
@@ -4657,9 +4660,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     this.LoadDocument(JSON.parse(undo_entry.data), {
       flush: false,
       override_selection: selection,
-      source: LoadSource.UNDO,
+      source: 'undo',
     }); 
-    // undefined, false, undefined, undefined, selection, LoadSource.UNDO);
 
     // don't decrement because we will get the file version from the revision
     // number in the file (this is new)
@@ -5875,7 +5877,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         this.InsertImageInternal(file);
       }
       else {
-        this.LoadFileInternal(file, LoadSource.DRAG_AND_DROP).catch(() => undefined);
+        this.LoadFileInternal(file, 'drag-and-drop').catch(() => undefined);
       }
     }
   }
@@ -5912,7 +5914,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
                   this.InsertImageInternal(file);
                   break;
                 case FileChooserOperation.LoadFile:
-                  this.LoadFileInternal(file, LoadSource.LOCAL_FILE, true);
+                  this.LoadFileInternal(file, 'local-file', true);
                   break;
                 default:
                   console.warn('file chooser: no operation');
@@ -6788,7 +6790,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     if (cache.decimal_mark !== this.parser.decimal_mark) {
       // this.ConvertLocale(cache.data);
-      this.LoadDocument(cache.data, { source: LoadSource.LANGUAGE_CHANGE });
+      this.LoadDocument(cache.data, { source: 'language-change' });
       this.file_version = cache.file_version;
       this.last_save_version = cache.last_saved_version;
     }

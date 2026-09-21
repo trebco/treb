@@ -115,6 +115,7 @@ export interface ResizeEvent {
   type: 'resize';
 }
 
+/*
 export const LoadSource = {
   DRAG_AND_DROP: 'drag-and-drop',
   LOCAL_FILE: 'local-file',
@@ -125,6 +126,21 @@ export const LoadSource = {
   UNDO: 'undo',
 } as const;
 export type LoadSource = (typeof LoadSource)[keyof typeof LoadSource];
+*/
+
+// testing
+
+/**
+ * Source of new document/document changes
+ */
+export type LoadSource = 
+  'drag-and-drop' |
+  'local-file' |
+  'network-file' |
+  'local-storage' |
+  'inline-document' |
+  'language-change' |
+  'undo' ;
 
 export const LoadType = {
   TREB: 'treb',

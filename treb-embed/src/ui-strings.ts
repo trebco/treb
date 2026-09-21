@@ -19,6 +19,7 @@ export const default_ui_strings = {
   about: `What's this?`,
   toggle_sidebar: 'Toggle sidebar',
   new_sheet_name: 'Sheet{#}',
+  chart_title: 'Chart Title',
 
 } as const;
 
