@@ -64,7 +64,7 @@ import type { Command, ActivateSheetCommand,
 import type { UpdateFlags } from './update_flags';
 import type { FreezePane, LegacySerializedSheet } from 'treb-data-model';
 import type { ClipboardCellData } from './clipboard_data';
-import { default_ui_strings } from '../../../treb-embed/src/ui-strings';
+import { default_ui_strings } from 'treb-base-types';
 
 interface PatchOptions extends PatchAreaOptions {
   sheet: Sheet;

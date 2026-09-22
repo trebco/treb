@@ -123,7 +123,7 @@ import { CreateWorker, type WorkerProxy } from 'treb-base-types';
 // --- types -------------------------------------------------------------------
 
 import type { CustomGridFactory } from './custom-grid-factory';
-import { default_error_messages, default_ui_strings } from './ui-strings';
+import { default_error_messages, default_ui_strings } from 'treb-base-types';
 
 /**
  * options for saving files. we add the option for JSON formatting.

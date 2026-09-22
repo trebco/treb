@@ -41,6 +41,7 @@ export * from './evaluate-options';
 export * from './dom-utilities';
 export * from './worker-proxy';
 export * from './error-value';
+export * from './ui-strings';
 
 export * as AreaUtils from './area-utils';
 

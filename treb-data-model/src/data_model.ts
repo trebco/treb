@@ -29,7 +29,7 @@ import type { SerializedNamed } from './named';
 import { NamedRangeManager } from './named';
 import type { ConnectedElementType, MacroFunction } from './types';
 import type { LanguageModel } from './language-model';
-import { default_error_messages, default_formula_errors } from '../../treb-embed/src/ui-strings';
+import { default_error_messages, default_formula_errors } from 'treb-base-types';
 
 /**
  * 

@@ -20,6 +20,9 @@ export const default_ui_strings = {
   toggle_sidebar: 'Toggle sidebar',
   new_sheet_name: 'Sheet{#}',
   chart_title: 'Chart Title',
+  count: 'Count',
+  sum: 'Sum',
+  average: 'Average',
 
 } as const;
 

@@ -122,6 +122,7 @@ import type { ClipboardCellData } from './clipboard_data';
 import type { ExternalEditorConfig } from './external_editor_config';
 import { ExternalEditor } from '../editors/external_editor';
 import type { ClipboardData, PasteOptions } from './clipboard_data2';
+import { default_ui_strings } from 'treb-base-types';
 
 interface DoubleClickData {
   timeout?: number;
@@ -7198,6 +7199,11 @@ export class Grid extends GridBase {
       return NumberFormatCache.Get('Number');
     };
 
+    const strings = {
+      ...default_ui_strings,
+      ...(this.model.language_model?.ui_strings || {})
+    };
+
     if (count > 1) {
       if (numbers > 0) {
         const general = NumberFormatCache.Get('General')
@@ -7205,22 +7211,22 @@ export class Grid extends GridBase {
           const average: Complex = { real: sum.real / numbers, imaginary: sum.imaginary / numbers };
 
           return [
-            { label: 'Count', value: count.toString() }, 
-            { label: 'Sum', value: NumberFormat.FormatPartsAsText(general.FormatComplex(sum)) },
-            { label: 'Average', value: NumberFormat.FormatPartsAsText(general.FormatComplex(average)) },
+            { label: strings.count, value: count.toString() }, 
+            { label: strings.sum, value: NumberFormat.FormatPartsAsText(general.FormatComplex(sum)) },
+            { label: strings.average, value: NumberFormat.FormatPartsAsText(general.FormatComplex(average)) },
           ];
 
         }
         else {
           return [
-            { label: 'Count', value: count.toString() }, 
-            { label: 'Sum', value: (SelectFormat(sum.real)).Format(sum.real) },
-            { label: 'Average', value: (SelectFormat(sum.real/numbers)).Format(sum.real/numbers) },
+            { label: strings.count, value: count.toString() }, 
+            { label: strings.sum, value: (SelectFormat(sum.real)).Format(sum.real) },
+            { label: strings.average, value: (SelectFormat(sum.real/numbers)).Format(sum.real/numbers) },
           ];
         }
       }
       else {
-        return [{ label: 'Count', value: count.toString() }] // `Count: ${count}`;
+        return [{ label: strings.count, value: count.toString() }] // `Count: ${count}`;
       }
     }
 
