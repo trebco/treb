@@ -32,6 +32,12 @@ let config: Config = {
 
 let api_version = '';
 
+/**
+ * containing type name for types referenced by exported variables. these
+ * are always emitted, so we always need their dependencies.
+ */
+const VARIABLE_CONTAINER = '__exported_variables__';
+
 const ReadConfigData = async (file: string) => {
 
   const text = await fs.promises.readFile(file, {encoding: 'utf8'});
@@ -538,9 +544,38 @@ function CollectDependencyTransformer<T extends ts.Node>(
           const text = node.getFullText();
           args.exported_variables.push(text);
 
+          containing_type.unshift(VARIABLE_CONTAINER);
+          const result = ts.visitEachChild(node, visit, context);
+          containing_type.shift();
+          return result;
+
+        }
+        else if (declared && !internal) {
+
+          // non-exported ambient variable, like a unique symbol used as a
+          // brand. treat it like a type so it's only included if referenced.
+
+          for (const declaration of node.declarationList.declarations) {
+            if (ts.isIdentifier(declaration.name)) {
+              AddFoundType(declaration.name.escapedText.toString(), node.getFullText());
+            }
+          }
+          return undefined;
+
         }
         else {
           return undefined; // end
+        }
+      }
+
+      else if (ts.isComputedPropertyName(node)) {
+
+        // e.g. { [ErrorBrand]: K } -- the identifier is a value, but we
+        // need to include it. [Symbol.iterator] is a property access, so
+        // it won't show up here.
+
+        if (ts.isIdentifier(node.expression)) {
+          AddReferencedType(node.expression.escapedText.toString(), 5);
         }
       }
 
@@ -846,7 +881,7 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
     keys = keys.filter(key => {
       const list = ResolveContainingTypes(key);
       for (const entry of list) {
-        if (types.includes(entry)) { return true; }
+        if (types.includes(entry) || entry === VARIABLE_CONTAINER) { return true; }
       }
       // console.info("DROPPING", key);
       return false;

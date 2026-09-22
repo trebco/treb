@@ -21,7 +21,7 @@
 
 declare const ErrorBrand: unique symbol;
 
-const raw_errors = {
+export const raw_errors = {
   Argument:   1,
   Data:       2,
   Reference:  3,
@@ -38,7 +38,7 @@ const raw_errors = {
 } as const;
 
 // map each property key to its branded literal type
-type Branded<T extends Record<string, number>> = {
+export type Branded<T extends Record<string, number>> = {
   readonly [K in keyof T]: T[K] & { readonly [ErrorBrand]: K };
 };
 
