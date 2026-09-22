@@ -49,4 +49,10 @@ export interface SetRangeOptions {
    */
   r1c1?: boolean;
 
+  /** 
+   * testing: throw if the target is an invalid reference. this does not
+   * test _values_, just the address/range.
+   */
+  throw_invalid?: boolean;
+
 }

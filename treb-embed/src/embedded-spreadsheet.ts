@@ -5335,6 +5335,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     const area = this.RangeOrSelection(range);
 
     if (area) {
+
+      if (!area.start.sheet_id && options.throw_invalid) {
+        throw new Error('invalid reference');
+      }
+
       // const area = this.model.ResolveArea(range, this.grid.active_sheet);
 
       if (options.spill && Array.isArray(data)) {
