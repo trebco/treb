@@ -2100,12 +2100,12 @@ export class GridBase {
       return;
     }
 
-    const template = this.model.language_model?.ui_strings?.new_sheet_name || default_ui_strings.new_sheet_name;
+    if (!name) {
+      const template = this.model.language_model?.ui_strings?.new_sheet_name || default_ui_strings.new_sheet_name;
+      name = template.replace(/\{#\}/, '1');
+    }
 
     // validate name...
-
-    name = template.replace(/\{#\}/, '1');
-
 
     while (this.model.sheets.list.some((test) => test.name === name)) {
 
