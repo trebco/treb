@@ -236,7 +236,7 @@ export const HTMLPlugin = (options) => ({
 
 /** 
  * @function
- * @param {{verbose?: boolean, minify?: boolean}} [options]
+ * @param {{verbose?: boolean, minify?: boolean, renderedCss?: boolean}} [options]
  * @returns {esbuild.Plugin}
  * 
  * plugin compiles sass and returns generated css as string, optionally minified 
@@ -267,7 +267,7 @@ export const SassPlugin = (options) => ({
 
         return {
           contents,
-          loader: 'text',
+          loader: options?.renderedCss ? 'css' : 'text',
           watchFiles: files,
         };
 
