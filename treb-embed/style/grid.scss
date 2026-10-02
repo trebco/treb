@@ -97,9 +97,6 @@
 
     .tile-cover {
 
-      /** don't handle pinch/pan */
-      touch-action: none;
-
       /** specific layout for main grid cover */
       &.grid-cover {
         grid-area: 2/2/3/3;
@@ -269,7 +266,6 @@
         }
 
         .annotation-move-target {
-          touch-action: none;
           position: absolute;
           z-index: 2;
           cursor: move;
@@ -281,7 +277,6 @@
         }
 
         .annotation-resize-target {
-          touch-action: none;
           position: absolute;
           z-index: 3;
           cursor: nwse-resize;
