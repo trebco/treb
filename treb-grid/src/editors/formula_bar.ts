@@ -26,6 +26,7 @@ import type { DataModel, ViewModel } from 'treb-data-model';
 import type { GridOptions } from '../types/grid_options';
 import { Autocomplete } from './autocomplete';
 import { DOMContext } from 'treb-base-types';
+import { UA } from '../util/ua';
 
 // --- from formula_bar ---
 
@@ -178,7 +179,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
     if (!this.active_editor || !this.container_node) return;
 
     if (editable) {
-      this.active_editor.node.setAttribute('contenteditable', 'true'); // is that required?
+      this.active_editor.node.setAttribute('contenteditable', 'plaintext-only'); // is that required?
       this.container_node.removeAttribute('locked');
     }
     else {
@@ -565,6 +566,14 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
       break;
 
     case 'Enter':
+      {
+        if (event.altKey) {
+          document.execCommand('insertLineBreak');
+          break;
+        }
+      }
+      // fall through
+
     case 'Tab':
       {
         // this.selecting_ = false;
