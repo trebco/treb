@@ -1172,6 +1172,10 @@ export abstract class BaseLayout {
 
   public RemoveAnnotation(annotation: Annotation): void {
     const view = annotation.view[this.view.view_index] || {};
+
+    // new, testing. is this the only place annotation views get destroyed?
+    view.destroy_callback?.();
+
     if (view.node) {
       view.node.parentElement?.removeChild(view.node);
     }

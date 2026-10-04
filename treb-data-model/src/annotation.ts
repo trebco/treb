@@ -72,6 +72,9 @@ export interface ViewData {
   /** if function exists, will be called when the annotation needs to update */
   update_callback?: () => void;
 
+  /** optional destuctor: WIP */
+  destroy_callback?: () => void;
+
   /** layout node */
   node?: HTMLDivElement;
 
