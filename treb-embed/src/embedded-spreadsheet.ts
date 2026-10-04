@@ -6215,6 +6215,67 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
   }
 
+  protected BuildTREBChart(annotation: Annotation, view: AnnotationViewData) {
+
+    if (view.content_node) {
+
+      const chart = this.CreateChart();
+      chart.Initialize(view.content_node);
+
+      const update_chart = () => {
+
+        if (annotation.data.formula) {
+          const parse_result = this.parser.Parse(annotation.data.formula);
+          if (parse_result &&
+            parse_result.expression &&
+            parse_result.expression.type === 'call') {
+
+            this.parser.Walk(parse_result.expression, (unit) => {
+              if (unit.type === 'address' || unit.type === 'range') {
+                this.model.ResolveSheetID(unit, undefined, this.grid.active_sheet);
+              }
+              return true;
+            });
+
+            const expr_name = parse_result.expression.name.toLowerCase() as ChartFunction;
+
+            const result = this.calculator.CalculateExpression(parse_result.expression);
+
+            chart.Exec(expr_name, result as ExtendedUnion); // FIXME: type?
+
+          }
+        }
+
+        chart.Update();
+
+      };
+
+      /** resize callback */
+      view.resize_callback = () => {
+        if (!this.grid.headless) {
+          chart.Resize();
+          chart.Update();
+        }
+      };
+
+      /** update callback */
+      view.update_callback = () => {
+        if (!this.grid.headless) {
+          update_chart();
+        }
+      };
+
+      /** call once */
+      if (view.node?.parentElement) {
+        if (!this.grid.headless) {
+          update_chart();
+        }
+      }
+
+    }
+
+  }
+
   protected InflateAnnotation(annotation: Annotation): void {
 
     if (this.grid.headless) { return; }
@@ -6254,66 +6315,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     if (view.content_node ) { // && annotation.annotation_data.data) {
 
       if (annotation.data.type === 'treb-chart') {
-
-        {
-
-          const chart = this.CreateChart();
-          chart.Initialize(view.content_node);
-
-          const update_chart = () => {
-
-            if (annotation.data.formula) {
-              const parse_result = this.parser.Parse(annotation.data.formula);
-              if (parse_result &&
-                parse_result.expression &&
-                parse_result.expression.type === 'call') {
-
-                // FIXME: make a method for doing this
-
-                this.parser.Walk(parse_result.expression, (unit) => {
-                  if (unit.type === 'address' || unit.type === 'range') {
-                    this.model.ResolveSheetID(unit, undefined, this.grid.active_sheet);
-                  }
-                  return true;
-                });
-
-                const expr_name = parse_result.expression.name.toLowerCase() as ChartFunction;
-
-                const result = this.calculator.CalculateExpression(parse_result.expression);
-
-                chart.Exec(expr_name, result as ExtendedUnion); // FIXME: type?
-
-              }
-            }
-
-            chart.Update();
-
-          };
-
-          /** resize callback */
-          view.resize_callback = () => {
-            if (!this.grid.headless) {
-              chart.Resize();
-              chart.Update();
-            }
-          };
-
-          /** update callback */
-          view.update_callback = () => {
-            if (!this.grid.headless) {
-              update_chart();
-            }
-          };
-
-          /** call once */
-          if (view.node?.parentElement) {
-            if (!this.grid.headless) {
-              update_chart();
-            }
-          }
-
-        }
-
+        this.BuildTREBChart(annotation, view);
       }
       else if (annotation.data.type === 'image') {
         if (typeof annotation.data.data?.src === 'string') {
