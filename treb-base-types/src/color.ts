@@ -45,7 +45,7 @@ export const ColorFunctions = {
 
     // eslint-disable-next-line prefer-const
     let { h, s, l } = ColorFunctions.RGBToHSL(r, g, b);
-    if (relative) l += l * amount / 100;
+    if (relative) l += (1 - l) * amount / 100;
     else l += amount / 100;
     l = Math.max(0, Math.min(1, l));
     return ColorFunctions.HSLToRGB(h, s, l);
