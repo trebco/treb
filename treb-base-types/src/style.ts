@@ -594,7 +594,7 @@ export const Style = {
       parts.push(font_size.value.toFixed(2) + font_size.unit);
       parts.push(font_face || '');
     }
-
+   
     return { font: parts.join(' '), variants, base, size: properties.font_size, scale, stack_size, font_size };
 
   },

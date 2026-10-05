@@ -176,6 +176,11 @@ export class Measurement {
    * @param bold
    */
   public static FontLoaded(font_face: string, italic = false, weight = 400): boolean {
+
+    return true;
+
+    // this was backwards?
+
     const face = `${italic ? 'italic' : ''} ${weight} 20pt ${font_face}`;
     const m1 = this.MeasureText(`${face}, sans-serif`, `check font`);
     const m2 = this.MeasureText(`${face}, serif`, `check font`);
