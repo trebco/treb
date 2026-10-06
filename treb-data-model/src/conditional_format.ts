@@ -67,6 +67,16 @@ export interface ConditionalFormatGradientOptions {
 
 }
 
+/** 
+ * literal colors for standard gradients. these are the colors Excel uses
+ * for its default color scales.
+ */
+const GradientColors = {
+  red: '#F8696B',
+  yellow: '#FFEB84',
+  green: '#63BE7B',
+} as const;
+
 /**
  * 
  * @internal
@@ -80,38 +90,81 @@ export const StandardGradientsList = {
   'red-green': {
     color_space: 'RGB',
     stops: [
-      { value: 0, color: { theme: 5, tint: .5 }}, 
-      { value: 1, color: { theme: 9, tint: .5 }}, 
+      { value: 0, color: { text: GradientColors.red }}, 
+      { value: 1, color: { text: GradientColors.green }}, 
     ] as GradientStop[],
   },
   'red-yellow-green': {
     color_space: 'RGB',
     stops: [
-      { value: 0, color: { theme: 5, tint: .5 }}, 
-      { value: 0.5, color: { theme: 7, tint: .5 }}, 
-      { value: 1, color: { theme: 9, tint: .5 }}, 
+      { value: 0, color: { text: GradientColors.red }}, 
+      { value: 0.5, color: { text: GradientColors.yellow }}, 
+      { value: 1, color: { text: GradientColors.green }}, 
     ] as GradientStop[],
   },
   'green-red': {
     color_space: 'RGB',
     stops: [
-      { value: 0, color: { theme: 9, tint: .5 }}, 
-      { value: 1, color: { theme: 5, tint: .5 }}, 
+      { value: 0, color: { text: GradientColors.green }}, 
+      { value: 1, color: { text: GradientColors.red }}, 
     ] as GradientStop[],
   },
   'green-yellow-red': {
     color_space: 'RGB',
     stops: [
-      { value: 0, color: { theme: 9, tint: .5 }}, 
-      { value: 0.5, color: { theme: 7, tint: .5 }}, 
-      { value: 1, color: { theme: 5, tint: .5 }}, 
+      { value: 0, color: { text: GradientColors.green }}, 
+      { value: 0.5, color: { text: GradientColors.yellow }}, 
+      { value: 1, color: { text: GradientColors.red }}, 
+    ] as GradientStop[],
+  },
+  'green-white': {
+    color_space: 'RGB',
+    stops: [
+      { value: 0, color: { text: GradientColors.green }}, 
+      { value: 1, color: { theme: 2 }}, 
+    ] as GradientStop[],
+  },
+  'white-green': {
+    color_space: 'RGB',
+    stops: [
+      { value: 0, color: { theme: 2 }}, 
+      { value: 1, color: { text: GradientColors.green }}, 
+    ] as GradientStop[],
+  },
+  'red-white': {
+    color_space: 'RGB',
+    stops: [
+      { value: 0, color: { text: GradientColors.red }}, 
+      { value: 1, color: { theme: 2 }}, 
+    ] as GradientStop[],
+  },
+  'white-red': {
+    color_space: 'RGB',
+    stops: [
+      { value: 0, color: { theme: 2 }}, 
+      { value: 1, color: { text: GradientColors.red }}, 
+    ] as GradientStop[],
+  },
+  'green-yellow': {
+    color_space: 'RGB',
+    stops: [
+      { value: 0, color: { text: GradientColors.green }}, 
+      { value: 1, color: { text: GradientColors.yellow }}, 
+    ] as GradientStop[],
+  },
+  'yellow-green': {
+    color_space: 'RGB',
+    stops: [
+      { value: 0, color: { text: GradientColors.yellow }}, 
+      { value: 1, color: { text: GradientColors.green }}, 
     ] as GradientStop[],
   },
 } as const; 
 
 // temp while I figure out what's wrong with the API generator
 // export type StandardGradient = keyof typeof StandardGradientsList;
-export type StandardGradient = 'red-green' | 'green-red' | 'red-yellow-green' | 'green-yellow-red';
+export type StandardGradient = 'red-green' | 'green-red' | 'red-yellow-green' | 'green-yellow-red' 
+  | 'green-white' | 'white-green' | 'red-white' | 'white-red' | 'green-yellow' | 'yellow-green';
 
 export interface ConditionalFormatGradient extends ConditionalFormatGradientOptions {
   type: 'gradient';
