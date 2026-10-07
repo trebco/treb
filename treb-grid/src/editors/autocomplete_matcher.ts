@@ -189,8 +189,13 @@ export class AutocompleteMatcher {
         // if (func.canonical_name) result.tooltip = func.canonical_name;
         // else result.tooltip = tt.toUpperCase();
 
+        const truncated_arguments = func.arguments || [];
+        while (truncated_arguments.length && !truncated_arguments[truncated_arguments.length - 1].name) {
+          truncated_arguments.pop();
+        }
+
         result.tooltip = '<span class="notranslate">' + func.name + '</span>';
-        result.arguments = '(' + (func.arguments || []).map((desc, index) => {
+        result.arguments = '(' + (truncated_arguments).map((desc, index) => {
           const argument = desc.name || 'argument';
           return (index === parsed.argument) ? `<span class="active-argument">${argument}</span>` : argument;
         }).join(Localization.argument_separator + ' ') + ')';
