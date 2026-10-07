@@ -238,6 +238,8 @@ export const ChartFunctions: Record<ChartFunction|SupportFunction, CompositeFunc
       { name: 'Data', metadata: true, },
       { name: 'Categories', metadata: true, },
       { name: 'Chart Title' },
+      {},
+      { metadata: true, } // callouts
     ],
     fn: Identity,
     category: ['chart functions'],
