@@ -80,9 +80,9 @@ export const ChartFunctions: Record<ChartFunction|SupportFunction, CompositeFunc
         value: {
           value: args[0],
           label: args[1],
-
+          type: args[2],
+          format: args[3],
           // ...
-
         },
         key: 'callout',
       };
