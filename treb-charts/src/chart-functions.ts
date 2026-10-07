@@ -48,7 +48,7 @@ export type ChartFunction
   | 'Box.Plot'
   ;
 
-type SupportFunction = 'Group'|'Series' ; // |'Scatter.Series';
+type SupportFunction = 'Group'|'Series'|'Callout' ; // |'Scatter.Series';
 
 /**
  * chart functions for registration
@@ -69,6 +69,25 @@ export const ChartFunctions: Record<ChartFunction|SupportFunction, CompositeFunc
 
     },
     category: ['grouping'],
+  },
+
+  Callout: {
+    arguments: [
+    ],
+    fn: (...args: unknown[]) => {
+      return {
+        type: ValueType.object,
+        value: {
+          value: args[0],
+          label: args[1],
+
+          // ...
+
+        },
+        key: 'callout',
+      };
+    },
+    category: ['chart functions'],
   },
 
   /**
@@ -153,6 +172,8 @@ export const ChartFunctions: Record<ChartFunction|SupportFunction, CompositeFunc
       { name: 'y', metadata: true,  },
       { name: 'x', metadata: true,  },
       { name: 'ChartTitle' },
+      {},
+      { metadata: true, } // callouts
     ],
     fn: Identity,
     category: ['chart functions'],
@@ -163,6 +184,8 @@ export const ChartFunctions: Record<ChartFunction|SupportFunction, CompositeFunc
       { name: 'y', metadata: true,  },
       { name: 'x', metadata: true,  },
       { name: 'ChartTitle' },
+      {},
+      { metadata: true, } // callouts
     ],
     fn: Identity,
     category: ['chart functions'],
