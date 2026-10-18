@@ -19,7 +19,11 @@
  * 
  */
 
+import * as NumberFormatCache from './format_cache2';
+
 export * from './number_format_section';
 export * from './format';
-export * from './format_cache';
+// export * from './format_cache';
 export * from './value_parser';
+
+export { NumberFormatCache };

@@ -66,29 +66,9 @@ export class NumberFormatCache {
 
   /** alias types */
   private static aliases: {[index: string]: string} = {
-
     Scientific: 'Exponential',
     Percentage: 'Percent',
     Currency: 'Dollar',
-
-    /*
-    // we switched to Uppercase symbolic names to better
-    // match imported files, but we have legacy stuff using
-    // lowercase, so add aliases.
-
-    accounting: 'Accounting',
-    number: 'Number',
-    integer: 'Integer',
-    percent: 'Percent',
-    general: 'General',
-    dollar: 'Dollar',
-    exponential: 'Exponential',
-
-    'short date': 'Short Date',
-    'long date': 'Long Date',
-    timestamp: 'Timestamp',
-    */
-
   };
 
   /**
@@ -121,6 +101,11 @@ export class NumberFormatCache {
 
   /** 
    * does anyone use this? (...)
+   * 
+   * this should properly be a method on formatter, no? although
+   * I guess the benefit here is it (1) uses cache and (2) supports
+   * symbolic names
+   * 
    */
   public static Equals(a: string, b: string): boolean {
     if (a === b) return true;
@@ -169,12 +154,9 @@ export class NumberFormatCache {
     // we're doing this to hide it, but we might as well allow it
     // since js interfaces will find it regardless
 
-    // this.cache['General'].magic_decimal = true;
-
     // special general type for complex has fewer digits by default
 
     this.complex_general = new NumberFormat('0.###');
-    // this.complex_general.magic_decimal = true;
 
     for (const key of Object.keys(this.aliases)) {
       this.cache[key] = this.cache[this.aliases[key]];
