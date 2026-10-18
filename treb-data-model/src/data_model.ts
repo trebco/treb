@@ -30,6 +30,7 @@ import { NamedRangeManager } from './named';
 import type { ConnectedElementType, MacroFunction } from './types';
 import type { LanguageModel } from './language-model';
 import { default_error_messages, default_formula_errors } from 'treb-base-types';
+import { NumberFormatCache } from 'treb-format';
 
 /**
  * 
@@ -779,9 +780,21 @@ export class DataModel {
  
     }
 
+  public UpdateNumberFormats() {
+    const overrides: Record<string, string> = {};
+    if (this.language_model?.number_formats) {
+      for (const [key, value] of Object.entries(this.language_model.number_formats)) {
+        if (typeof value === 'object') {
+          overrides[key] = value.format;
+        }
+      }
+    }
+    NumberFormatCache.InitCache(overrides);
+  }
+
   public UpdateErrorLabels() {
 
-    const errors = this.language_map?.formula_errors || default_formula_errors;
+    const errors = this.language_model?.formula_errors || default_formula_errors;
     const error_map: Record<number, string> = {};
     for (const [key, value] of Object.entries(errors)) {
       error_map[Errors[key as keyof typeof Errors]] = value;
@@ -802,7 +815,10 @@ export class DataModel {
     // error strings -> map for sheet, which handles the rendering
     this.UpdateErrorLabels();
 
-    //
+    // update number formats. this updates the _formats_, not the labels,
+    // which should be translated externally. we don't handle localized
+    // labels
+    this.UpdateNumberFormats();    
 
     if (!model) {
       this.SetLanguageMap(); // clear

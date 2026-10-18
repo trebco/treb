@@ -912,7 +912,20 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     // --- testing dynamic loading ---------------------------------------------
 
-    this.LoadLanguage(options.language);
+    // OK this is a problem because it's async, and it's manipulating data,
+    // so we will probably lose data. it needs to go in async services loading.
+    // but fundametally, it's incompatible with the init function because it
+    // will immediately cache data.
+
+    // FIXME: we'll need to rewrite this constructor as an async factory method,
+    // which will be much better long-term, but it will require a major version
+    // bump
+
+    if (options.language) {
+      console.warn("options.language removed for race condition, call it manually");
+    }
+
+    // this._ready_state.push(this.LoadLanguage(options.language));
 
     // --- testing plugins -----------------------------------------------------
 

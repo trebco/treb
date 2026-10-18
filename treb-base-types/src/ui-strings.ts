@@ -81,8 +81,17 @@ export const default_number_formats = {
     Currency:     'Currency',
     Exponential:  'Exponential',
     Scientific:   'Scientific', // alias for exponential
-    'Short Date': 'Short Date',
-    'Long Date':  'Long Date',
-    Timestamp:    'Timestamp',
-
+    'Short Date': {
+      label: 'Short Date',
+      format: 'mm/dd/yy',
+    },
+    'Long Date':  {
+      label: 'Long Date',
+      format: 'dddd, mmm d yyyy',
+    },
+    Timestamp: { 
+      label: 'Timestamp',
+      format: 'mm-dd-yy hh:mm:ss',
+    },
+    
 };

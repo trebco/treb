@@ -71,6 +71,10 @@
       "types": "./build/treb-base-types/src/index.d.ts",
       "import": "./treb-base-types/src/index.ts"
     },
+    "./treb-base-types/*": {
+      "types": "./build/treb-base-types/*.d.ts",
+      "import": "./treb-base-types/*.ts"
+    },
     "./ooxml-types": {
       "types": "./build/ooxml-types/src/types/index.d.ts",
       "import": "./ooxml-types/src/types/index.ts"

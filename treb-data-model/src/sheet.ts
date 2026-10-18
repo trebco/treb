@@ -1573,7 +1573,17 @@ export class Sheet {
       cell.rendered_type = ValueType.number;
     }
     else if (type === ValueType.error) {
-      cell.formatted = Sheet.error_labels[value as number] || '#ERR?';
+
+      // to support old-style models, if the type is error
+      // but the value is a string, we can just show the 
+      // string. although that will break i18n...
+
+      if (typeof value === 'string') {
+        cell.formatted = `#${value}!`;
+      }
+      else {
+        cell.formatted = Sheet.error_labels[value as number] || '#ERR?';
+      }
       cell.rendered_type = ValueType.error;
     }
     else if (type === ValueType.boolean) {
