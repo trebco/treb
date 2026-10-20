@@ -37,7 +37,10 @@ export interface TranslatedFunctionDescriptor {
   description?: string;
 
   /** argument names only */
-  arguments?: string[];
+  arguments?: (string|{
+    name?: string;
+    description?: string;
+  })[];
 
 }
 

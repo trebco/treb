@@ -1524,7 +1524,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           if (partial.arguments && clone.arguments) {
             for (const [index, argument] of partial.arguments.entries()) {
               if (clone.arguments[index]) {
-                clone.arguments[index].name = argument;
+                if (typeof argument === 'string') {
+                  clone.arguments[index].name = argument;
+                }
+                else if (argument) {
+                  if (argument.name) {
+                    clone.arguments[index].name = argument.name;
+                  }
+                }
               }
             }
           }
