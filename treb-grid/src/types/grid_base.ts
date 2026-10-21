@@ -3919,13 +3919,14 @@ export class GridBase {
 
             let valid = true;
 
-            validation_loop:
-            for (let row = area.start.row; row <= area.end.row; row++) {
-              for (let column = area.start.column; column <= area.end.column; column++) {
+            // validation_loop:
+            
+            for (let row = area.start.row; valid && row <= area.end.row; row++) {
+              for (let column = area.start.column; valid && column <= area.end.column; column++) {
                 const cell = sheet.cells.GetCell({row, column}, false);
                 if (cell && (cell.area || cell.merge_area || cell.table)) {
                   valid = false;
-                  break validation_loop;
+                  break; // validation_loop;
                 }
               }
             }
