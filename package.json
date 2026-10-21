@@ -94,6 +94,7 @@
     "cssnano": "^7.1.4",
     "esbuild": "^0.28.0",
     "eslint": "^10.1.0",
+    "eslint-plugin-sonarjs": "^4.2.2",
     "extended-function-lib": "file:extended-function-lib",
     "fast-xml-parser": "^5.3.2",
     "html-minifier-terser": "^7.2.0",
@@ -128,6 +129,8 @@
     "watch-api": "tsx --watch api-generator/api-generator.ts --config api-config.json",
     "generate-api": "tsx api-generator/api-generator.ts --config api-config.json",
     "release": "npm run clean && npm run rebuild-tsc && npm run build && npm run generate-api && npx tsx postprocess.ts",
-    "coverage-test": "npm run build && cd coverage-test && bun run main.ts"
+    "coverage-test": "npm run build && cd coverage-test && bun run main.ts",
+    "lint:sonar": "eslint -c eslint.sonar.config.js \"treb-*/src/**/*.ts\"",
+    "lint:sonar-dist": "eslint -c eslint.sonar.config.js \"dist/**/*.mjs\""
   }
 }
