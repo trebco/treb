@@ -31,3 +31,4 @@ export type { FunctionDescriptor, ArgumentDescriptor } from './editors/autocompl
 export { UA } from './util/ua';
 export type { SetRangeOptions } from './types/set_range_options';
 export type { ExternalEditorConfig, DependencyList, ExternalEditorCallback } from './types/external_editor_config';
+export type { StatsFunction } from './types/grid_options';

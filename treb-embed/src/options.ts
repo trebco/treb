@@ -22,6 +22,7 @@
 import type { ICellAddress } from 'treb-base-types';
 import type { TREBDocument } from './types';
 import type { ChartRenderer } from 'treb-charts';
+import type { StatsFunction } from 'treb-grid';
 
 /**
  * factory type for chart renderer, if you want instances (pass a constructor)
@@ -218,7 +219,7 @@ export interface EmbeddedSpreadsheetOptions {
   /** 
    * show the stats panel under the spreadsheet.
    */
-  stats?: boolean;
+  stats?: boolean|StatsFunction;
 
   /** 
    * save/load scale. this can optionally have a string key to disambiguate 
