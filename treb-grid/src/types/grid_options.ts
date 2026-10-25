@@ -22,7 +22,12 @@
 import type { CellValue } from 'treb-base-types';
 import type { StatsEntry } from './tab_bar';
 
-export type StatsFunction = (data: CellValue|CellValue[][]|undefined) => StatsEntry[];
+/**
+ * update type to support "false" as a return value; in that specific
+ * case, and we test === false rather than falsy, we'll use the default 
+ * handler.
+ */
+export type StatsFunction = (data: CellValue|CellValue[][]|undefined) => StatsEntry[]|false;
 
 
 /**

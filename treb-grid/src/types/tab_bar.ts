@@ -68,7 +68,7 @@ export type TabEvent
 
 export interface StatsEntry {
   label: string;
-  value: string;
+  value: string|HTMLElement|SVGElement;
 }
 
 /**
@@ -118,10 +118,15 @@ export class TabBar extends EventSource<TabEvent> {
           text: entry.label
         });
 
-        this.DOM.Create('span', 'treb-stats-value', this.stats_panel, {
-          text: entry.value,
-        });
-
+        if (typeof entry.value === 'string') {
+          this.DOM.Create('span', 'treb-stats-value', this.stats_panel, {
+            text: entry.value,
+          });
+        }
+        else {
+          this.stats_panel.append(entry.value);
+        }
+        
       }
     }
   }

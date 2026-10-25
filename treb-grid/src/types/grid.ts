@@ -7242,7 +7242,18 @@ export class Grid extends GridBase {
 
       if (typeof this.options.stats === 'function') {
         if (!this.primary_selection.empty) {
-          data = this.options.stats.call(undefined, this.GetRange(this.primary_selection.area));
+          const result = this.options.stats.call(undefined, this.GetRange(this.primary_selection.area));
+          if (result === false) {
+
+            // on an explicit false result, call the default handler
+
+            if (this.primary_selection.area.count > 1) {
+              data = this.RenderStats(this.GetRange(this.primary_selection.area));
+            }
+          }
+          else {
+            data = result;
+          }
         }
       }
       else {
