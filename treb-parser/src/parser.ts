@@ -82,6 +82,8 @@ const CLOSE_PAREN = 0x29;
 const COMMA = 0x2c;
 const PERCENT = 0x25;
 
+const BACKSLASH = 0x5C;
+
 const UNDERSCORE = 0x5f;
 const DOLLAR_SIGN = 0x24;
 
@@ -621,13 +623,32 @@ export class Parser {
         // we have to transpose because we're column-major but the 
         // format is row-major
 
-        return '{' +
-          this.Transpose(unit.values).map((row) => row.map((value) => {
-            if (typeof value === 'string') {
-              return '"' + value + '"';
-            }
-            return value;
-          }).join(', ')).join('; ') + '}';
+        {
+          let separator = (this.decimal_mark_char === COMMA) ? '\\ ' : ', ';
+          if (convert_decimal) {
+            separator = (convert_decimal === DecimalMarkType.Comma) ? '\\ ' : ', ';
+          }
+
+          // we need to use renderer semantics to render the actual
+          // value, and I don't want to rewrite it. we could break
+          // out the renderer as a function, but for now we can just
+          // wrap temporarily...
+
+          return '{' +
+            this.Transpose(unit.values).map((row) => row.map((value) => {
+              return (typeof value === 'undefined') ? '' : 
+                this.Render({
+                  type: 'literal',
+                  value,
+                  position: 0, 
+                  id: 0,
+                }, {
+                  convert_decimal: options.convert_decimal || this.decimal_mark,
+                  ...options
+                });
+              }).join(separator)).join('; ') + '}';
+        }
+
 
       case 'binary':
 
@@ -2043,6 +2064,8 @@ export class Parser {
     let row = 0;
     let column = 0;
 
+    const separator_char = (this.decimal_mark_char === COMMA) ? BACKSLASH : COMMA;
+
     while (this.index < this.length) {
       const item = this.ParseNext();
       const start_position = this.index;
@@ -2052,14 +2075,15 @@ export class Parser {
         switch (item) {
 
           case SEMICOLON:
-            //column = 0;
-            //row++;
             column++;
             row = 0;
             break;
 
-          case COMMA:
-            //column++;
+          // NOTE: in dot-decimal locales, the row separator
+          // is a backslash (!) character. not sure we can even
+          // handle that properly...
+
+          case separator_char:
             row++;
             break;
 
@@ -2217,8 +2241,10 @@ export class Parser {
 
         // comma can appear in the first level. this is maybe an older
         // syntax? it looks like `Table2[[#this row],[region]]
+        // NOTE: that's not comma, it's argument separator (semicolon in dot-decimal locales)
 
-        || (square_bracket === 1 && (char === COMMA || char === SPACE))
+        // || (square_bracket === 1 && (char === COMMA || char === SPACE))
+        || (square_bracket === 1 && (char === this.argument_separator_char || char === SPACE))
 
         // structured references allow basically any character, if 
         // it's in the SECOND bracket. not sure what's up with that.
