@@ -33,7 +33,9 @@ export class Localization {
 
   public static decimal_separator: ('.' | ',') = '.';
   public static argument_separator: ','|';' = ',';
-  public static grouping_separator: ','|' ' = ',';
+
+  // public static grouping_separator: ','|' ' = ',';
+  public static grouping_separator: string = ',';
 
   public static date_components = {
     short_days: [
@@ -69,7 +71,7 @@ export class Localization {
    *
    * @param locale explicitly set locale
    */
-  public static UpdateLocale(locale?: string, override_decimal_separator?: '.' | ','): void {
+  public static UpdateLocale(locale?: string, override_decimal_separator?: '.' | ',', override_grouping_separator?: string): void {
 
     if (locale) {
       this.locale = locale; // 1
@@ -125,12 +127,21 @@ export class Localization {
       // tabular numbers, in which case we would want to use it.
       //
       // FIXME: does format use this field, or does it have its own? (...)
+      //
+      // A: format uses this field, so if you want to adjust, this is the place
+      //
+      // One note on this character: this has to be a non-breaking space.
+      // that's probably not relevant for us, since we do our own rendering,
+      // but it could be a problem if the renderer uses a space in another
+      // context.
+      //
+
+      this.grouping_separator = override_grouping_separator || ' '; 
       
-      this.grouping_separator = ' '; 
     }
     else {
       this.argument_separator = ',';
-      this.grouping_separator = ',';
+      this.grouping_separator = override_grouping_separator || ',';
     }
 
     // moved from number format lib
