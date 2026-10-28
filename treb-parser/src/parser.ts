@@ -371,6 +371,7 @@ export class Parser {
     }
 
     switch (unit.type) {
+      case 'array':
       case 'address':
       case 'missing':
       case 'literal':
@@ -441,6 +442,7 @@ export class Parser {
   public Walk(unit: ExpressionUnit, func: (unit: ExpressionUnit) => boolean): void {
     switch (unit.type) {
       case 'address':
+      case 'array':
       case 'missing':
       case 'literal':
       case 'complex':

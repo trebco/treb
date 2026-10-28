@@ -721,15 +721,27 @@ export class DataModel {
     const parse_result = this.parser.Parse(value);
 
     if (parse_result.expression) {
-      
+     
       let modified = false;
       this.parser.Walk(parse_result.expression, unit => {
+
         if (unit.type === 'call') {
           const replacement = map[unit.name.toUpperCase()];
           if (replacement) {
             modified = true;
             unit.name = replacement;
           }
+        }
+        else if (unit.type === 'array') {
+
+          // we do need to translate booleans in arrays
+
+          if (unit.values.some(row => row.some(value => {
+            return (typeof value === 'boolean');
+          }))) {
+            modified = true;
+          }
+
         }
         else if (unit.type === 'literal' && typeof unit.value === 'boolean') {
 
