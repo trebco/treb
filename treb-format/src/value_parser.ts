@@ -72,7 +72,8 @@ export interface ParseResult {
 
 const this_year = new Date().getUTCFullYear();
 
-const RemoveUnderscores = (str: string) => str.replace(/(?<=\d)_(?=\d)(?![^.]*\.)/g, '');
+const RemoveUnderscores = (str: string) => 
+  str.replace(/^([^.]+)/, (integer_part) => integer_part.replace(/(?<=\d)_(?=\d)/g, ''));
 
 
 /**
