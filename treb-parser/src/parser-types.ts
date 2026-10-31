@@ -437,6 +437,14 @@ export interface OptionalParserFlags {
   /** string representing boolean false, for parsing/rendering */
   boolean_false?: string;
 
+  /** 
+   * allow underscores in numbers. numbers cannot start with underscores, 
+   * they can only appear in the integer part of a number. technically we 
+   * allow underscores at the end of a number, because we treat that as 
+   * a new token (perhaps incorrectly)
+   */
+  allow_underscores?: boolean;
+
 }
 
 export type ParserFlags = Partial<OptionalParserFlags> & RequiredParserFlags;
@@ -495,5 +503,6 @@ export const DefaultParserConfig: ParserFlags = {
   argument_separator: ArgumentSeparatorType.Comma,
   boolean_true: 'TRUE',
   boolean_false: 'FALSE',
+  allow_underscores: true,
 };
 

@@ -2872,6 +2872,34 @@ export class Parser {
         }
         else break; // not sure what this is, then
       }
+      else if (char === UNDERSCORE) {
+
+        // config
+
+        if (!this.flags.allow_underscores) {
+          break;
+        }
+
+        // legal if we're in the integer part, there are already 
+        // some digits, and there's a digit next
+
+        if (state !== 'integer') {
+          break;
+        }
+
+        const last = this.data[this.index - 1];
+        if (last < ZERO || last > NINE) {
+          break;
+        }
+
+        const peek = this.data[this.index + 1];
+        if (peek < ZERO || peek > NINE) {
+          break;
+        }
+
+        this.index++;
+
+      }
       else if (char === this.imaginary_char) {
 
         // FIXME: this should only be set if it's exactly '8i' and not '8in',
