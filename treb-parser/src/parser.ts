@@ -2897,8 +2897,8 @@ export class Parser {
           break;
         }
 
-        this.index++;
-
+        // do nothing; ignore the char
+        
       }
       else if (char === this.imaginary_char) {
 

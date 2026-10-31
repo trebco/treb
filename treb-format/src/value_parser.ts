@@ -72,6 +72,9 @@ export interface ParseResult {
 
 const this_year = new Date().getUTCFullYear();
 
+const RemoveUnderscores = (str: string) => str.replace(/(?<=\d)_(?=\d)(?![^.]*\.)/g, '');
+
+
 /**
  * value parser class is a singleton, instance is exported
  */
@@ -286,6 +289,11 @@ class ValueParserType {
       x = x.replace(/(\d)\s+/g, '$1'); // remove spaces inside numbers
       x = x.replace(/\./g, ''); // remove point separators
       x = x.replace(/,/, '.'); // convert to US-style
+    }
+
+    if (/_/.test(x)) {
+      x = RemoveUnderscores(x);
+      hints.Grouping = true;
     }
 
     let num = Number(x);
