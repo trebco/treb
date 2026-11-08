@@ -7,7 +7,6 @@ import * as esbuild from 'esbuild';
 import { promises as fs } from 'fs';
 import { minify } from 'html-minifier-terser';
 import path from 'path';
-import * as sass from 'sass';
 import cssnano from 'cssnano';
 import postcss, { Result } from 'postcss';
 
@@ -325,7 +324,7 @@ export const CSSTextPlugin = (options) => ({
  * @returns {esbuild.Plugin}
  * 
  * plugin compiles sass and returns generated css as string, optionally minified 
- */
+ * /
 export const SassPlugin = (options) => ({
   name: 'sass',
   setup(build) {
@@ -374,6 +373,7 @@ export const SassPlugin = (options) => ({
     });
   },
 });
+*/
 
 /**
  * @returns {esbuild.Plugin}
