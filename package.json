@@ -100,7 +100,6 @@
     "html-minifier-terser": "^7.2.0",
     "ooxml-types": "file:ooxml-types",
     "postcss": "^8.5.8",
-    "sass": "^1.98.0",
     "treb-base-types": "file:treb-base-types",
     "treb-calculator": "file:treb-calculator",
     "treb-charts": "file:treb-charts",
