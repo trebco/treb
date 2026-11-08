@@ -236,6 +236,91 @@ export const HTMLPlugin = (options) => ({
 
 /** 
  * @function
+ * @param {{verbose?: boolean, minify?: boolean, renderedCss?: boolean, writeBundleCss?: boolean}} [options]
+ * @returns {esbuild.Plugin}
+ * 
+ * compile CSS according to normal rules, save to a file, but return as a 
+ * string so we can directly import it in script
+ */
+export const CSSTextPlugin = (options) => ({
+  name: 'css-text-pipeline',
+  setup(build) {
+
+    const collectedCss = new Map();
+
+    build.onLoad({ filter: /\.css$/ }, async (args) => {
+
+      // Run a targeted sub-build on the entry CSS file
+      const result = await esbuild.build({
+        entryPoints: [args.path],
+        bundle: true,                            // Inlines @import files and handles url()
+        minify: build.initialOptions.minify ?? false,
+        metafile: true,                          // Enables tracking of input dependency files
+        write: false,                            // Keep output in memory buffer
+        outdir: 'out',                           // Required for bundle output calculation
+        loader: build.initialOptions.loader,     // Inherit custom asset loaders (e.g. svg, png)
+      });
+
+      const output_file = result.outputFiles.find((file) => file.path.endsWith('.css'));
+      const css_text = output_file?.text || '';
+      const watchFiles = Object.keys(result.metafile.inputs) || [];
+
+      collectedCss.set(args.path, css_text);
+
+      return {
+        contents: css_text,
+        loader: 'text',
+        watchFiles,
+      };
+    });
+
+    build.onEnd(async (result) => {
+
+      if (options?.writeBundleCss === false || collectedCss.size === 0) {
+        return;
+      }
+
+      const { outfile, outdir, entryPoints } = build.initialOptions;
+      let cssOutputPath;
+
+      // Case A: Main build defines an explicit `outfile` (e.g. `outfile: 'dist/my-app.js'`)
+      if (outfile) {
+        const parsed = path.parse(outfile);
+        cssOutputPath = path.join(parsed.dir, `${parsed.name}.css`);
+      } 
+      // Case B: Main build uses `outdir` with named entry points (e.g. `entryPoints: { 'my-bundle': 'src/index.js' }`)
+      else {
+        const targetDir = outdir || 'dist';
+        let bundleName = 'bundle';
+
+        if (Array.isArray(entryPoints) && entryPoints.length > 0) {
+          const first = entryPoints[0];
+          if (typeof first === 'object' && first !== null && first.out) {
+            bundleName = first.out; // Named entry: { in: 'src/index.js', out: 'my-custom-name' }
+          } else if (typeof first === 'string') {
+            bundleName = path.basename(first, path.extname(first));
+          }
+        } else if (typeof entryPoints === 'object' && entryPoints !== null) {
+          // Key-value entry points object: { 'custom-name': 'src/index.js' }
+          bundleName = Object.keys(entryPoints)[0];
+        }
+
+        cssOutputPath = path.join(targetDir, `${bundleName}.css`);
+      }
+      
+      const fullCssContent = Array.from(collectedCss.values()).join('\n\n');
+
+      // Ensure target directory exists and write the file
+      await fs.mkdir(path.dirname(cssOutputPath), { recursive: true });
+      await fs.writeFile(cssOutputPath, fullCssContent, 'utf8');
+
+    });
+
+  },
+});
+
+/** 
+ * @function
  * @param {{verbose?: boolean, minify?: boolean, renderedCss?: boolean}} [options]
  * @returns {esbuild.Plugin}
  * 
@@ -291,6 +376,8 @@ export const SassPlugin = (options) => ({
 });
 
 /**
+ * @returns {esbuild.Plugin}
+ * 
  * thanks to
  * https://github.com/evanw/esbuild/issues/3337#issuecomment-2085394950
  */
@@ -318,9 +405,7 @@ export const RewriteIgnoredImports = () => {
 };
 
 /**
- * 
- * 
- * 
+ * @returns {esbuild.Plugin}
  * @param {*} options 
  */
 export const CopyFilesPlugin = (options) => {

@@ -33,4 +33,5 @@ treb-parser/test
 
 dist/treb.d.ts
 dist/*.mjs
+dist/*.css
 

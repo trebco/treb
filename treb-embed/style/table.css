@@ -19,14 +19,11 @@
  * 
  */
 
-@use 'z-index.scss' as *;
-@use 'defaults.scss' as *;
-
 .treb-main.treb-main {
 
   .treb-sort-button {
 
-    z-index: $z-index-note;
+    z-index: var(--treb-stacking-note); /* ? */
     border: 1px solid #ccc;
     background: #fff;
     border-radius: 2px;

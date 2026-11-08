@@ -23,13 +23,11 @@
 import { EmbeddedSpreadsheet } from '../embedded-spreadsheet';
 import type { EmbeddedSpreadsheetOptions } from '../options';
 
-import css from 'treb-embed/style/treb-spreadsheet-element.scss';
+// import css from 'treb-embed/style/treb-spreadsheet-element.scss';
+import css from 'treb-embed/style/treb.css';
+
 import html from 'treb-embed/markup/layout.html';
 import toolbar_html from 'treb-embed/markup/toolbar.html';
-
-// import css from '../../style/treb-spreadsheet-element.scss';
-// import html from '../../markup/layout.html';
-// import toolbar_html from '../../markup/toolbar.html';
 
 import { NumberFormatCache } from 'treb-format';
 import { ColorFunctions, type Color, IsThemeColor } from 'treb-base-types';
@@ -39,7 +37,7 @@ import type { ToolbarMessage } from '../toolbar-message';
 import { DOMContext } from 'treb-base-types';
 import { font_stack_labels, type FontStackType } from 'treb-base-types/src/font-stack';
 
-
+console.info({css}); // temp
 
 /** @internal */
 export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
@@ -105,10 +103,10 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
 
       this.root = root;
       
-      const style_node = this.DOM.doc?.head.querySelector('style[treb-stylesheet]');
+      let style_node = this.DOM.doc?.head.querySelector('style[treb-stylesheet]');
       if (!style_node) {
-        this.DOM.doc?.head.prepend(
-          this.DOM.Create('style', undefined, undefined, { text: css, attrs: { 'treb-stylesheet': '' } }));
+        style_node = this.DOM.Create('style', undefined, undefined, { text: css, attrs: { 'treb-stylesheet': '' } });
+        this.DOM.doc?.head.prepend(style_node);
       }
 
     }

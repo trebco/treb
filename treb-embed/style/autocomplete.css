@@ -19,9 +19,6 @@
  * 
  */
 
-@use 'z-index.scss' as *;
-@use 'defaults.scss' as *;
- 
 
 /**
  * this is getting attached to the document (why? b/c fixed pos?)
@@ -47,7 +44,7 @@
 
     max-height: 10em;
     overflow-y: auto;
-    z-index: $z-index-autocomplete;
+    z-index: var(--treb-stacking-autocomplete);
 
     * { box-sizing: border-box; }
 
@@ -82,7 +79,7 @@
   }
 
   .treb-autocomplete-tooltip {
-    z-index: $z-index-autocomplete;
+    z-index: var(--treb-stacking-autocomplete);
     top: -1000px;
     position: fixed;
     white-space: pre;

@@ -4,7 +4,7 @@
 
 import * as esbuild from 'esbuild';
 
-import { SassPlugin, NotifyPlugin, HTMLPlugin, CopyFilesPlugin } from './esbuild-utils.mjs';
+import { NotifyPlugin, HTMLPlugin, CopyFilesPlugin, CSSTextPlugin } from './esbuild-utils.mjs';
 import { promises as fs } from 'fs';
 
 import pkg from './package.json' with { type: 'json' }; 
@@ -80,7 +80,6 @@ const build_options = {
   },
   bundle: true,
   outdir: options.outdir,
-  // outfile: 'dist/' + options.output_filename,
   outExtension: { '.js': '.mjs' },
   minify: options.minify,
   splitting: options.split,
@@ -88,7 +87,7 @@ const build_options = {
   format: 'esm',
   external: ['*.wasm', 'node:*'],
   alias: {
-    "treb-embed/style/treb-spreadsheet-element.scss": "./treb-embed/style/treb-spreadsheet-element.scss",
+    "treb-embed/style/treb.css": "./treb-embed/style/treb.css",
     "treb-embed/markup/layout.html": "./treb-embed/markup/layout.html",
     "treb-embed/markup/toolbar.html": "./treb-embed/markup/toolbar.html"
   },
@@ -103,7 +102,8 @@ const build_options = {
     // RewriteIgnoredImports(),
     NotifyPlugin(),
     HTMLPlugin(options),
-    SassPlugin(options),
+    // SassPlugin(options),
+    CSSTextPlugin(options),
     CopyFilesPlugin({
       outdir: options.outdir,
       verbose: true,

@@ -1,0 +1,80 @@
+/*
+ * This file is part of TREB.
+ *
+ * TREB is free software: you can redistribute it and/or modify it under the 
+ * terms of the GNU General Public License as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any 
+ * later version.
+ *
+ * TREB is distributed in the hope that it will be useful, but WITHOUT ANY 
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along 
+ * with TREB. If not, see <https://www.gnu.org/licenses/>. 
+ *
+ * Copyright 2022-2026 trebco, llc. 
+ * info@treb.app
+ * 
+ */
+
+.treb-main.treb-main {
+
+  /* this is actually 2x the arrow size, to avoid unecessary calc() */
+  --treb-tooltip-arrow-size: 8px;
+
+  /*
+   * this is the resize row/column tooltip. it shows a pixel size
+   * in a box with an arrow pointing to the row/column divider. in
+   * modern CSS we should be able to draw a proper arrow/box I think?
+   *
+   * eh as it turns out all the shape stuff (like clip-path) breaks 
+   * shadows, you can't use box-shadow or filter:drop-shadow. so we 
+   * can't use shapes. we might still be able to simplify, though.
+   */
+
+  .treb-tooltip {
+
+    display: none;
+    pointer-events: none;
+    position: fixed;
+    padding: 2px 10px;
+    border-radius: 2px;
+    box-shadow: var(--treb-default-box-shadow);
+    z-index: var(--treb-stacking-tooltip);
+    line-height: normal;
+
+    /* common */
+    &::before {
+      width: var(--treb-tooltip-arrow-size);
+      height: var(--treb-tooltip-arrow-size);
+      content: '';
+      position: absolute;
+      background: inherit;
+      z-index: -1;
+      box-shadow: inherit;
+    }
+
+    /* positioning */
+    &.arrow-up {
+      &::before {
+        top: 0px;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(45deg);
+      }
+    }
+
+    /* positioning */
+    &.arrow-left {
+      &::before {
+        top: 50%;
+        left: 0px;
+        transform: translate(-50%, -50%) rotate(45deg);
+      }
+    }
+
+  }
+
+}
+

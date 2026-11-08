@@ -19,22 +19,20 @@
  * 
  */
 
-@use 'z-index.scss' as *;
-@use 'defaults.scss' as *;
- 
-
 .treb-main.treb-main {
 
+  /*
   // are these exactly the same? clearly we copied-and-pasted
   // at first. seems like we could consolidate.
+  */
 
   .treb-note {
 
     position: fixed;
     padding: 7px 10px;
     border-radius: 2px;
-    box-shadow: $default-box-shadow;
-    z-index: $z-index-note;
+    box-shadow: var(--treb-default-box-shadow);
+    z-index: var(--treb-stacking-note);
     line-height: normal;
 
     top: 100px;
@@ -48,7 +46,7 @@
 
     /* themeable properties */
 
-    font-family: $font-stack;
+    font-family: var(--treb-font-stack);
 
     border: 1px solid var(--treb-note-border-color, var(--treb-ui-border-color, #ddd));
     color: var(--treb-note-color, #333);
@@ -64,8 +62,8 @@
     position: fixed;
     padding: 7px 10px;
     border-radius: 2px;
-    box-shadow: $default-box-shadow;
-    z-index: $z-index-note;
+    box-shadow: var(--treb-default-box-shadow);
+    z-index: var(--treb-stacking-note);
     line-height: normal;
 
     top: 100px;
@@ -79,7 +77,7 @@
 
     /* themeable properties */
 
-    font-family: $font-stack; /* can't we inherit? ... */
+    font-family: var(--treb-font-stack); /* can't we inherit? ... */
 
     border: 1px solid var(--treb-note-border-color, var(--treb-ui-border-color, #ddd));
     color: var(--treb-note-color, #333);

@@ -40,7 +40,9 @@
 
  .treb-main.treb-main .treb-chart, .treb-chart {
 
+  /*
   // this was getting lost by the new higher-specificity reset
+  */
   background: var(--treb-chart-background, #fff);
 
  }
@@ -61,9 +63,11 @@
    * of times we have to define the same colors.
    */
 
+   /*
   // lightness offsets for subsequent colors. is there a way we could 
   // have the charts just use a modulo and an offset? (...) would be 
   // cleaner maybe
+  */
 
   /* something like this:
    *
@@ -143,7 +147,7 @@
 
   /* legend uses matching series colors */
   .legend {
-    font-size: 1.05em; // ?
+    font-size: 1.05em; /* // ? */
     rect {
       fill: currentColor;
     }

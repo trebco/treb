@@ -19,10 +19,6 @@
  * 
  */
 
-@use 'z-index.scss' as *;
-@use 'defaults.scss' as *;
- 
-
 .treb-main.treb-main {
 
   .treb-spreadsheet-footer {
@@ -98,10 +94,12 @@
       border-top-width: 0px;
       z-index: 1;
 
+      /*
       // the negative margins here (plus some correction below) makes the
       // active tab overlap just a little bit, very tab like. we have to
       // stop at the last one or it causes problems for the containing node
       // (forces a 2-pixel scroll which is infuriating)
+      */
 
       margin-right: -2px;
 
@@ -137,7 +135,6 @@
      & .treb-spreadsheet-tabs>li {
 
       white-space: nowrap;
-      // overflow-x: hidden;
 
       &[selected] {
         z-index: 2;
@@ -181,7 +178,7 @@
         left: .5em;
         transform-origin: left top;
         transform: rotate(-90deg);
-        z-index: $z-index-scale-popup;
+        z-index: var(--treb-stacking-scale-popup);
         opacity: 0;
         transition: opacity .25s ease;
         display: flex;
@@ -211,8 +208,10 @@
 
     & .treb-delete-tab {
 
+      /*
       // was a div, now a button, so needs some adjustments
       // why double focus?
+      */
 
       border: none;
       background: transparent;
@@ -270,7 +269,6 @@
       overflow: hidden;
       text-overflow: ellipsis;
 
-      // > * + * {
       >* {
         margin-left: .5em;
       }

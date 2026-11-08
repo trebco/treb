@@ -19,8 +19,6 @@
  * 
  */
 
-@use './defaults.scss' as *;
-
 /**
  * we're using variables for selection colors because the colors are used
  * in more than one place; that's a drawback of using CSS, but I think overall
@@ -29,11 +27,11 @@
  * just FYI primary selection color is used in header overlay; and alternate
  * selection color is used to highlight in formula editors (TODO/WIP).
  */
-// $primary-selection-color: rgb(64, 192, 64);
-$primary-selection-color: #4caaf1;
-$primary-selection-color-unfocused: #acc0cf;
 
 .treb-main.treb-main {
+
+  --primary-selection-color: #4caaf1;
+  --primary-selection-color-unfocused: #acc0cf;
 
   --alternate-selection-color-1: rgb(251, 177, 60);
   --alternate-selection-color-2: rgb(64, 192, 64);
@@ -62,7 +60,7 @@ $primary-selection-color-unfocused: #acc0cf;
 
     .treb-grid-selection .primary-selection,
     .treb-header-overlay {
-      color: var(--treb-selection-color, $primary-selection-color);
+      color: var(--treb-selection-color, var(--primary-selection-color));
     }
   }
 
@@ -146,7 +144,7 @@ $primary-selection-color-unfocused: #acc0cf;
    * highlight in the corner of a cell when there's a comment. this is painted.
    */
   .note-marker {
-    background: var(--treb-note-marker-color, #6FAB20); // lovely color
+    background: var(--treb-note-marker-color, #6FAB20); /* lovely color */
   }
 
   /** 
@@ -155,12 +153,14 @@ $primary-selection-color-unfocused: #acc0cf;
    */
   .grid-headers {
     font-family: var(--treb-grid-header-font-family, inherit);
-    font-size: var(--treb-grid-header-font-size, 10pt); // how does this look on ubuntu/android?
+    font-size: var(--treb-grid-header-font-size, 10pt); /* // how does this look on ubuntu/android? */
     font-weight: var(--treb-grid-header-font-weight, normal);
     font-style: var(--treb-grid-header-font-style, normal);
     background: var(--treb-grid-header-background, rgb(238, 238, 242));
 
+    /*
     // for these two fall back to grid values, then defaults
+    */
     color: var(--treb-grid-header-color, var(--treb-grid-default-color, #666));
     stroke: var(--treb-grid-header-grid-color, var(--treb-grid-grid-color, rgb(204, 204, 212)));
   }
@@ -177,12 +177,14 @@ $primary-selection-color-unfocused: #acc0cf;
   .grid-cells {
     font-family: var(--treb-grid-font-family, inherit);
     
+    /*
     // it seems like the old default was 14px / 16px for calibri on windows? 
     // we should get back to that, then we can adjust calibri (in the stacks)
     // to scale.
 
     // font-size: var(--treb-grid-font-size, 10px);
     // font-size: var(--treb-grid-font-size, 10pt);
+    */
 
     font-size: var(--treb-grid-font-size, 14px);
 
@@ -251,13 +253,12 @@ $primary-selection-color-unfocused: #acc0cf;
     background: var(--treb-autocomplete-background, #fff);
     border-radius: 2px;
     border: 1px solid var(--treb-autocomplete-border-color, var(--treb-ui-border-color, #ccc));
-    box-shadow: $default-box-shadow;
+    box-shadow: var(--treb-default-box-shadow);
 
     li {
       color: var(--treb-autocomplete-entry-color, #333);
 
       a.selected {
-        // background: #339966;
         background: var(--treb-autocomplete-selected-entry-background, #2e8dd6);
         color: var(--treb-autocomplete-selected-entry-color, #fff);
       }
@@ -269,7 +270,7 @@ $primary-selection-color-unfocused: #acc0cf;
   .treb-header-overlay {
 
     stroke: none;
-    color: var(--treb-selection-color-unfocused, var(--treb-selection-color, $primary-selection-color));
+    color: var(--treb-selection-color-unfocused, var(--treb-selection-color, var(--primary-selection-color)));
 
     .treb-overlay {
       fill: rgb(0, 0, 0);
@@ -354,27 +355,22 @@ $primary-selection-color-unfocused: #acc0cf;
     }
 
     .alternate-selection:nth-of-type(1n) {
-      // color: $alternate-selection-color-1;
       color: var(--alternate-selection-color-1);
     }
 
     .alternate-selection:nth-of-type(2n) {
-      // color: $alternate-selection-color-2;
       color: var(--alternate-selection-color-2);
     }
 
     .alternate-selection:nth-of-type(3n) {
-      // color: $alternate-selection-color-3;
       color: var(--alternate-selection-color-3);
     }
 
     .alternate-selection:nth-of-type(4n) {
-      // color: $alternate-selection-color-4;
       color: var(--alternate-selection-color-4);
     }
 
     .alternate-selection:nth-of-type(5n) {
-      // color: $alternate-selection-color-5;
       color: var(--alternate-selection-color-5);
     }
 
@@ -383,10 +379,10 @@ $primary-selection-color-unfocused: #acc0cf;
      * not filled
      */
     .primary-selection {
-      color: var(--treb-selection-color-unfocused, var(--treb-selection-color, $primary-selection-color));
+      color: var(--treb-selection-color-unfocused, var(--treb-selection-color, var(--primary-selection-color)));
 
       .treb-selection-nub {
-        stroke: #fff; // <-- ? maybe grid background color?
+        stroke: #fff; /* // <-- ? maybe grid background color? */
         fill: currentColor;
         stroke-width: 1px;
       }
@@ -415,7 +411,6 @@ $primary-selection-color-unfocused: #acc0cf;
    */
   .treb-spreadsheet-footer {
 
-    // font-size: 14px;
     /* FIXME: could be relative? */
 
     .treb-spreadsheet-tabs>li,
@@ -483,7 +478,6 @@ $primary-selection-color-unfocused: #acc0cf;
            *
            * FIXME: this makes theming the lock icon impossible. use a node.
            */
-          // background-image: url("data:image/svg+xml,%0A%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M416 224H400V144C400 65 335 0 256 0S112 65 112 144V224H96C61 224 32 253 32 288V448C32 483 61 512 96 512H416C451 512 480 483 480 448V288C480 253 451 224 416 224ZM176 144C176 100 212 64 256 64S336 100 336 144V224H176V144Z' fill='currentColor'/%3E%3C/svg%3E");
 
           --icon: url("data:image/svg+xml,%0A%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M416 224H400V144C400 65 335 0 256 0S112 65 112 144V224H96C61 224 32 253 32 288V448C32 483 61 512 96 512H416C451 512 480 483 480 448V288C480 253 451 224 416 224ZM176 144C176 100 212 64 256 64S336 100 336 144V224H176V144Z' fill='currentColor'/%3E%3C/svg%3E");
 
@@ -536,7 +530,7 @@ $primary-selection-color-unfocused: #acc0cf;
     overflow: hidden;
     width: 100%;
     height: 100%;
-    padding: .5em; // ?
+    padding: .5em; /* // ? */
 
     p {
       margin-block-start: 0;

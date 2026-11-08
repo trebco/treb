@@ -19,21 +19,14 @@
  * 
  */
 
-// sass vars only
-
-@use 'z-index.scss' as *;
-@use 'defaults.scss' as *;
-
-// clean, no imports (but use sass vars)
-
-@use 'note.scss';
-@use 'table.scss';
-@use 'tooltip.scss';
-@use 'dropdown-select.scss';
-@use 'autocomplete.scss';
-@use 'formula-bar.scss';
-@use 'tab-bar.scss';
-@use 'overlay-editor.scss';
+@import url('note.css');
+@import url('autocomplete.css');
+@import url('dropdown-select.css');
+@import url('tooltip.css');
+@import url('overlay-editor.css');
+@import url('tab-bar.css');
+@import url('formula-bar.css');
+@import url('table.css');
 
 .treb-main.treb-main {
 
@@ -42,7 +35,9 @@
     position: absolute;
     pointer-events: none;
 
+    /*
     // patch for ios safari bug
+    */
     transform: translateZ(0);
 
     rect {
@@ -50,7 +45,7 @@
       stroke-dasharray: var(--treb-spill-border-dasharray, 0);
       fill: none;
       stroke-width: var(--treb-spill-border-width, 1px);
-      z-index: $z-index-spill-border;
+      z-index: var(--treb-stacking-spill-border);
       filter: var(--treb-spill-border-filter, drop-shadow( 3px 3px 2px rgba(0, 0, 0, .5)));
     }
   }
@@ -88,7 +83,9 @@
 
     overscroll-behavior: none;
 
+    /*
     // --- merging from old (split) layout ---
+    */
 
     display: grid;
     grid-template-columns: 100px auto;
@@ -159,12 +156,11 @@
       grid-template-rows: auto;
     }
 
-
-    // ---
-
     &.safari {
 
+      /*
       // WTF is this stuff?
+      */
 
       &::-webkit-scrollbar {
         -webkit-appearance: none;
@@ -206,12 +202,12 @@
     .tile-cover {
       background: transparent;
       position: relative;
-      z-index: $z-index-tile-cover;
+      z-index: var(--treb-stacking-tile-cover);
 
       /** specific layout for column header cover */
       &.column-header-cover {
 
-        z-index: $z-index-header-tile-cover;
+        z-index: var(--treb-stacking-header-tile-cover);
 
         /** style is attached when mousing over a column boundary */
         &.resize {
@@ -223,7 +219,7 @@
       /** specific layout for row header cover */
       &.row-header-cover {
 
-        z-index: $z-index-header-tile-cover;
+        z-index: var(--treb-stacking-header-tile-cover);
 
         /** style is attached when mousing over a row boundary */
         &.resize {
@@ -242,7 +238,7 @@
       top: 0px;
       left: 0px;
 
-      z-index: $z-index-annotations;
+      z-index: var(--treb-stacking-annotations);
       pointer-events: none;
 
       .annotation {
@@ -291,9 +287,7 @@
         &:focus,
         &.retain-focus,
         &.clone-focus {
-          // outline: 2px solid lightblue;
-          // box-shadow: 0 0 0 3px #0ea5e954;
-          box-shadow: 0px 0px 0px 3px rgba(14, 165, 233, 0.33); // IE can't handle RGBA hex
+          box-shadow: 0px 0px 0px 3px rgba(14, 165, 233, 0.33); /* // IE can't handle RGBA hex */
         }
 
       }
@@ -315,9 +309,9 @@
     .treb-grid-selection {
       background: transparent;
       position: absolute;
-      z-index: $z-index-grid-selection;
-      transform: translateZ(0); // patch for ios safari bug
-      -moz-transform: scale(1); // firefox anti-blur
+      z-index: var(--treb-stacking-grid-selection);
+      transform: translateZ(0); /* // patch for ios safari bug */
+      -moz-transform: scale(1); /* // firefox anti-blur */
     }
 
     /** separate selection node for frozen rows/columns (needs different stacking) */
@@ -327,10 +321,10 @@
       transition: background .33s;
 
       position: absolute;
-      z-index: $z-index-frozen-selection;
-      overflow: hidden; // needed for IE11 (put in legacy?) 
-      transform: translateZ(0); // patch for ios safari bug
-      -moz-transform: scale(1); // firefox anti-blur
+      z-index: var(--treb-stacking-frozen-selection);
+      overflow: hidden; /* // needed for IE11 (put in legacy?)  */
+      transform: translateZ(0); /* // patch for ios safari bug */
+      -moz-transform: scale(1); /* // firefox anti-blur */
       pointer-events: none;
 
       &.frozen-selection-rows {
@@ -365,7 +359,7 @@
 
       top: 0px;
       left: 0px;
-      z-index: $z-index-corner;
+      z-index: var(--treb-stacking-corner);
 
       canvas {
         position: absolute;
@@ -379,14 +373,14 @@
     /** contains row header tiles */
     .treb-left-header {
       left: 0px;
-      z-index: $z-index-headers;
+      z-index: var(--treb-stacking-headers);
       pointer-events: none;
     }
 
     /** contains column header tiles */
     .treb-top-header {
       top: 0px;
-      z-index: $z-index-headers;
+      z-index: var(--treb-stacking-headers);
       pointer-events: none;
     }
 
@@ -399,3 +393,4 @@
   }
 
 }
+

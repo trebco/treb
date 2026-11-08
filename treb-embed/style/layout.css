@@ -19,19 +19,21 @@
  * 
  */
 
+@import url('grid.css');
+@import url('theme-defaults.css');
+@import url('dark-theme.css');
+@import url('treb-icons.css');
+@import url('toolbar.css');
+@import url('spinner.css');
+@import url('dialog.css');
 
-@use './defaults.scss' as *;
-@use './z-index.scss' as *;
+/* FIXME: switch to new charts lib */
+@import url('../../treb-charts/style/charts.css');
 
-@use './grid.scss';
-@use './theme-defaults.scss';
-@use './dark-theme.scss';
-@use '../../treb-charts/style/charts.scss';
-@use './dialog.scss';
-@use './spinner.scss';
-@use './treb-icons.scss';
-@use './toolbar.scss';
+/* FIXME: do something else */
+/*
 @use './font-stacks.scss';
+*/
 
 /*
  * switching to a double-selector to increase specificity. the particular
@@ -40,6 +42,40 @@
  * at least inadvertent overrides.
  */
 .treb-main.treb-main {
+
+  --treb-default-box-shadow: 0px 1px 4px 2px rgba(109,109,109,0.2);
+
+  /* --- stacking ----------------------------------------------------------- */
+
+  /* FIXME: move */
+
+  --treb-stacking-contents:                    8;
+  --treb-stacking-grid-selection:             10;
+  --treb-stacking-frozen-selection:           12;
+  --treb-stacking-tile-cover:                 14;
+  --treb-stacking-annotations:                16;
+  --treb-stacking-headers:                    18;
+  --treb-stacking-corner:                     20;
+  --treb-stacking-header-tile-cover:          22;
+  --treb-stacking-cell-editor:                24;
+  --treb-stacking-spill-border:               35;
+
+  --treb-stacking-tooltip:                    39;
+  --treb-stacking-autocomplete:               39;
+  --treb-stacking-note:                       39;
+  --treb-stacking-dropdown-caret:             39;
+  --treb-stacking-sort-button:                39;
+
+  --treb-stacking-scale-popup:                40;
+  --treb-stacking-error-highlight:            40;
+
+  /*
+$z-index-mask:                     9999;
+  */
+
+
+  /* --- /stacking ---------------------------------------------------------- */
+
 
   /*============================================================================
    *
@@ -78,31 +114,43 @@
   all: revert;
   box-sizing: border-box;
 
+  /*
   // text-align does not revert? it should be covered by all...
   // or is the problem that there's no initial value? (although 
   // unset does not work either)
-  
+  */
+
   text-align: start;
 
+  /*
   // set a default font, as well. we used to inherit but that
   // does not necessarily make sense.
+  */
 
-  font-family: var(--treb-default-font, system-ui, $font-stack);
+  /*
+  // this is getting clobbered below?
+  */
 
+  font-family: var(--treb-default-font, system-ui, var(--font-stack));
+
+  /*
   // reset in case we inherit something
+  */
 
   line-height: normal;
 
+  /*
   // ---------------------------------------------------------------------------
+  */
 
   color-scheme: var(--treb-color-scheme, unset);
 
-  font-family: $font-stack;
+  font-family: var(--font-stack);
 
   font-style: normal;
   font-weight: normal;
   color: inherit;
-  font-size: 14px; // ?
+  font-size: 14px; /* ? */
 
   height: 100%;
   width: 100%;
@@ -111,27 +159,33 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-columns: minmax(0, 1fr) auto;
-  // gap: 1em;
 
+  
+  /*
   // ---------------------------------------------------------------------------
+  */
 
   div, button, input, ul, ol, li, a, textarea, svg {
 
+    /*
     // maybe this is being too aggressive. we could be a little 
     // more specific about what we unset in order to avoid any 
     // unexpected side effects.
+    */
 
     all: revert;
     
     box-sizing: border-box;
-    font-family: var(--treb-default-font, system-ui, $font-stack);
+    font-family: var(--treb-default-font, system-ui, var(--font-stack));
 
   }
 
+  /*
   // addressing some specific problems... increased specificity
 
   // &.treb-main svg { all: revert; }
   // &.treb-main div { margin: revert; }
+  */
 
   /**
    * this is kind of a global property but we don't actually want
@@ -155,8 +209,9 @@
     -moz-user-modify: read-write;
   }
 
+  /*
   // ---------------------------------------------------------------------------
-
+  */
 
   &[animate] {
     .treb-layout-header {
@@ -212,13 +267,15 @@
     gap: 1em;
     transition: opacity .2s ease;
 
+    /*
     // why was this here?
     // overflow: hidden;
 
     // FIXME: move up (or not needed?)
     // line-height: normal;
     // text-align: left;
-  
+    */
+
   }
 
   .treb-views.treb-can-revert .treb-view {
@@ -236,14 +293,16 @@
     grid-template-rows: auto minmax(0, 1fr) auto;
     flex: 1 1 0px;
 
+    /*
     // why was this here?
     // overflow: hidden;
+    */
 
     .treb-spreadsheet-backdrop {
       grid-row: 2;
       grid-column: 1;
       z-index: 2;
-      box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .4);
+      box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .4); /* FIXME */
     }
 
     .treb-spreadsheet-body {
@@ -268,7 +327,7 @@
 
       .treb-revert-indicator {
         display: block;
-        grid-area: 2/1/3/2; // overlap the grid body
+        grid-area: 2/1/3/2; /* // overlap the grid body */
         justify-self: start;
         align-self: start;
         width: 1rem;
@@ -299,7 +358,7 @@
 
         /* end styles */
 
-        z-index: 20; // FIXME: use stack
+        z-index: 20; /* // FIXME: use stack */
       }
 
     }
@@ -309,7 +368,7 @@
       .treb-layout-resize-handle {
         
         display: block;
-        grid-area: 2/1/3/2; // overlap the grid body
+        grid-area: 2/1/3/2; /* // overlap the grid body */
         justify-self: end;
         align-self: end;
 
@@ -317,7 +376,7 @@
         border-top-color: transparent;
         border-left-color: transparent;
 
-        z-index: 20; // FIXME: use stack
+        z-index: 20; /* // FIXME: use stack */
 
         width: 1rem;
         height: 1rem;
@@ -348,8 +407,10 @@
 
   .treb-layout-sidebar {
 
+    /*
     // we're using fixed sizes for buttons, but then ems for spacing.
     // that is not good.
+    */
 
     grid-row: 2;
     grid-column: 2;
@@ -395,7 +456,10 @@
 
   .treb-layout-sidebar > button, .treb-toggle-sidebar-button {
 
+    /*
     // all: initial;
+    */
+
     padding: 0;
     margin: 0;
     border: 0;
@@ -406,7 +470,7 @@
       height: 24px;
       width: 24px;
       content: '';
-      background: #ccc; // FIXME
+      background: #ccc; /* // FIXME */
       mask-position: center;
       -webkit-mask-position: center;
       mask-repeat: no-repeat;
@@ -416,8 +480,10 @@
       -webkit-mask-image: var(--icon);
     }
   
+    /*
     // working on how to alter the revert button depending on state...
     // remove hover effect? remove the button? (...)
+    */
 
     /*
     &:not(.sidebar-disabled):hover::after{
@@ -430,7 +496,7 @@
     }
 
     &:hover::after {
-      background: #666; // FIXME
+      background: #666; /* // FIXME */
     }
 
     &[data-command=recalculate] {
@@ -455,7 +521,14 @@
    
   }
 
-  .treb-toggle-sidebar-button {
+  /* 
+    this was losing specificity to the above definition.
+    not sure why but I _think_ it's because it matched both
+    rules. definitely don't know why it was different under sass.
+
+    fix: add button to the definition
+  */
+  button.treb-toggle-sidebar-button {
 
     position: absolute;
     right: .5rem;
@@ -475,7 +548,7 @@
     padding: 0;
     margin: 0;
 
-    z-index: $z-index-note;
+    z-index: var(--treb-stacking-note); /* ?? */
 
     &::after {
       height: 12px;
@@ -486,7 +559,7 @@
 
   }
 
-
+  /*
   // these are (atm) outside of the container because we want them
   // to be able to float over any outside content as well... what's the
   // rule with that? something about stacking contexts? of course we're
@@ -496,10 +569,11 @@
   //
 
   // OK, but then we can't scope properly. so no.
+  */
 
   .treb-resize-rect {
-    // all: initial;
-    z-index: 9998; // ugh
+    /* // all: initial; */
+    z-index: 9998; /* // ugh */
     position: fixed;
     top: 0px;
     left: 0px;
@@ -510,8 +584,8 @@
   }
 
   .treb-resize-mask {
-    // all: initial;
-    z-index: 9999; // ugh
+    /* // all: initial; */
+    z-index: 9998; /* // ugh */
     position: fixed;
     top: 0px;
     left: 0px;

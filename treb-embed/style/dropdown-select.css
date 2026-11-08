@@ -19,9 +19,6 @@
  * 
  */
 
-@use 'z-index.scss' as *;
-@use 'defaults.scss' as *;
- 
 .treb-main.treb-main {
 
   .treb-dropdown-caret {
@@ -35,8 +32,8 @@
     border: 1px solid var(--treb-dropdown-caret-border-color, #ccc);
     border-radius: 2px;
 
-    box-shadow: $default-box-shadow;
-    z-index: $z-index-dropdown-caret;
+    box-shadow: var(--treb-default-box-shadow);
+    z-index: var(--treb-stacking-dropdown-caret);
 
     & path {
       fill: none;
@@ -52,8 +49,8 @@
 
     position: absolute;
     display: none;
-    box-shadow: $default-box-shadow;
-    z-index: $z-index-dropdown-caret;
+    box-shadow: var(--treb-default-box-shadow);
+    z-index: var(--treb-stacking-dropdown-caret);
     background: var(--treb-dropdown-background, #fff);
     font-size: 10pt;
     color: var(--treb-dropdown-color, inherit);
@@ -95,7 +92,7 @@
     opacity: 0;
     pointer-events: none;
     position: absolute;
-    z-index: $z-index-error-highlight;
+    z-index: var(--treb-stacking-error-highlight);
 
   }
 

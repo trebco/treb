@@ -19,13 +19,11 @@
  * 
  */
 
-@use 'z-index.scss' as *;
-@use 'defaults.scss' as *;
-
 .treb-main.treb-main {
 
   .treb-grid {
 
+    /*
     // rewrite of the overlay structure. much simpler. 
     // 
     // the aim is to bottom-justify the editor in a cell, and then 
@@ -41,6 +39,7 @@
 
     // going to bring back the extra node, so we can have a background
     // that crosses the selection box...
+    */
 
     .treb-overlay-container {
 
@@ -56,7 +55,7 @@
       /* probably unecessary */
       outline: none;
 
-      z-index: $z-index-cell-editor;
+      z-index: var(--treb-stacking-cell-editor);
 
       &.align-right .treb-overlay-inset {
         right: 0px;
@@ -92,13 +91,14 @@
       outline: none;
       white-space: nowrap;
       position: relative;
-      // -webkit-user-modify: read-write;
 
+      /*
       // this fixes the firefox issue (firefox removing spaces), but 
       // I'm not sure if it will cause other problems. for the overlay
       // editor we're trapping CR, so it shouldn't be a typing problem --
       // it might be an issue on paste though. also need to check safari
       // with pre here.
+      */
 
       white-space: pre; 
 

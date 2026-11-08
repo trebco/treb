@@ -19,26 +19,6 @@
  * 
  */
 
-
-// -----------------------------------------------------------------------------
-
-$button-width: 32px;
-$dropdown-button-width: 16px;
-
-$background-color: var(--treb-toolbar-button-background, transparent);
-$background-hover: var(--treb-toolbar-hover-button-background, #f3f4f6);
-$border-color: var(--treb-toolbar-border-color, var(--treb-ui-border-color, rgb(209, 213, 219)));
-
-$menu-background: var(--treb-toolbar-button-background, #fff);
-$menu-border-color: var(--treb-toolbar-border-color, var(--treb-ui-border-color, rgb(209, 213, 219)));
-$menu-item-hover-color: var(--treb-toolbar-hover-button-background, #f3f4f6);
-
-$box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .4);
-$border-radius: 3px;
-
-$split-font-size: 10px;
-$swatch-size: 18px;
-
 .treb-main.treb-main {
 
   .treb-layout-header {
@@ -46,9 +26,6 @@ $swatch-size: 18px;
     overflow: hidden;
     position: relative;
     overflow-x: scroll;
-
-    // hide scrollbars
-    // FIXME: util class
 
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -60,10 +37,29 @@ $swatch-size: 18px;
 
   .treb-toolbar {
 
+    /* --- vars --- */
+
+  --button-width: 32px;
+  --dropdown-button-width: 16px;
+
+  --background-color: var(--treb-toolbar-button-background, transparent);
+  --background-hover: var(--treb-toolbar-hover-button-background, #f3f4f6);
+  --border-color: var(--treb-toolbar-border-color, var(--treb-ui-border-color, rgb(209, 213, 219)));
+
+  --menu-background: var(--treb-toolbar-button-background, #fff);
+  --menu-border-color: var(--treb-toolbar-border-color, var(--treb-ui-border-color, rgb(209, 213, 219)));
+  --menu-item-hover-color: var(--treb-toolbar-hover-button-background, #f3f4f6);
+
+  --box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .4);
+  --border-radius: 3px;
+
+  --split-font-size: 10px;
+  --swatch-size: 18px;
+
+    /* --- /vars --- */
+
     color: var(--treb-toolbar-color, var(--treb-ui-color, #333));
     font-size: var(--treb-toolbar-font-size, inherit);
-
-    // ----
 
     display: flex;
     flex-direction: row;
@@ -75,9 +71,9 @@ $swatch-size: 18px;
     }
 
     & > input, & > div > input {
-      height: $button-width;
-      background-color: $background-color;
-      border: 1px solid $border-color;
+      height: var(--button-width);
+      background-color: var(--background-color);
+      border: 1px solid var(--border-color);
       text-overflow: ellipsis;
       overflow: hidden;
       padding-left: .5em;
@@ -85,7 +81,7 @@ $swatch-size: 18px;
     }
 
     & > .treb-menu > button {
-      border-radius: $border-radius;
+      border-radius: var(--border-radius);
     }
 
     & > .group, & > [composite] {
@@ -99,13 +95,13 @@ $swatch-size: 18px;
       }
 
       & > button:first-child, & > input:first-child {
-        border-top-left-radius: $border-radius;
-        border-bottom-left-radius: $border-radius;
+        border-top-left-radius: var(--border-radius);
+        border-bottom-left-radius: var(--border-radius);
       }
   
       & > button:last-child, & > .treb-menu:last-child > button {
-        border-top-right-radius: $border-radius;
-        border-bottom-right-radius: $border-radius;
+        border-top-right-radius: var(--border-radius);
+        border-bottom-right-radius: var(--border-radius);
       }
   
 
@@ -115,23 +111,25 @@ $swatch-size: 18px;
 
     & > button, & > div > button, .treb-menu > button, button[data-icon], .treb-icon-buttons > button {
 
-      width: $button-width;
-      height: $button-width;
-      background-color: $background-color;
-      border: 1px solid $border-color;
+      width: var(--button-width);
+      height: var(--button-width);
+      background-color: var(--background-color);
+      border: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       position: relative;
 
+      /*
       // removing this transition because it lags when toggling light/dark mode 
 
       // transition: background-color .1s ease;
       // border-radius: $border-radius;
+      */
 
       &[dropdown] {
-        width: $dropdown-button-width;
+        width: var(--dropdown-button-width);
         &::after {
           box-sizing: content-box;
           content: '';
@@ -140,14 +138,14 @@ $swatch-size: 18px;
           height: 0px;
           border: 5px solid transparent;
           border-top-color: currentColor;
-          top: 18px; // FIXME: specify in ems // NO
+          top: 18px; /* // FIXME: specify in ems // NO */
           left: 50%;
           transform: translate(-50%, -50%);
         }
       }
 
       &:hover, &[active] {
-        background-color: $background-hover;
+        background-color: var(--background-hover);
       }
 
       &[data-color-bar]::after {
@@ -157,7 +155,7 @@ $swatch-size: 18px;
         display: block;
         width: 20px;
         height: 6px;
-        border: 1px solid $border-color;
+        border: 1px solid var(--border-color);
         background: var(--treb-color-bar-color, var(--treb-default-color, unset));
       }
 
@@ -195,28 +193,28 @@ $swatch-size: 18px;
       gap: 0;
 
       button[data-command] {
-        font-size: $split-font-size;
+        font-size: var(--split-font-size);
         &::before {
           display: none;
         }
       }
 
       & > button {
-        height: calc($button-width / 2);
+        height: calc(var(--button-width) / 2);
         display: flex;
         align-items: center;
         justify-content: center;
       }
 
       & > button:first-child {
-        border-top-left-radius: $border-radius;      
-        border-top-right-radius: $border-radius;      
+        border-top-left-radius: var(--border-radius);      
+        border-top-right-radius: var(--border-radius);      
       }
 
       & > button:last-child {
         border-top: 0;      
-        border-bottom-left-radius: $border-radius;      
-        border-bottom-right-radius: $border-radius;      
+        border-bottom-left-radius: var(--border-radius);      
+        border-bottom-right-radius: var(--border-radius);      
       }
 
     }
@@ -232,15 +230,15 @@ $swatch-size: 18px;
 
     .treb-menu {
 
+      /*
       // on Safari, we need to make these menus focus targets, so we can 
       // use :focus-within. they will get a tabIndex. we will preferentially 
       // focus on buttons within the menus, but there will be flashes where 
       // focus is visible on the menu itself, so to reduce jitter we remove
       // the outline.
+      */
 
       outline: none;
-
-      // ---
 
       & > div {
 
@@ -249,13 +247,13 @@ $swatch-size: 18px;
         margin-top: .5rem;
 
         flex-direction: column;
-        background: $menu-background;
-        border: 1px solid $border-color;
-        border-radius: $border-radius;
+        background: var(--menu-background);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
         position: fixed;
         z-index: 20;
         top: 48px;
-        box-shadow: $box-shadow;
+        box-shadow: var(--box-shadow);
 
         button {
           white-space: nowrap;
@@ -267,7 +265,7 @@ $swatch-size: 18px;
           transition: background-color .125s ease;
 
           &:hover {
-            background: $background-hover;
+            background: var(--background-hover);
           }
       
         }
@@ -279,7 +277,7 @@ $swatch-size: 18px;
         }
 
         & > [separator] {
-          background: $border-color;
+          background: var(--border-color);
           height: 1px;
           margin: 2px 0;
 
@@ -293,7 +291,9 @@ $swatch-size: 18px;
 
     }
 
+    /*
     // ---------------------------------------------------------------------------
+    */
 
     [data-icon=file-menu]{ --icon: var(--icon-file-menu); }
     
@@ -356,7 +356,7 @@ $swatch-size: 18px;
         padding: 0;
         display: flex;
         align-items: center;
-        width: $button-width;
+        width: var(--button-width);
         justify-content: center;
 
         & > svg {
@@ -386,9 +386,9 @@ $swatch-size: 18px;
         }
 
         input, button {
-          border: 1px solid $border-color;
-          border-radius: $border-radius;
-          height: $button-width;
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius);
+          height: var(--button-width);
         }
 
       }
@@ -396,11 +396,11 @@ $swatch-size: 18px;
       .treb-swatches, .treb-default-swatch {
 
         button {
-          width: $swatch-size;
-          height: $swatch-size;
+          width: var(--swatch-size);
+          height: var(--swatch-size);
           padding: 0;
           margin: 0;
-          border: 1px solid $border-color;
+          border: 1px solid var(--border-color);
           border-radius: 2px;          
         }
 
@@ -444,7 +444,7 @@ $swatch-size: 18px;
       textarea {
         font: inherit;
         resize: both;
-        border: 1px solid $border-color;
+        border: 1px solid var(--border-color);
         padding: .25rem;
         line-height: 1.5;
         margin: .5rem;
@@ -460,8 +460,8 @@ $swatch-size: 18px;
         padding: 0 0 .5rem 0;
 
         button {
-          border: 1px solid $border-color;
-          border-radius: $border-radius;
+          border: 1px solid var(--border-color);
+          border-radius: var(--border-radius);
         }
 
       }
@@ -484,9 +484,7 @@ $swatch-size: 18px;
       left: .5em;
       transform: translateY(-50%);
       opacity: .9;
-      // border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
       border-radius: 3px;
-      // background: color-mix(in srgb, currentColor 10%, transparent);
 
       pointer-events: none;
       line-height: 1;

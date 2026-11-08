@@ -32,7 +32,7 @@
 
 
 
-      padding: 0px 2px 12px 2px; // FIXME: use ems?
+      padding: 0px 2px 12px 2px; /* // FIXME: use ems? */
 
       max-width: 100%;
       overflow-x: hidden;
@@ -55,8 +55,6 @@
         flex-direction: column;
         justify-content: center;
         padding-left: 3px;
-
-        // margin-right: 6px;
 
         &>div {
           outline: none;
