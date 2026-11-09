@@ -353,7 +353,7 @@ $z-index-mask:                     9999;
 
         /* triangular style */
 
-        border: .5em solid orange;
+        border: .5em solid var(--treb-revert-indicator-color);
         border-right-color: transparent;
         border-bottom-color: transparent;
 
@@ -471,7 +471,7 @@ $z-index-mask:                     9999;
       height: 24px;
       width: 24px;
       content: '';
-      background: #ccc; /* // FIXME */
+      background: var(--treb-sidebar-button-color); /* // FIXME */
       mask-position: center;
       -webkit-mask-position: center;
       mask-repeat: no-repeat;
@@ -497,7 +497,7 @@ $z-index-mask:                     9999;
     }
 
     &:hover::after {
-      background: #666; /* // FIXME */
+      background: var(--treb-sidebar-button-hover-color); /* // FIXME */
     }
 
     &[data-command=recalculate] {

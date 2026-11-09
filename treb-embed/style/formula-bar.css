@@ -92,7 +92,7 @@
           border: 5px solid transparent;
           position: relative;
           display: inline-block;
-          border-top-color: #999;
+          border-top-color: var(--treb-formula-bar-expand-button-color);
           padding: 0;
           margin: 0;
           top: -6px;

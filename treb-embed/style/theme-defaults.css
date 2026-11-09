@@ -32,23 +32,6 @@
 
   --primary-selection-color-unfocused: #acc0cf;
 
-  --alternate-selection-color-1: rgb(251, 177, 60);
-  --alternate-selection-color-2: rgb(64, 192, 64);
-  --alternate-selection-color-3: rgb(182, 109, 13);
-  --alternate-selection-color-4: rgb(33, 118, 174);
-  --alternate-selection-color-5: rgb(254, 104, 71);
-  
-  /**
-   * slightly darkening colors for text highlighting
-   * algo: convert to HSL; if L > .5, regenerate with L = .5; back to RGB (why?)
-   */
-  --text-reference-color-1: rgb(224, 138, 0);
-  --text-reference-color-2: rgb(58, 173, 58);
-  --text-reference-color-3: rgb(182, 109, 13);
-  --text-reference-color-4: rgb(33, 118, 174);
-  --text-reference-color-5: rgb(254, 47, 1);
-  
-
   /** 
    * move primary selection focus color to focus-within on the top-level 
    * node, and use a (new) unfocused selection color. name?
@@ -131,12 +114,12 @@
 
   /** offset dark is the DARK color applied against LIGHT backgrounds */
   .treb-offset-dark {
-    color: #000;
+    color: var(--treb-offset-dark-color);
   }
 
   /** offset light is the LIGHT color applied against DARK backgrounds */
   .treb-offset-light {
-    color: #fff;
+    color: var(--treb-offset-light-color);
   }
 
   /** 
@@ -198,10 +181,10 @@
    */
   .frozen-selection {
     &.highlight-area {
-      background: rgba(87, 184, 255, .25);
-      border-left-color: rgba(33, 118, 174, 1);
+      background: var(--treb-freeze-highlight-background);
+      border-left-color: var(--treb-freeze-highlight-border-color);
       /* not using */
-      border-bottom-color: rgba(33, 118, 174, 1);
+      border-bottom-color: var(--treb-freeze-highlight-border-color);
       /* not using */
     }
   }
@@ -267,7 +250,7 @@
     color: var(--treb-selection-color-unfocused);
 
     .treb-overlay {
-      fill: rgb(0, 0, 0);
+      fill: var(--treb-header-overlay-fill);
       /* FIXME: use color? */
       stroke: none;
       opacity: 0.05;
@@ -288,35 +271,35 @@
   .treb-editor-container>div,
   .treb-overlay-editor {
 
-    [data-highlight-index="1"] { color: var(--text-reference-color-1); }
-    [data-highlight-index="2"] { color: var(--text-reference-color-2); }
-    [data-highlight-index="3"] { color: var(--text-reference-color-3); }
-    [data-highlight-index="4"] { color: var(--text-reference-color-4); }
-    [data-highlight-index="5"] { color: var(--text-reference-color-5); }
+    [data-highlight-index="1"] { color: var(--treb-text-reference-color-1); }
+    [data-highlight-index="2"] { color: var(--treb-text-reference-color-2); }
+    [data-highlight-index="3"] { color: var(--treb-text-reference-color-3); }
+    [data-highlight-index="4"] { color: var(--treb-text-reference-color-4); }
+    [data-highlight-index="5"] { color: var(--treb-text-reference-color-5); }
 
     /* span:nth-of-type(1n) { */
     span.highlight-1 {
-      color: var(--text-reference-color-1);
+      color: var(--treb-text-reference-color-1);
     }
 
     /* span:nth-of-type(2n) { */
     span.highlight-2 {
-      color: var(--text-reference-color-2);
+      color: var(--treb-text-reference-color-2);
     }
 
     /* span:nth-of-type(3n) { */
     span.highlight-3 {
-      color: var(--text-reference-color-3);
+      color: var(--treb-text-reference-color-3);
     }
 
     /* span:nth-of-type(4n) { */
     span.highlight-4 {
-      color: var(--text-reference-color-4);
+      color: var(--treb-text-reference-color-4);
     }
 
     /* span:nth-of-type(5n) { */
     span.highlight-5 {
-      color: var(--text-reference-color-5);
+      color: var(--treb-text-reference-color-5);
     }
 
   }
@@ -356,23 +339,23 @@
     }
 
     .alternate-selection:nth-of-type(1n) {
-      color: var(--alternate-selection-color-1);
+      color: var(--treb-alternate-selection-color-1);
     }
 
     .alternate-selection:nth-of-type(2n) {
-      color: var(--alternate-selection-color-2);
+      color: var(--treb-alternate-selection-color-2);
     }
 
     .alternate-selection:nth-of-type(3n) {
-      color: var(--alternate-selection-color-3);
+      color: var(--treb-alternate-selection-color-3);
     }
 
     .alternate-selection:nth-of-type(4n) {
-      color: var(--alternate-selection-color-4);
+      color: var(--treb-alternate-selection-color-4);
     }
 
     .alternate-selection:nth-of-type(5n) {
-      color: var(--alternate-selection-color-5);
+      color: var(--treb-alternate-selection-color-5);
     }
 
     /** 
@@ -383,7 +366,7 @@
       color: var(--treb-selection-color-unfocused);
 
       .treb-selection-nub {
-        stroke: #fff; /* // <-- ? maybe grid background color? */
+        stroke: var(--treb-selection-nub-border-color); /* // <-- ? maybe grid background color? */
         fill: currentColor;
         stroke-width: 1px;
       }
@@ -524,7 +507,7 @@
    *
    */
   .treb-annotation-textbox {
-    background: Canvas;
+    background: var(--treb-annotation-textbox-background);
     position: relative;
     top: 0px;
     left: 0px;

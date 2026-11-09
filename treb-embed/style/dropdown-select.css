@@ -88,7 +88,7 @@
    */
   .treb-error-highlight {
     transition: opacity 0.15s ease-in-out;
-    background: rgba(255, 0, 0, .25);
+    background: var(--treb-error-highlight-background);
     opacity: 0;
     pointer-events: none;
     position: absolute;

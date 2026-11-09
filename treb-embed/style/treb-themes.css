@@ -137,4 +137,70 @@
 
   --treb-spinner-color: currentColor;
 
+  /* --- previously hard-coded colors --------------------------------------- */
+
+  /*
+   * NOTE: most of these do not have dark-mode values yet (they had none
+   * when they were hard-coded).
+   */
+
+  /* alternate selections (dashed), and matching references in editors */
+
+  --treb-alternate-selection-color-1: rgb(251, 177, 60);
+  --treb-alternate-selection-color-2: rgb(64, 192, 64);
+  --treb-alternate-selection-color-3: rgb(182, 109, 13);
+  --treb-alternate-selection-color-4: rgb(33, 118, 174);
+  --treb-alternate-selection-color-5: rgb(254, 104, 71);
+
+  /**
+   * slightly darkening colors for text highlighting
+   * algo: convert to HSL; if L > .5, regenerate with L = .5; back to RGB (why?)
+   */
+  --treb-text-reference-color-1: rgb(224, 138, 0);
+  --treb-text-reference-color-2: rgb(58, 173, 58);
+  --treb-text-reference-color-3: rgb(182, 109, 13);
+  --treb-text-reference-color-4: rgb(33, 118, 174);
+  --treb-text-reference-color-5: rgb(254, 47, 1);
+
+  /* grid */
+
+  --treb-offset-dark-color:             #000; /* dark text on light theme-table backgrounds */
+  --treb-offset-light-color:            #fff; /* light text on dark theme-table backgrounds */
+  --treb-freeze-highlight-background:   rgba(87, 184, 255, .25);
+  --treb-freeze-highlight-border-color: rgba(33, 118, 174, 1);
+  --treb-header-overlay-fill:           rgb(0, 0, 0); /* used at 5% opacity */
+  --treb-selection-nub-border-color:    #fff;
+  --treb-scrollbar-thumb-background:    rgba(0, 0, 0, .25); /* safari only */
+  --treb-scrollbar-thumb-shadow-color:  rgba(255, 255, 255, .5); /* safari only */
+  --treb-sort-button-border-color:      #ccc;
+  --treb-sort-button-background:        #fff;
+  --treb-error-highlight-background:    rgba(255, 0, 0, .25);
+
+  /* annotations */
+
+  --treb-annotation-background:         rgba(255, 255, 255, .5);
+  --treb-annotation-border-color:       #999;
+  --treb-annotation-focus-color:        rgba(14, 165, 233, 0.33);
+  --treb-annotation-textbox-background: Canvas;
+
+  /* formula bar, sidebar, revert indicator */
+
+  --treb-formula-bar-expand-button-color: #999;
+  --treb-sidebar-button-color:            #ccc;
+  --treb-sidebar-button-hover-color:      #666;
+  --treb-revert-indicator-color:          orange;
+
+  /* dialog */
+
+  --treb-dialog-accent-color:           #999; /* top border */
+  --treb-dialog-success-accent-color:   rgb(68, 217, 38);
+  --treb-dialog-about-accent-color:     rgb(0, 157, 255);
+  --treb-dialog-error-accent-color:     rgb(249, 47, 6);
+  --treb-dialog-info-accent-color:      rgb(0, 157, 255);
+  --treb-dialog-close-icon-color:       rgb(115, 130, 140);
+  --treb-dialog-close-icon-hover-color: rgb(4, 156, 251);
+  --treb-dialog-link-hover-color:       rgb(4, 156, 251);
+  --treb-dialog-progress-border-color:  #ddd;
+  --treb-dialog-progress-bar-color:     #52880b;
+
 }

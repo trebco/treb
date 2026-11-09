@@ -24,8 +24,8 @@
   .treb-sort-button {
 
     z-index: var(--treb-stacking-note); /* ? */
-    border: 1px solid #ccc;
-    background: #fff;
+    border: 1px solid var(--treb-sort-button-border-color);
+    background: var(--treb-sort-button-background);
     border-radius: 2px;
     width: 1em;
     height: 1em;
