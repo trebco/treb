@@ -43,7 +43,7 @@
   /*
   // this was getting lost by the new higher-specificity reset
   */
-  background: var(--treb-chart-background, #fff);
+  background: var(--treb-chart-background, light-dark(#fff, #000));
 
  }
 
@@ -141,7 +141,7 @@
 
   /* default text color */
   text {
-    fill: var(--treb-chart-text-color, #000);
+    fill: var(--treb-chart-text-color, light-dark(#000, #fff));
     stroke: none;
   }
 
@@ -162,10 +162,10 @@
 
   /* grid */
   .chart-grid, .chart-ticks {
-    stroke: var(--treb-chart-grid-color, #ddd);
+    stroke: var(--treb-chart-grid-color, light-dark(#ddd, #976));
 
     &.zero {
-      stroke: var(--treb-chart-grid-zero-color, var(--treb-chart-grid-color, #999));
+      stroke: var(--treb-chart-grid-zero-color, var(--treb-chart-grid-color, light-dark(#999, #fdd)));
     }
 
   }
