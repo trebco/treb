@@ -40,7 +40,7 @@
       z-index: 2;
       max-width: 100%;
       height: 2.2em;
-      color: var(--treb-ui-color, light-dark(currentColor, #fff));
+      color: var(--treb-ui-color);
       list-style-type: none;
       padding-inline-start: 0;
     }
@@ -81,7 +81,7 @@
       height: 100%;
       overflow: hidden;
 
-      color: var(--treb-tab-bar-tab-color, var(--treb-ui-color, #fff));
+      color: var(--treb-tab-bar-tab-color);
 
       cursor: default;
       display: inline-flex;
@@ -90,7 +90,7 @@
 
       border-bottom-left-radius: 5px;
       border-bottom-right-radius: 5px;
-      border: 1px solid var(--treb-tab-bar-tab-border-color, var(--treb-ui-border-color, light-dark(#ccc, #444)));
+      border: 1px solid var(--treb-tab-bar-tab-border-color);
       border-top-width: 0px;
       z-index: 1;
 
@@ -168,9 +168,9 @@
       & .treb-slider-container {
         position: absolute;
 
-        border: 1px solid var(--treb-scale-slider-border-color, var(--treb-ui-border-color, light-dark(#ccc, #aaa)));
-        background: var(--treb-scale-slider-background, light-dark(#fff, #333));
-        accent-color: var(--treb-scale-slider-accent-color, undefined);
+        border: 1px solid var(--treb-scale-slider-border-color);
+        background: var(--treb-scale-slider-background);
+        accent-color: var(--treb-scale-slider-accent-color);
 
         width: 10em;
         height: 4em;
@@ -190,7 +190,7 @@
 
       &:hover .treb-scale-input,
       .treb-scale-input:focus {
-        border-color: var(--treb-ui-border-color, #ccc);
+        border-color: var(--treb-ui-border-color);
       }
 
       .treb-slider-container>input[type=range] {
@@ -274,8 +274,8 @@
       }
 
       .treb-stats-value {
-        border: 1px solid var(--treb-stats-value-border-color, var(--treb-ui-border-color, light-dark(#ddd, #888)));
-        background: var(--treb-stats-value-background, light-dark(#f8f8ff, #223));
+        border: 1px solid var(--treb-stats-value-border-color);
+        background: var(--treb-stats-value-background);
         padding: 0 .3em;
         border-radius: 3px;
       }

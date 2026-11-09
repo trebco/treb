@@ -49,7 +49,7 @@
 
         min-height: 1.5em;
         height: 1.75em;
-        border: 1px solid var(--treb-formula-bar-border-color, var(--treb-ui-border-color, #ccc));
+        border: 1px solid var(--treb-formula-bar-border-color);
         border-radius: 2px;
         display: flex;
         flex-direction: column;
@@ -67,7 +67,7 @@
       .treb-insert-function-button {
         min-height: 1.5em;
         height: 1.75em;
-        border: 1px solid var(--treb-formula-bar-border-color, var(--treb-ui-border-color, #ccc));
+        border: 1px solid var(--treb-formula-bar-border-color);
         border-radius: 2px;
         background: transparent;
 
@@ -107,7 +107,7 @@
       }
 
       .treb-editor-container {
-        border: 1px solid var(--treb-formula-bar-border-color, var(--treb-ui-border-color, #ccc));
+        border: 1px solid var(--treb-formula-bar-border-color);
         
         border-radius: 2px;
         flex-grow: 1;

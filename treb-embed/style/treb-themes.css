@@ -1,0 +1,140 @@
+/*
+ * This file is part of TREB.
+ *
+ * TREB is free software: you can redistribute it and/or modify it under the 
+ * terms of the GNU General Public License as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any 
+ * later version.
+ *
+ * TREB is distributed in the hope that it will be useful, but WITHOUT ANY 
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along 
+ * with TREB. If not, see <https://www.gnu.org/licenses/>. 
+ *
+ * Copyright 2022-2026 trebco, llc. 
+ * info@treb.app
+ * 
+ */
+
+/**
+ * theme colors. all color variables used in the stylesheets are defined
+ * here; stylesheets reference these with var() and no fallback. colors
+ * use light-dark() and resolve against the color-scheme of the element
+ * where they are used, so nested color-scheme settings work as expected.
+ *
+ * defaults are on :where(:root), which has zero specificity. to override,
+ * set variables on :root, treb-spreadsheet, .treb-main, or any containing
+ * element; the closest definition wins.
+ *
+ * fonts are not included here (yet).
+ */
+
+:where(:root) {
+
+  /* --- grid, selections, autocomplete, tabs, formula bar (theme-defaults.css) --- */
+
+  --treb-theme-color-1:                          light-dark(#E7E6E6, #222);
+  --treb-theme-color-2:                          light-dark(#44546A, #ddd);
+  --treb-theme-color-3:                          #4472C4;
+  --treb-theme-color-4:                          #ED7D31;
+  --treb-theme-color-5:                          #A5A5A5;
+  --treb-theme-color-6:                          #FFC000;
+  --treb-theme-color-7:                          #5B9BD5;
+  --treb-theme-color-8:                          #70AD47;
+  --treb-theme-color-9:                          #0563C1;
+  --treb-theme-color-10:                         #954F72;
+  --treb-note-marker-color:                      light-dark(#6FAB20, pink);
+  --treb-grid-header-background:                 light-dark(rgb(238, 238, 242), rgb(86, 86, 86));
+  --treb-grid-header-color:                      light-dark(#666, rgb(221, 221, 221));
+  --treb-grid-header-grid-color:                 light-dark(rgb(204, 204, 212), #000);
+  --treb-grid-default-color:                     inherit;
+  --treb-grid-grid-color:                        light-dark(rgb(204, 204, 212), #444);
+  --treb-grid-background:                        light-dark(#fff, rgb(10, 10, 10));
+  --treb-autocomplete-tooltip-background:        light-dark(#fffbb5, darkred);
+  --treb-autocomplete-tooltip-color:             inherit;
+  --treb-autocomplete-tooltip-border-color:      light-dark(rgba(0, 0, 0, 0), #fff);
+  --treb-autocomplete-background:                light-dark(#fff, #333);
+  --treb-autocomplete-border-color:              light-dark(#ccc, #fff);
+  --treb-autocomplete-entry-color:               light-dark(#333, #fff);
+  --treb-autocomplete-selected-entry-background: light-dark(#2e8dd6, darkred);
+  --treb-autocomplete-selected-entry-color:      #fff;
+  --treb-selection-color:                        light-dark(#4caaf1, yellow);
+  --treb-selection-color-unfocused:              var(--treb-selection-color);
+  --treb-selection-fill:                        light-dark(color-mix(in srgb, rgba(0, 0, 0, 0) 90%, currentColor), color-mix(in srgb, rgba(0, 0, 0, 0) 80%, currentColor));
+  --treb-resize-tooltip-background:              light-dark(rgba(0, 0, 0, .8), #fff);
+  --treb-resize-tooltip-color:                   light-dark(#fff, #000);
+  --treb-tab-bar-tab-background:                 light-dark(rgb(238, 238, 242), rgba(0, 0, 0, 0));
+  --treb-tab-bar-tab-color:                      light-dark(currentColor, #fff);
+  --treb-tab-bar-active-tab-background:          light-dark(#fff, #444);
+  --treb-tab-bar-active-tab-color:               light-dark(currentColor, #fff);
+  --treb-tab-bar-active-tab-border-color:        currentColor;
+  --treb-formula-bar-background:                 transparent;
+  --treb-formula-bar-color:                      light-dark(currentColor, #fff);
+  --treb-formula-bar-locked-background:          light-dark(rgb(238, 244, 252), #234);
+  --treb-formula-bar-lock-icon-color:            currentColor;
+
+  /* --- toolbar.css --- */
+
+  --treb-toolbar-button-background:       light-dark(rgba(0, 0, 0, 0), rgb(33, 33, 33));
+  --treb-toolbar-menu-background:         light-dark(#fff, rgb(33, 33, 33));
+  --treb-toolbar-hover-button-background: light-dark(#f3f4f6, #444);
+  --treb-toolbar-color:                   light-dark(#333, rgb(221, 221, 221));
+
+  /* --- layout.css --- */
+
+  --treb-resize-handle-color:  light-dark(#0059B9, lightblue);
+  --treb-toolbar-border-color: light-dark(rgb(209, 213, 219), rgb(67, 67, 67));
+  --treb-resize-frame-color:   light-dark(blue, lightblue);
+
+  /* --- formula-bar.css --- */
+
+  --treb-formula-bar-border-color: #ccc;
+
+  /* --- tab-bar.css --- */
+
+  --treb-ui-color:                  light-dark(currentColor, #fff);
+  --treb-tab-bar-tab-border-color:  light-dark(#ccc, #444);
+  --treb-scale-slider-border-color: light-dark(#ccc, #aaa);
+  --treb-scale-slider-background:   light-dark(#fff, #333);
+  --treb-scale-slider-accent-color: unset;
+  --treb-ui-border-color:           #ccc;
+  --treb-stats-value-border-color:  light-dark(#ddd, #888);
+  --treb-stats-value-background:    light-dark(#f8f8ff, #223);
+
+  /* --- grid.css --- */
+
+  --treb-spill-border-color:  light-dark(rgb(92, 92, 224), pink);
+  --treb-spill-border-filter: drop-shadow(3px 3px 2px light-dark(rgba(0, 0, 0, .5), rgba(255, 255, 255, .95)));
+
+  /* --- note.css --- */
+
+  --treb-note-border-color: light-dark(#ddd, #aaa);
+  --treb-note-color:        light-dark(#333, #fff);
+  --treb-note-background:   light-dark(#fff, #333);
+
+  /* --- dialog.css --- */
+
+  --treb-dialog-border-color: light-dark(#999, #aaa);
+  --treb-dialog-background:   light-dark(#fff, #000);
+  --treb-dialog-color:        light-dark(#000, #fff);
+
+  /* --- dropdown-select.css --- */
+
+  --treb-dropdown-caret-background:        light-dark(#fff, #444);
+  --treb-dropdown-caret-border-color:      light-dark(#ccc, #fff);
+  --treb-dropdown-caret-color:             light-dark(#444, #fff);
+  --treb-dropdown-background:              light-dark(#fff, #000);
+  --treb-dropdown-color:                   inherit;
+  --treb-dropdown-border-color:            color-mix(in srgb, rgba(0, 0, 0, 0) 50%, currentColor);
+  --treb-dropdown-selected-background:     light-dark(#555, darkred);
+  --treb-dropdown-selected-color:          #fff;
+  --treb-dropdown-caret-active-background: light-dark(#eee, darkred);
+
+  /* --- spinner.css --- */
+
+  --treb-spinner-color: currentColor;
+
+}

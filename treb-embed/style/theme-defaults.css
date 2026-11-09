@@ -30,7 +30,6 @@
 
 .treb-main.treb-main {
 
-  --primary-selection-color: light-dark(#4caaf1, yellow);
   --primary-selection-color-unfocused: #acc0cf;
 
   --alternate-selection-color-1: rgb(251, 177, 60);
@@ -60,7 +59,7 @@
 
     .treb-grid-selection .primary-selection,
     .treb-header-overlay {
-      color: var(--treb-selection-color, var(--primary-selection-color));
+      color: var(--treb-selection-color);
     }
   }
 
@@ -73,43 +72,43 @@
   */
 
   .theme-color-1 {
-    color: var(--treb-theme-color-1, light-dark(#E7E6E6, #222));
+    color: var(--treb-theme-color-1);
   }
 
   .theme-color-2 {
-    color: var(--treb-theme-color-2, light-dark(#44546A, #ddd));
+    color: var(--treb-theme-color-2);
   }
 
   .theme-color-3 {
-    color: var(--treb-theme-color-3, #4472C4);
+    color: var(--treb-theme-color-3);
   }
 
   .theme-color-4 {
-    color: var(--treb-theme-color-4, #ED7D31);
+    color: var(--treb-theme-color-4);
   }
 
   .theme-color-5 {
-    color: var(--treb-theme-color-5, #A5A5A5);
+    color: var(--treb-theme-color-5);
   }
 
   .theme-color-6 {
-    color: var(--treb-theme-color-6, #FFC000);
+    color: var(--treb-theme-color-6);
   }
 
   .theme-color-7 {
-    color: var(--treb-theme-color-7, #5B9BD5);
+    color: var(--treb-theme-color-7);
   }
 
   .theme-color-8 {
-    color: var(--treb-theme-color-8, #70AD47);
+    color: var(--treb-theme-color-8);
   }
 
   .theme-color-9 {
-    color: var(--treb-theme-color-9, #0563C1);
+    color: var(--treb-theme-color-9);
   }
 
   .theme-color-10 {
-    color: var(--treb-theme-color-10, #954F72);
+    color: var(--treb-theme-color-10);
   }
 
   /*
@@ -144,7 +143,7 @@
    * highlight in the corner of a cell when there's a comment. this is painted.
    */
   .note-marker {
-    background: var(--treb-note-marker-color, light-dark(#6FAB20, pink)); /* lovely color(s) */
+    background: var(--treb-note-marker-color); /* lovely color(s) */
   }
 
   /** 
@@ -156,13 +155,13 @@
     font-size: var(--treb-grid-header-font-size, 10pt); /* // how does this look on ubuntu/android? */
     font-weight: var(--treb-grid-header-font-weight, normal);
     font-style: var(--treb-grid-header-font-style, normal);
-    background: var(--treb-grid-header-background, light-dark(rgb(238, 238, 242), rgb(86,86,86)));
+    background: var(--treb-grid-header-background);
 
     /*
     // for these two fall back to grid values, then defaults
     */
-    color: var(--treb-grid-header-color, var(--treb-grid-default-color, light-dark(#666, rgb(221,221,221))));
-    stroke: var(--treb-grid-header-grid-color, var(--treb-grid-grid-color, light-dark(rgb(204, 204, 212), #000)));
+    color: var(--treb-grid-header-color);
+    stroke: var(--treb-grid-header-grid-color);
   }
 
   /** 
@@ -188,10 +187,10 @@
 
     font-size: var(--treb-grid-font-size, 14px);
 
-    color: var(--treb-grid-default-color, inherit); 
+    color: var(--treb-grid-default-color); 
 
-    stroke: var(--treb-grid-grid-color, light-dark(rgb(204, 204, 212), #444));
-    background: var(--treb-grid-background, light-dark(#fff, rgb(10, 10, 10)));
+    stroke: var(--treb-grid-grid-color);
+    background: var(--treb-grid-background);
   }
 
   /**
@@ -217,12 +216,12 @@
     /* FIXME: relative */
     border-radius: 2px;
 
-    background: var(--treb-autocomplete-tooltip-background, light-dark(#fffbb5, darkred));
-    color: var(--treb-autocomplete-tooltip-color, inherit);
+    background: var(--treb-autocomplete-tooltip-background);
+    color: var(--treb-autocomplete-tooltip-color);
 
     /* FIXME: UNSET IS NOT VALID HERE */
     /* OK, fixed, but not sure it's necessary */
-    border: 1px solid var(--treb-autocomplete-tooltip-border-color, light-dark(rgba( 0, 0, 0, 0), #fff));
+    border: 1px solid var(--treb-autocomplete-tooltip-border-color);
 
     padding: 3px 8px;
     margin: 4px 0px;
@@ -245,17 +244,17 @@
 
     font-size: 14px;
     /* FIXME: relative? could be larger, actually */
-    background: var(--treb-autocomplete-background, light-dark(#fff, #333));
+    background: var(--treb-autocomplete-background);
     border-radius: 2px;
-    border: 1px solid var(--treb-autocomplete-border-color, var(--treb-ui-border-color, light-dark(#ccc, #fff)));
+    border: 1px solid var(--treb-autocomplete-border-color);
     box-shadow: var(--treb-default-box-shadow);
 
     li {
-      color: var(--treb-autocomplete-entry-color, light-dark(#333, #fff));
+      color: var(--treb-autocomplete-entry-color);
 
       a.selected {
-        background: var(--treb-autocomplete-selected-entry-background, light-dark(#2e8dd6, darkred));
-        color: var(--treb-autocomplete-selected-entry-color, #fff);
+        background: var(--treb-autocomplete-selected-entry-background);
+        color: var(--treb-autocomplete-selected-entry-color);
       }
     }
 
@@ -265,7 +264,7 @@
   .treb-header-overlay {
 
     stroke: none;
-    color: var(--treb-selection-color-unfocused, var(--treb-selection-color, var(--primary-selection-color)));
+    color: var(--treb-selection-color-unfocused);
 
     .treb-overlay {
       fill: rgb(0, 0, 0);
@@ -343,9 +342,7 @@
        */
       .treb-selection-fill {
         stroke: none;
-        fill: var(--treb-selection-fill, light-dark(
-          color-mix(in srgb, transparent 90%, currentColor),
-          color-mix(in srgb, transparent 80%, currentColor)));
+        fill: var(--treb-selection-fill);
         /*
         fill: currentColor;
         opacity: var(--treb-selection-fill-opacity, .1);
@@ -383,7 +380,7 @@
      * not filled
      */
     .primary-selection {
-      color: var(--treb-selection-color-unfocused, var(--treb-selection-color, var(--primary-selection-color)));
+      color: var(--treb-selection-color-unfocused);
 
       .treb-selection-nub {
         stroke: #fff; /* // <-- ? maybe grid background color? */
@@ -402,9 +399,9 @@
     font-size: 11pt;
     /** FIXME: relative */
 
-    background: var(--treb-resize-tooltip-background, light-dark(rgba(0, 0, 0, .8), #fff));
-    color: var(--treb-resize-tooltip-color, light-dark(#fff, #000));
-    border-color: var(--treb-resize-tooltip-background, light-dark(rgba(0, 0, 0, .8), #fff));
+    background: var(--treb-resize-tooltip-background);
+    color: var(--treb-resize-tooltip-color);
+    border-color: var(--treb-resize-tooltip-background);
     /* for arrow */
 
   }
@@ -419,14 +416,14 @@
 
     .treb-spreadsheet-tabs>li,
     .treb-add-tab {
-      background: var(--treb-tab-bar-tab-background, light-dark(rgb(238, 238, 242), rgba(0, 0, 0, 0)));
-      color: var(--treb-tab-bar-tab-color, var(--treb-ui-color, light-dark(currentColor, #fff)));
+      background: var(--treb-tab-bar-tab-background);
+      color: var(--treb-tab-bar-tab-color);
 
       &[selected] {
-        background: var(--treb-tab-bar-active-tab-background, light-dark(#fff, #444));
-        color: var(--treb-tab-bar-active-tab-color, var(--treb-ui-color, light-dark(currentColor, #fff)));
+        background: var(--treb-tab-bar-active-tab-background);
+        color: var(--treb-tab-bar-active-tab-color);
 
-        border-bottom-color: var(--treb-tab-bar-active-tab-border-color, currentColor);
+        border-bottom-color: var(--treb-tab-bar-active-tab-border-color);
 
         /*
         position: relative;
@@ -457,11 +454,11 @@
 
     .treb-address-label,
     .treb-editor-container {
-      background: var(--treb-formula-bar-background, transparent);
-      color: var(--treb-formula-bar-color, var(--treb-ui-color, light-dark(currentColor, #fff)));
+      background: var(--treb-formula-bar-background);
+      color: var(--treb-formula-bar-color);
 
       &[locked] {
-        background: var(--treb-formula-bar-locked-background, light-dark(rgb(238, 244, 252), #234));
+        background: var(--treb-formula-bar-locked-background);
         position: relative;
 
         &:after {
@@ -485,7 +482,7 @@
 
           --icon: url("data:image/svg+xml,%0A%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M416 224H400V144C400 65 335 0 256 0S112 65 112 144V224H96C61 224 32 253 32 288V448C32 483 61 512 96 512H416C451 512 480 483 480 448V288C480 253 451 224 416 224ZM176 144C176 100 212 64 256 64S336 100 336 144V224H176V144Z' fill='currentColor'/%3E%3C/svg%3E");
 
-          background: var(--treb-formula-bar-lock-icon-color, currentColor);
+          background: var(--treb-formula-bar-lock-icon-color);
           mask-position: center;
           -webkit-mask-position: center;
           mask-repeat: no-repeat;

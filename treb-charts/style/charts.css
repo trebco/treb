@@ -271,7 +271,7 @@
   .bubble-chart {
 
     stroke-width: 3;
-    fill: color-mix(in srgb, currentColor 75%, transparent);
+    fill: color-mix(in srgb, currentColor 75%, rgba(0, 0, 0, 0));
     stroke: currentColor;
   }
 

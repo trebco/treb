@@ -19,6 +19,7 @@
  * 
  */
 
+@import url('treb-themes.css');
 @import url('grid.css');
 @import url('theme-defaults.css');
 @import url('dark-theme.css');
@@ -372,7 +373,7 @@ $z-index-mask:                     9999;
         justify-self: end;
         align-self: end;
 
-        border: .5rem solid var(--treb-resize-handle-color, light-dark(#0059B9, lightblue));
+        border: .5rem solid var(--treb-resize-handle-color);
         border-top-color: transparent;
         border-left-color: transparent;
 
@@ -440,12 +441,12 @@ $z-index-mask:                     9999;
 
     .treb-toggle-sidebar-button {
     
-        border-color: var(--treb-toolbar-border-color, var(--treb-ui-border-color, light-dark(rgb(209, 213, 219), rgb(67, 67, 67))));
-        border-right-color: var(--treb-toolbar-button-background, light-dark(transparent, rgb(33, 33, 33)));
+        border-color: var(--treb-toolbar-border-color);
+        border-right-color: var(--treb-toolbar-button-background);
         right: 0px;
         border-top-right-radius: 0px;
         border-bottom-right-radius: 0px;
-        background: var(--treb-toolbar-button-background, light-dark(#fff, rgb(33, 33, 33)));
+        background: var(--treb-toolbar-menu-background);
         &::after {
           mask-image: var(--icon-chevron-left);
           -webkit-mask-image: var(--icon-chevron-left);
@@ -577,7 +578,7 @@ $z-index-mask:                     9999;
     position: fixed;
     top: 0px;
     left: 0px;
-    border: 1px dotted var(--treb-resize-frame-color, light-dark(blue, lightblue));
+    border: 1px dotted var(--treb-resize-frame-color);
     width: 100%;
     height: 100%;
     display: block;

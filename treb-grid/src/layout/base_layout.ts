@@ -612,13 +612,25 @@ export abstract class BaseLayout {
 
         /////
 
-        const styles = getComputedStyle(this.grid_selection);
-        const selection_color = styles.getPropertyValue('--treb-selection-color');
-        const selection_opacity = styles.getPropertyValue('--treb-selection-fill-opacity');
+        let styles = getComputedStyle(this.grid_selection);
 
-        const default_color = '#4caaf1';
-        const default_opacity = 0.1;
+        // const default_color = `rgba(192, 192, 255, 1)`;
+        // const default_fill = `rgba(129, 129, 255, .2)`;
 
+        let selection_color = `rgba(192, 192, 255, 1)`;
+        let selection_fill = `rgba(129, 129, 255, .2)`;
+
+        let child = this.grid_selection.querySelector('.primary-selection');
+        if (child) {
+          styles = getComputedStyle(child);
+          selection_color = styles.color;
+        }
+        child = this.grid_selection.querySelector('.treb-selection-fill');
+        if (child) {
+          styles = getComputedStyle(child);
+          selection_fill = styles.fill;
+        }
+        
         //////
 
         const offset = {
@@ -626,10 +638,10 @@ export abstract class BaseLayout {
           y: this.header_size.height - top,
         };
 
-        context.fillStyle = context.strokeStyle = selection_color || default_color;
+        context.fillStyle = context.strokeStyle = selection_fill;
         context.lineWidth = 2;
 
-        context.globalAlpha = selection_opacity ? Number(selection_opacity) : default_opacity;
+        // context.globalAlpha = selection_opacity ? Number(selection_opacity) : default_opacity;
         for (const cell of selection) {
           if (target?.Contains(cell)) {
             continue;
@@ -639,8 +651,9 @@ export abstract class BaseLayout {
         }
 
         const rect = this.AreaToRect(selection, offset);
-        context.globalAlpha = 1;
+        // context.globalAlpha = 1;
 
+        context.fillStyle = context.strokeStyle = selection_color;
         context.strokeRect(
           rect.left, rect.top, rect.width, rect.height
         );
