@@ -52,7 +52,7 @@
     line-height: 1.6em;
 
     font-size: var(--treb-dialog-font-size, 16px);
-    border: 1px solid var(--treb-dialog-border-color, var(--treb-ui-border-color, #999));
+    border: 1px solid var(--treb-dialog-border-color, var(--treb-ui-border-color, light-dark(#999, #aaa)));
     box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .3);
 
     border-top-width: 3px;
@@ -66,8 +66,8 @@
     position: relative;
 
     padding: 1rem;
-    background: var(--treb-dialog-background, #fff);
-    color: var(--treb-dialog-color, #000);
+    background: var(--treb-dialog-background, light-dark(#fff, #000));
+    color: var(--treb-dialog-color, light-dark(#000, #fff));
 
     text-align: left;
     border-radius: 3px;

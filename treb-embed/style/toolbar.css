@@ -42,13 +42,13 @@
   --button-width: 32px;
   --dropdown-button-width: 16px;
 
-  --background-color: var(--treb-toolbar-button-background, transparent);
-  --background-hover: var(--treb-toolbar-hover-button-background, #f3f4f6);
-  --border-color: var(--treb-toolbar-border-color, var(--treb-ui-border-color, rgb(209, 213, 219)));
+  --background-color: var(--treb-toolbar-button-background, light-dark(rgba(0, 0, 0, 0), rgb(33, 33, 33)));
+  --background-hover: var(--treb-toolbar-hover-button-background, light-dark(#f3f4f6, #444));
+  --border-color: var(--treb-toolbar-border-color, var(--treb-ui-border-color, light-dark(rgb(209, 213, 219), rgb(67,67,67))));
 
-  --menu-background: var(--treb-toolbar-button-background, #fff);
-  --menu-border-color: var(--treb-toolbar-border-color, var(--treb-ui-border-color, rgb(209, 213, 219)));
-  --menu-item-hover-color: var(--treb-toolbar-hover-button-background, #f3f4f6);
+  --menu-background: var(--treb-toolbar-button-background, light-dark(#fff, rgb(33, 33, 33)));
+  --menu-border-color: var(--treb-toolbar-border-color, var(--treb-ui-border-color, light-dark(rgb(209, 213, 219), rgb(67, 67, 67))));
+  --menu-item-hover-color: var(--treb-toolbar-hover-button-background, light-dark(#f3f4f6, #444));
 
   --box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .4);
   --border-radius: 3px;
@@ -58,7 +58,7 @@
 
     /* --- /vars --- */
 
-    color: var(--treb-toolbar-color, var(--treb-ui-color, #333));
+    color: var(--treb-toolbar-color, var(--treb-ui-color, light-dark(#333, rgb(221,221,221))));
     font-size: var(--treb-toolbar-font-size, inherit);
 
     display: flex;

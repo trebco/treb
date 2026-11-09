@@ -28,8 +28,8 @@
     width: 20px;
     height: 20px;
     
-    background: var(--treb-dropdown-caret-background, #fff);
-    border: 1px solid var(--treb-dropdown-caret-border-color, #ccc);
+    background: var(--treb-dropdown-caret-background, light-dark(#fff, #444));
+    border: 1px solid var(--treb-dropdown-caret-border-color, light-dark(#ccc, #fff));
     border-radius: 2px;
 
     box-shadow: var(--treb-default-box-shadow);
@@ -37,7 +37,7 @@
 
     & path {
       fill: none;
-      stroke: var(--treb-dropdown-caret-color, #444);
+      stroke: var(--treb-dropdown-caret-color, light-dark(#444, #fff));
       stroke-linecap: round;
       stroke-linejoin: round;
       stroke-width: 2;
@@ -51,10 +51,10 @@
     display: none;
     box-shadow: var(--treb-default-box-shadow);
     z-index: var(--treb-stacking-dropdown-caret);
-    background: var(--treb-dropdown-background, #fff);
+    background: var(--treb-dropdown-background, light-dark(#fff, #000));
     font-size: 10pt;
     color: var(--treb-dropdown-color, inherit);
-    border: 1px solid var(--treb-dropdown-border-color, unset);
+    border: 1px solid var(--treb-dropdown-border-color, color-mix(in srgb, transparent 50%, currentColor));
 
     text-align: left;
     max-height: 10em;
@@ -67,14 +67,14 @@
     }  
 
     & div.selected {
-      background: var(--treb-dropdown-selected-background, #555);
+      background: var(--treb-dropdown-selected-background, light-dark(#555, darkred));
       color: var(--treb-dropdown-selected-color, #fff);
     }
 
   }
 
   .treb-dropdown-caret.active {
-    background: var(--treb-dropdown-caret-active-background, #eee);
+    background: var(--treb-dropdown-caret-active-background, light-dark(#eee, darkred));
 
     & + .treb-dropdown-list {
       display: block;

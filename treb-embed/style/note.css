@@ -48,9 +48,10 @@
 
     font-family: var(--treb-font-stack);
 
-    border: 1px solid var(--treb-note-border-color, var(--treb-ui-border-color, #ddd));
-    color: var(--treb-note-color, #333);
-    background: var(--treb-note-background, #fff);
+
+    border: 1px solid var(--treb-note-border-color, var(--treb-ui-border-color, light-dark(#ddd, #aaa)));
+    color: var(--treb-note-color, light-dark(#333, #fff));
+    background: var(--treb-note-background, light-dark(#fff, #333));
     font-size: 10.5pt;
 
     white-space: pre-line;
@@ -79,9 +80,9 @@
 
     font-family: var(--treb-font-stack); /* can't we inherit? ... */
 
-    border: 1px solid var(--treb-note-border-color, var(--treb-ui-border-color, #ddd));
-    color: var(--treb-note-color, #333);
-    background: var(--treb-note-background, #fff);
+    border: 1px solid var(--treb-note-border-color, var(--treb-ui-border-color, light-dark(#ddd, #aaa)));
+    color: var(--treb-note-color, light-dark(#333, #fff));
+    background: var(--treb-note-background, light-dark(#fff, #333));
 
     font-size: 10.5pt;
 

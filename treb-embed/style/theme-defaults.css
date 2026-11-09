@@ -30,7 +30,7 @@
 
 .treb-main.treb-main {
 
-  --primary-selection-color: #4caaf1;
+  --primary-selection-color: light-dark(#4caaf1, yellow);
   --primary-selection-color-unfocused: #acc0cf;
 
   --alternate-selection-color-1: rgb(251, 177, 60);
@@ -73,11 +73,11 @@
   */
 
   .theme-color-1 {
-    color: var(--treb-theme-color-1, #E7E6E6);
+    color: var(--treb-theme-color-1, light-dark(#E7E6E6, #222));
   }
 
   .theme-color-2 {
-    color: var(--treb-theme-color-2, #44546A);
+    color: var(--treb-theme-color-2, light-dark(#44546A, #ddd));
   }
 
   .theme-color-3 {
@@ -144,7 +144,7 @@
    * highlight in the corner of a cell when there's a comment. this is painted.
    */
   .note-marker {
-    background: var(--treb-note-marker-color, #6FAB20); /* lovely color */
+    background: var(--treb-note-marker-color, light-dark(#6FAB20, pink)); /* lovely color(s) */
   }
 
   /** 
@@ -156,13 +156,13 @@
     font-size: var(--treb-grid-header-font-size, 10pt); /* // how does this look on ubuntu/android? */
     font-weight: var(--treb-grid-header-font-weight, normal);
     font-style: var(--treb-grid-header-font-style, normal);
-    background: var(--treb-grid-header-background, rgb(238, 238, 242));
+    background: var(--treb-grid-header-background, light-dark(rgb(238, 238, 242), rgb(86,86,86)));
 
     /*
     // for these two fall back to grid values, then defaults
     */
-    color: var(--treb-grid-header-color, var(--treb-grid-default-color, #666));
-    stroke: var(--treb-grid-header-grid-color, var(--treb-grid-grid-color, rgb(204, 204, 212)));
+    color: var(--treb-grid-header-color, var(--treb-grid-default-color, light-dark(#666, rgb(221,221,221))));
+    stroke: var(--treb-grid-header-grid-color, var(--treb-grid-grid-color, light-dark(rgb(204, 204, 212), #000)));
   }
 
   /** 
@@ -188,19 +188,11 @@
 
     font-size: var(--treb-grid-font-size, 14px);
 
-    color: var(--treb-grid-default-color, inherit);
-    stroke: var(--treb-grid-grid-color, rgb(204, 204, 212));
-    background: var(--treb-grid-background, #fff);
-  }
+    color: var(--treb-grid-default-color, inherit); 
 
-  /* 
-   * we stopped using this in favor of sheet backgrounds. although
-   * there's a case to be made for the static background as well.
-   *
-  .grid-background {
-    background-image: var(--treb-grid-background-image, none);
+    stroke: var(--treb-grid-grid-color, light-dark(rgb(204, 204, 212), #444));
+    background: var(--treb-grid-background, light-dark(#fff, rgb(10, 10, 10)));
   }
-  */
 
   /**
    * this is used for freeze-area highlights
@@ -225,9 +217,12 @@
     /* FIXME: relative */
     border-radius: 2px;
 
-    background: var(--treb-autocomplete-tooltip-background, #fffbb5);
+    background: var(--treb-autocomplete-tooltip-background, light-dark(#fffbb5, darkred));
     color: var(--treb-autocomplete-tooltip-color, inherit);
-    border: 1px solid var(--treb-autocomplete-tooltip-border-color, unset);
+
+    /* FIXME: UNSET IS NOT VALID HERE */
+    /* OK, fixed, but not sure it's necessary */
+    border: 1px solid var(--treb-autocomplete-tooltip-border-color, light-dark(rgba( 0, 0, 0, 0), #fff));
 
     padding: 3px 8px;
     margin: 4px 0px;
@@ -250,16 +245,16 @@
 
     font-size: 14px;
     /* FIXME: relative? could be larger, actually */
-    background: var(--treb-autocomplete-background, #fff);
+    background: var(--treb-autocomplete-background, light-dark(#fff, #333));
     border-radius: 2px;
-    border: 1px solid var(--treb-autocomplete-border-color, var(--treb-ui-border-color, #ccc));
+    border: 1px solid var(--treb-autocomplete-border-color, var(--treb-ui-border-color, light-dark(#ccc, #fff)));
     box-shadow: var(--treb-default-box-shadow);
 
     li {
-      color: var(--treb-autocomplete-entry-color, #333);
+      color: var(--treb-autocomplete-entry-color, light-dark(#333, #fff));
 
       a.selected {
-        background: var(--treb-autocomplete-selected-entry-background, #2e8dd6);
+        background: var(--treb-autocomplete-selected-entry-background, light-dark(#2e8dd6, darkred));
         color: var(--treb-autocomplete-selected-entry-color, #fff);
       }
     }
@@ -342,10 +337,19 @@
         fill: none;
       }
 
+      /* 
+       * default fill uses currentColor (color of the selection),
+       * but sets opacity differently in light/dark mode.
+       */
       .treb-selection-fill {
         stroke: none;
+        fill: var(--treb-selection-fill, light-dark(
+          color-mix(in srgb, transparent 90%, currentColor),
+          color-mix(in srgb, transparent 80%, currentColor)));
+        /*
         fill: currentColor;
         opacity: var(--treb-selection-fill-opacity, .1);
+        */
       }
     }
 
@@ -398,9 +402,9 @@
     font-size: 11pt;
     /** FIXME: relative */
 
-    background: var(--treb-resize-tooltip-background, rgba(0, 0, 0, .8));
-    color: var(--treb-resize-tooltip-color, #fff);
-    border-color: var(--treb-resize-tooltip-background, rgba(0, 0, 0, .8));
+    background: var(--treb-resize-tooltip-background, light-dark(rgba(0, 0, 0, .8), #fff));
+    color: var(--treb-resize-tooltip-color, light-dark(#fff, #000));
+    border-color: var(--treb-resize-tooltip-background, light-dark(rgba(0, 0, 0, .8), #fff));
     /* for arrow */
 
   }
@@ -415,12 +419,12 @@
 
     .treb-spreadsheet-tabs>li,
     .treb-add-tab {
-      background: var(--treb-tab-bar-tab-background, rgb(238, 238, 242));
-      color: var(--treb-tab-bar-tab-color, var(--treb-ui-color, inherit));
+      background: var(--treb-tab-bar-tab-background, light-dark(rgb(238, 238, 242), rgba(0, 0, 0, 0)));
+      color: var(--treb-tab-bar-tab-color, var(--treb-ui-color, light-dark(currentColor, #fff)));
 
       &[selected] {
-        background: var(--treb-tab-bar-active-tab-background, #fff);
-        color: var(--treb-tab-bar-active-tab-color, var(--treb-ui-color, inherit));
+        background: var(--treb-tab-bar-active-tab-background, light-dark(#fff, #444));
+        color: var(--treb-tab-bar-active-tab-color, var(--treb-ui-color, light-dark(currentColor, #fff)));
 
         border-bottom-color: var(--treb-tab-bar-active-tab-border-color, currentColor);
 
@@ -454,10 +458,10 @@
     .treb-address-label,
     .treb-editor-container {
       background: var(--treb-formula-bar-background, transparent);
-      color: var(--treb-formula-bar-color, var(--treb-ui-color, inherit));
+      color: var(--treb-formula-bar-color, var(--treb-ui-color, light-dark(currentColor, #fff)));
 
       &[locked] {
-        background: var(--treb-formula-bar-locked-background, rgb(238, 244, 252));
+        background: var(--treb-formula-bar-locked-background, light-dark(rgb(238, 244, 252), #234));
         position: relative;
 
         &:after {

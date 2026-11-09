@@ -40,7 +40,7 @@
       z-index: 2;
       max-width: 100%;
       height: 2.2em;
-      color: var(--treb-ui-color, inherit);
+      color: var(--treb-ui-color, light-dark(currentColor, #fff));
       list-style-type: none;
       padding-inline-start: 0;
     }
@@ -90,7 +90,7 @@
 
       border-bottom-left-radius: 5px;
       border-bottom-right-radius: 5px;
-      border: 1px solid var(--treb-tab-bar-tab-border-color, var(--treb-ui-border-color, #ccc));
+      border: 1px solid var(--treb-tab-bar-tab-border-color, var(--treb-ui-border-color, light-dark(#ccc, #444)));
       border-top-width: 0px;
       z-index: 1;
 
@@ -168,8 +168,8 @@
       & .treb-slider-container {
         position: absolute;
 
-        border: 1px solid var(--treb-scale-slider-border-color, var(--treb-ui-border-color, #ccc));
-        background: var(--treb-scale-slider-background, #fff);
+        border: 1px solid var(--treb-scale-slider-border-color, var(--treb-ui-border-color, light-dark(#ccc, #aaa)));
+        background: var(--treb-scale-slider-background, light-dark(#fff, #333));
         accent-color: var(--treb-scale-slider-accent-color, undefined);
 
         width: 10em;
@@ -274,8 +274,8 @@
       }
 
       .treb-stats-value {
-        border: 1px solid var(--treb-stats-value-border-color, var(--treb-ui-border-color, #ddd));
-        background: var(--treb-stats-value-background, #f8f8ff);
+        border: 1px solid var(--treb-stats-value-border-color, var(--treb-ui-border-color, light-dark(#ddd, #888)));
+        background: var(--treb-stats-value-background, light-dark(#f8f8ff, #223));
         padding: 0 .3em;
         border-radius: 3px;
       }
