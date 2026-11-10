@@ -470,7 +470,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     return this.model.parser;
   }
 
-  /** for destruction */
+  /** 
+   * for destruction. optional because we support headless operation
+   */
   protected view_node?: HTMLElement;
 
   /** for destruction */
@@ -676,64 +678,33 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /**
-   * constructor takes spreadsheet options. type should be implicit, either
-   * the default (here) or a subclass
-   * 
+   * the constructor is now private. use the static factory method. 
    * @internal
+   * 
+   * @param has_parent_model: indicates this is a split view, and there's a 
+   * parent. in that case we do less initialization. this is a replacement 
+   * for gating on `options.model` which we used to use for the same purpose
    */
-  constructor(options: EmbeddedSpreadsheetOptions & { model?: EmbeddedSpreadsheet, custom_grid?: CustomGridFactory }) { 
+  constructor(members: {
+        options: EmbeddedSpreadsheetOptions & { local_storage: string|undefined },
+        calculator: Calculator,
+        grid: Grid,
+        model: DataModel,
+        custom_grid?: CustomGridFactory,
+        toll_initial_render?: boolean,
+      }, has_parent_model?: boolean ) { 
 
-    // we renamed this option, default to the new name
-
-    if (options.storage_key && !options.local_storage) {
-      options.local_storage = options.storage_key;
-    }
-
-    // consolidate options w/ defaults. note that this does not
-    // support nested options, for that you need a proper merge
-
-    this.options = { ...DefaultOptions, ...options, local_storage: this.ResolveStorageKey(options.local_storage, 'document') };
+    this.options = members.options;
+    this.calculator = members.calculator;
+    this.grid = members.grid;
+    this.model = members.model;
+    
+    // retained in ctor
 
     if (typeof this.options.imaginary_value === 'string') {
-      NumberFormat.imaginary_character = this.options.imaginary_value;
+      NumberFormat.imaginary_character = this.options.imaginary_value; // global? what about instances?
     }
-
-    if (this.options.network_document) {
-      console.warn('the option `network_document` is deprecated. please use `document` instead.');
-      if (!this.options.document) { 
-        this.options.document = this.options.network_document;
-      }
-    }
-
-    if (this.options.document && this.options.inline_document) {
-      console.warn('both document and inline-document are provided');
-    }
-
-    const network_document = this.options.document;
-
-    // optionally data from storage, with fallback
-
-    let data: string | undefined | TREBDocument;
-    let source: LoadSource | undefined;
-
-    // don't load if we're a split view. we can also skip the 
-    // unload event, as parent will already have that set
-
-    if (this.options.local_storage && !this.options.toll_initial_load && !options.model) {
-      data = localStorage.getItem(this.options.local_storage) || undefined;
-      if (data) {
-        source = 'local-storage'; // LoadSource.LOCAL_STORAGE;
-      }
-    }
-
-    // if we have an inline document, and there was nothing in local storage,
-    // load the inline document now. not for splits.
-
-    if (!data && !this.options.toll_initial_load && !options.model && options.inline_document) {
-      data = options.inline_document;
-      source = 'inline-document'; // LoadSource.INLINE_DOCUMENT;
-    }
-
+    
     // this one should not be done for a split view, but we should still
     // do it if the toll flag is set, and storage key is set. 
 
@@ -747,7 +718,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // https://developer.mozilla.org/en-US/docs/Web/API/Window/unload_event
     //
 
-    if (this.options.local_storage && !options.model ) {
+    if (this.options.local_storage && !has_parent_model ) {
 
       window.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
@@ -766,188 +737,21 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       */
     }
 
-    let container: HTMLElement | undefined;
-
-    if (typeof this.options.container === 'string') {
-      container = document.querySelector(this.options.container) as HTMLElement;
-    }
-    else if (this.options.container) {
-      container = this.options.container;
-    }
-
-    // create + init grid
-
-    const grid_options: GridOptions = {
-      // expand: false,
-      // insert_function_button: false, // do we have this?
-      in_cell_editor: true, // if this is always true, why is it an option?
-      repaint_on_cell_change: false,
-      scrollbars: this.options.scrollbars,
-      markdown: !!this.options.markdown,
-
-      formula_bar: this.options.formula_bar,
-      expand_formula_button: this.options.expand_formula_button,
-      tab_bar: this.options.tab_bar,
-      add_tab: this.options.add_tab,
-      // delete_tab: this.options.delete_tab,
-      expand: this.options.expand,
-
-      support_font_stacks: !!this.options.font_stack,
-
-    };
-
-    if (this.options.scale) {
-      grid_options.initial_scale = this.options.scale;
-    }
-
-    if (this.options.stats) {
-      grid_options.stats = this.options.stats;
-      grid_options.tab_bar = true; // implied
-    }
-
-    if (this.options.scale_control) {
-
-      grid_options.scale_control = true;
-      grid_options.tab_bar = true; // implied
-
-      if (this.options.persist_scale) {
-        grid_options.persist_scale_key = this.ResolveStorageKey(this.options.persist_scale, 'scale');
-        if (grid_options.persist_scale_key) {
-
-          // persisted scale should _not_ override parameter/option... only
-          // set here if option is blank... actually, no, that's not right.
-          // persisted scale should override parameter, because if you do NOT
-          // want that behavior you can just disable persisting. so there are 
-          // clear ways to accomplish any of
-
-          // (1) no initial scale, persist
-          // (2) initial scale, don't persist (revert to parameter)
-          // (3) initial scale but persist and use persisted value if available
-
-          // if (!this.options.scale_control) {
-          const json = localStorage.getItem(grid_options.persist_scale_key);
-          if (json) {
-            try {
-              const obj = JSON.parse(json);
-              grid_options.initial_scale = obj.scale || 1;
-            }
-            catch {
-              console.warn('parsing persisted scale failed');
-            }
-          }
-
-        }
-      }
-
-    }
-
-    if (options.model) {
-      this.model = options.model.model as DataModel;
-      this.calculator = options.model.calculator; // as CalcType;
-      this.DOM = options.model.DOM;
-    }
-    else {
-
-      this.model = new DataModel();
-
-      // we need an initial sheet, now we're pointing to the model theme
-      // properties and those will get updated by grid on initialize, and
-      // then on any theme update.
-
-      this.model.sheets.Add(Sheet.Blank(this.model.theme_style_properties));
-
-      // create calculator instance
-
-      this.calculator = this.CreateCalculator(this.model, this.options);
-
-    }
-
-    // FIXME: we should start figuring out what can happen before
-    // this async init, and what has to wait. then we can split the 
-    // ctor into two parts, and move stuff that has to wait to part 2
-
-    const calculator_init = this.calculator.InitResources();
-    this._ready_state.push(calculator_init);
-
-    if (container) {
-      this.DOM = DOMContext.GetInstance(container.ownerDocument);
-    }
-
-    // update: tell the grid if we don't want to initialize the DOM,
-    // if we don't have a container. that's distinct (at the moment)
-    // from headless, which is a state that can change.
-
-    // what's the point of having the GridBase type if we're not using
-    // it when we don't have a container? or was it built for something
-    // else? (A: it was)
-
-    if (options.custom_grid) {
-      this.grid = options.custom_grid.call(this,
-          grid_options, 
-          this.model, 
-          undefined, 
-          !!container, 
-          this.DOM);
-
-      // we're going to need to create some sort of capabilities map
-      // for custom grids. for the time being, let's subscribe to events
-      // and see what happens.
-
-      // UPDATE: do that a little later...
-
-
-    }
-    else {
-      this.grid = new Grid(
-          grid_options, 
-          this.model, 
-          undefined, 
-          !!container, 
-          this.DOM);
-      }
-
-    if (this.options.headless) {
-      this.grid.headless = true; // FIXME: move into grid options
-    }
-
-    // --- testing dynamic loading ---------------------------------------------
-
-    // OK this is a problem because it's async, and it's manipulating data,
-    // so we will probably lose data. it needs to go in async services loading.
-    // but fundametally, it's incompatible with the init function because it
-    // will immediately cache data.
-
-    // FIXME: we'll need to rewrite this constructor as an async factory method,
-    // which will be much better long-term, but it will require a major version
-    // bump
-
-    if (options.language) {
-      console.warn("options.language removed for race condition, call it manually");
-    }
-
-    // this._ready_state.push(this.LoadLanguage(options.language));
-
-    // --- testing plugins -----------------------------------------------------
-
-    /*
-    // FIXME: when to do this? could it wait? should it be async? (...)
-
-    if (options.plugins) {
-      for (const plugin of options.plugins) {
-        plugin.Attach(this);
-      }
-    }
-    */
-
-    // -------------------------------------------------------------------------
-
     // we're now gating this on container to support fully headless operation
 
-    if (container) {
+    const container = this.options.container;
+
+    if (container instanceof HTMLElement) {
+      
+      // didn't we already do this?
 
       this.DOM = DOMContext.GetInstance(container.ownerDocument);
 
       // if this is the first one, update UA classes (used to be in grid)
+
+      // I don't understand how this could ever be set. it's not set 
+      // earlier in the ctor. we should switch on the model passed in 
+      // as an option. although it's probably not harmful
 
       if (!this.parent_view) {
 
@@ -1000,11 +804,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       this.key_listener = (event) => this.HandleKeyDown(event);
       container.addEventListener('keydown', this.key_listener);
 
-      const toll_initial_render = !!(data || this.options.document);
+      // const toll_initial_render = !!(data || this.options.document);
 
-      // const view = container.querySelector('.treb-view') as HTMLElement;
-
-      this.grid.Initialize(this.view_node, toll_initial_render);
+      // NEW: this is async. calling it here does not seem to be a 
+      // problem, but I'm not 100% sure about that.
+      
+      const grid_ready = this.grid.Initialize(this.view_node, members.toll_initial_render);
+      this._ready_state.push(grid_ready);
 
       // dnd
 
@@ -1199,7 +1005,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
     else {
 
-      if (options.custom_grid) {
+      if (members.custom_grid) {
         console.info("creating subscription for custom grid (TODO: capabilities)")
 
         ////
@@ -1292,63 +1098,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
               break;
 
             case 'annotation':
-
-              /*
-              // FIXME: maybe need to update vertices (on create, update, delete,
-              // not on move or resize)
-
-              if (event.annotation) {
-                const view: AnnotationViewData = event.annotation.view[this.grid.view_index] || {};
-
-                let update_toolbar = false;
-
-                if (event.event === 'select') {
-                  update_toolbar = true;
-                }
-                else {
-                  this.DocumentChange();
-                  switch (event.event) {
-                    case 'create':
-                      this.InflateAnnotation(event.annotation);
-                      this.calculator.UpdateAnnotations(event.annotation, this.grid.active_sheet);
-                      this.grid.AnnotationUpdated(event.annotation);
-                      update_toolbar = (event.annotation === this.grid.selected_annotation);
-                      break;
-                    case 'delete':
-                      this.calculator.RemoveAnnotation(event.annotation); // clean up vertex
-                      break;
-                    case 'update':
-                      if (view.update_callback) {
-                        view.update_callback();
-                        this.grid.AnnotationUpdated(event.annotation);
-                      }
-                      else {
-                        console.info('annotation update event without update callback');
-                      }
-                      this.calculator.UpdateAnnotations(event.annotation, this.grid.active_sheet);
-                      update_toolbar = (event.annotation === this.grid.selected_annotation);
-                      break;
-                    case 'resize':
-                      if (view.resize_callback) {
-                        view.resize_callback();
-                        this.grid.AnnotationUpdated(event.annotation);
-                      }
-                      break;
-                  }
-
-                }
-
-                if (update_toolbar) {
-                  this.UpdateSelectionStyleAnnotation(event.annotation);
-                  this.Publish({ type: 'annotation-selection' });
-                  break;
-                }
-
-              }
-              else {
-                console.info('annotation event without annotation');
-              }
-              */
               break;
 
             case 'structure':
@@ -1391,16 +1140,279 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
         // suppress this warning if you explicitly set headless mode
 
-        if (!options.headless) {
+        if (!this.options.headless) {
           EmbeddedSpreadsheet.one_time_warnings.headless = true;
           console.info('not initializing layout; don\'t call UI functions');
         }
       }
     }
 
-    if (options.preload) {
-      options.preload.call(0, this);
+    // ----------------------------
+
+
+  }
+
+  /**
+   * @internal 
+   */
+  public static async CreateInstance<USER_DATA_TYPE>(
+    base_options: EmbeddedSpreadsheetOptions & { 
+      model?: EmbeddedSpreadsheet, 
+      custom_grid?: CustomGridFactory 
+    }): Promise<EmbeddedSpreadsheet<USER_DATA_TYPE>> {
+
+    // consolidate options w/ defaults. note that this does not
+    // support nested options, for that you need a proper merge
+
+    const options: EmbeddedSpreadsheetOptions & { local_storage: string|undefined } =
+      { ...DefaultOptions, ...base_options, local_storage: this.ResolveStorageKey(base_options.local_storage, 'document') };
+
+
+
+
+    let container: HTMLElement | undefined;
+
+    if (typeof options.container === 'string') {
+      container = document.querySelector(options.container) as HTMLElement;
     }
+    else if (options.container) {
+      container = options.container;
+    }
+
+    // create + init grid
+
+    const grid_options: GridOptions = {
+      // expand: false,
+      // insert_function_button: false, // do we have this?
+      in_cell_editor: true, // if this is always true, why is it an option?
+      repaint_on_cell_change: false,
+      scrollbars: options.scrollbars,
+      markdown: !!options.markdown,
+
+      formula_bar: options.formula_bar,
+      expand_formula_button: options.expand_formula_button,
+      tab_bar: options.tab_bar,
+      add_tab: options.add_tab,
+      // delete_tab: this.options.delete_tab,
+      expand: options.expand,
+
+      support_font_stacks: !!options.font_stack,
+
+    };
+
+    if (options.scale) {
+      grid_options.initial_scale = options.scale;
+    }
+
+    if (options.stats) {
+      grid_options.stats = options.stats;
+      grid_options.tab_bar = true; // implied
+    }
+
+    if (options.scale_control) {
+
+      grid_options.scale_control = true;
+      grid_options.tab_bar = true; // implied
+
+      if (options.persist_scale) {
+        grid_options.persist_scale_key = this.ResolveStorageKey(options.persist_scale, 'scale');
+        if (grid_options.persist_scale_key) {
+
+          // persisted scale should _not_ override parameter/option... only
+          // set here if option is blank... actually, no, that's not right.
+          // persisted scale should override parameter, because if you do NOT
+          // want that behavior you can just disable persisting. so there are 
+          // clear ways to accomplish any of
+
+          // (1) no initial scale, persist
+          // (2) initial scale, don't persist (revert to parameter)
+          // (3) initial scale but persist and use persisted value if available
+
+          // if (!this.options.scale_control) {
+          const json = localStorage.getItem(grid_options.persist_scale_key);
+          if (json) {
+            try {
+              const obj = JSON.parse(json);
+              grid_options.initial_scale = obj.scale || 1;
+            }
+            catch {
+              console.warn('parsing persisted scale failed');
+            }
+          }
+
+        }
+      }
+
+    }
+
+    let model: DataModel;
+    let calculator: Calculator;
+    let DOM: DOMContext = DOMContext.GetInstance(); // default
+    let grid: Grid;
+
+    const ready_state: Promise<void>[] = [];
+
+    if (base_options.model) {
+      model = base_options.model.model as DataModel;
+      calculator = base_options.model.calculator; // as CalcType;
+      DOM = base_options.model.DOM;
+    }
+    else {
+
+      model = new DataModel();
+
+      // we need an initial sheet, now we're pointing to the model theme
+      // properties and those will get updated by grid on initialize, and
+      // then on any theme update.
+
+      model.sheets.Add(Sheet.Blank(model.theme_style_properties));
+
+      // create calculator instance
+
+      calculator = this.CreateCalculator(model, options);
+
+      if (container) {
+        DOM = DOMContext.GetInstance(container.ownerDocument);
+      }
+
+    }
+
+    // FIXME: we should start figuring out what can happen before
+    // this async init, and what has to wait. then we can split the 
+    // ctor into two parts, and move stuff that has to wait to part 2
+
+    // for the split branch, this is idempotent, and importantly, we 
+    // want to wait on init if we're created at the same time
+
+    ready_state.push(calculator.InitResources());
+
+    // update: tell the grid if we don't want to initialize the DOM,
+    // if we don't have a container. that's distinct (at the moment)
+    // from headless, which is a state that can change.
+
+    // what's the point of having the GridBase type if we're not using
+    // it when we don't have a container? or was it built for something
+    // else? (A: it was)
+
+    if (base_options.custom_grid) {
+      grid = base_options.custom_grid.call(this,
+          grid_options, 
+          model, 
+          undefined, 
+          !!container, 
+          DOM);
+
+      // we're going to need to create some sort of capabilities map
+      // for custom grids. for the time being, let's subscribe to events
+      // and see what happens.
+
+      // UPDATE: do that a little later...
+
+
+    }
+    else {
+      grid = new Grid(
+          grid_options, 
+          model, 
+          undefined, 
+          !!container, 
+          DOM);
+      }
+
+    if (options.headless) {
+      grid.headless = true; // FIXME: move into grid options
+    }
+
+    // --- testing dynamic loading ---------------------------------------------
+
+    // OK this is a problem because it's async, and it's manipulating data,
+    // so we will probably lose data. it needs to go in async services loading.
+    // but fundametally, it's incompatible with the init function because it
+    // will immediately cache data.
+
+    // FIXME: we'll need to rewrite this constructor as an async factory method,
+    // which will be much better long-term, but it will require a major version
+    // bump
+
+    if (options.language) {
+      console.warn("options.language removed for race condition, call it manually");
+    }
+
+    // this._ready_state.push(this.LoadLanguage(options.language));
+
+    // --- testing plugins -----------------------------------------------------
+
+    /*
+    // FIXME: when to do this? could it wait? should it be async? (...)
+
+    if (options.plugins) {
+      for (const plugin of options.plugins) {
+        plugin.Attach(this);
+      }
+    }
+    */
+
+    // -------------------------------------------------------------------------
+
+    const has_parent_model = !!base_options.model;
+
+    if (options.document && options.inline_document) {
+      console.warn('both document and inline-document are provided');
+    }
+
+    const network_document = options.document;
+
+    // we're calling this ahead of calling the constructor, because the 
+    // constructor wants to know if it should wait drawing the grid. it 
+    // should wait if there's a document, because there's no point in 
+    // painting before the document data is avaliable.
+
+    let data: string | undefined | TREBDocument;
+    let source: LoadSource | undefined;
+
+    // don't load if we're a split view. we can also skip the 
+    // unload event, as parent will already have that set
+
+    if (options.local_storage && !options.toll_initial_load && !has_parent_model) {
+      data = localStorage.getItem(options.local_storage) || undefined;
+      if (data) {
+        source = 'local-storage'; // LoadSource.LOCAL_STORAGE;
+      }
+    }
+
+    // if we have an inline document, and there was nothing in local storage,
+    // load the inline document now. not for splits.
+
+    if (!data && !options.toll_initial_load && !has_parent_model && options.inline_document) {
+      data = options.inline_document;
+      source = 'inline-document'; // LoadSource.INLINE_DOCUMENT;
+    }
+
+    const instance = new EmbeddedSpreadsheet<USER_DATA_TYPE>({
+      options, 
+      grid, 
+      model, 
+      calculator,
+      custom_grid: base_options.custom_grid,
+      toll_initial_render: !!(data || options.document),
+    }, has_parent_model);
+
+    instance._ready_state.push(...ready_state);
+
+    // FIXME: we can now make this async, optionally. something to think about.
+    // it does have to happen before loading document, though.
+
+    if (options.preload) {
+      options.preload.call(0, instance);
+    }
+
+    // -----------------------------------------------------------------
+
+
+
+    // ...
+
+    //
 
     // FIXME: this should yield so we can subscribe to events before the initial load
 
@@ -1409,12 +1421,12 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         data = JSON.parse(data);
       }
       if (data) {
-        calculator_init.then(() => {
-          this.LoadDocument(data as TREBDocument, { recalculate: !!this.options.recalculate, source});
+        instance.ready.then(() => {
+          instance.LoadDocument(data as TREBDocument, { recalculate: !!instance.options.recalculate, source});
         });
       }
       else {
-        this.UpdateDocumentStyles();
+        instance.UpdateDocumentStyles();
       }
     }
     else if (!network_document) {
@@ -1422,48 +1434,48 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       // no data and no network document -- we need to connect the grid model
       // and the calculator, which would otherwise happen on document load
 
-      this.calculator.RebuildClean(true);
-      this.UpdateDocumentStyles();
+      calculator.RebuildClean(true);
+      instance.UpdateDocumentStyles();
 
     }
 
-    this.FlushUndo();
+    instance.FlushUndo();
 
     // why is this outside of the container test? there should be
     // no reason to do this when headless
 
-    this.grid.ShowHeaders(this.options.headers);
+    grid.ShowHeaders(options.headers);
 
     // again, this should be gated on container
 
     // optionally scroll grid on create (async -- why?)
 
-    if (this.options.scroll && !this.options.document) {
-      const address = this.options.scroll;
+    if (options.scroll && !options.document) {
+      const address = options.scroll;
       requestAnimationFrame(() => {
-        this.ScrollTo(address);
+        instance.ScrollTo(address);
       });
     }
 
     // init AC
 
     // this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
-    this.UpdateAC();
+    instance.UpdateAC();
 
     // dev
-    if (this.options.global_name) {
+    if (typeof self !== 'undefined' && options.global_name) {
 
       // there has to be a simpler way to do this
       // (that comment was written when this was slightly worse; still bad though)
 
-      (self as (typeof self & Record<string, unknown>))[this.options.global_name] = this;
+      (self as (typeof self & Record<string, unknown>))[options.global_name] = this;
 
     }
 
     // create spinner, we might want it for load
 
-    if (container && this.options.spinner) {
-      this.spinner = new Spinner(container);
+    if (container && options.spinner) {
+      instance.spinner = new Spinner(container);
     }
 
 
@@ -1472,17 +1484,19 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // over the old alternate_document flow, because it doesn't make any sense
     // otherwise. what would local_storage with document_name mean otherwise?
 
-    if (network_document && !options.model && !data) {
-      calculator_init.then(() => {
-        this.LoadNetworkDocument(network_document, this.options);
+    if (network_document && !base_options.model && !data) {
+      instance.ready.then(() => {
+        instance.LoadNetworkDocument(network_document, instance.options);
       });
     }
 
     // create mask dialog
 
     if (container) {
-      this.dialog = new Dialog(container);
+      instance.dialog = new Dialog(container);
     }
+
+    return instance;
 
   }
 
@@ -1551,8 +1565,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   /**
    * initialize calculator instance
+   * 
+   * update: static
    */
-  protected CreateCalculator(model: DataModel, options: EmbeddedSpreadsheetOptions) {
+  protected static CreateCalculator(model: DataModel, options: EmbeddedSpreadsheetOptions) {
     return new Calculator(model, {
       complex_numbers: options.complex,
       spill: options.spill,
@@ -1617,12 +1633,15 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * this will need to get overloaded for subclasses so they can
    * create the correct type
    */
-  protected CreateView(): EmbeddedSpreadsheet {
-    const child = new EmbeddedSpreadsheet<USER_DATA_TYPE>({
-      ...this.options,
-      global_name: undefined, // don't overwrite
-      model: this,
+  protected async CreateView(): Promise<EmbeddedSpreadsheet> {
+
+    const child = // new EmbeddedSpreadsheet<USER_DATA_TYPE>({
+      await EmbeddedSpreadsheet.CreateInstance<USER_DATA_TYPE>({
+        ...this.options,
+        global_name: undefined, // don't overwrite
+        model: this,
     });
+    
     child.parent_view = this;
     return child;
   }
@@ -1684,9 +1703,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @internal
    */
-  public Split(): void {
+  public async Split(): Promise<void> {
 
-    const view = this.CreateView();
+    const view = await this.CreateView();
     view.grid.EnsureActiveSheet(true);
 
     view.view_node?.addEventListener('focusin', () => {
@@ -2864,20 +2883,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * rendered, you need to notifiy us if external style (CSS) properties
    * have changed. We will update and repaint.
    */
-  public UpdateTheme(): void {
+  public async UpdateTheme(): Promise<void> {
 
     // API v1 OK
 
     // not sure about the override thing, since we now do CSS theme
     // UPDATE: dropping override parameter (extra theme properties)
 
-    this.grid.UpdateTheme(undefined);
-
-    /*
-    if (this.toolbar) {
-      this.toolbar.UpdateTheme(this.grid.theme);
-    }
-    */
+    await this.grid.UpdateTheme(undefined);
 
     this.UpdateDocumentStyles();
 
@@ -6568,8 +6581,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * if we have a boolean for a storage key, generate a (weak) hash
    * based on document URI. use the prefix to create separate keys
    * when using the autogenerated key (uri hash)
+   * 
+   * update: static method
    */
-  protected ResolveStorageKey(key?: string|boolean, prefix = ''): string|undefined {
+  protected static ResolveStorageKey(key?: string|boolean, prefix = ''): string|undefined {
 
     if (!key) { 
       return undefined;

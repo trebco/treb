@@ -29,18 +29,14 @@ import type { ICellAddress,
 import { TextPartFlag, Style, ValueType, Area, Rectangle, ResolveThemeColor, IsDefinedColor } from 'treb-base-types';
 
 import type { Tile } from '../types/tile';
-// import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
 import type { FormattedString} from 'treb-parser';
 import { MDParser } from 'treb-parser';
 import { BaseLayout, TileRange } from '../layout/base_layout';
 import type { DataModel, ViewModel } from 'treb-data-model';
 import type { GridOptions } from '../types/grid_options';
-
 import { Get as GetFontMetrics } from '../util/fontmetrics';
 
 const DEFAULT_INDENT = '  '; // two spaces in the current font
-// const BASELINE = 'bottom';
-// const WK = /webkit/i.test(typeof navigator === 'undefined' ? '' : navigator?.userAgent || '') ? 1 : 0;
 
 interface FontSet {
   base: string,

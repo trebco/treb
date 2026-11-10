@@ -227,7 +227,7 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
    * the connectedCallback call. for elements created with the API, we 
    * call it immediately.
    */
-  public AttachElement(options: EmbeddedSpreadsheetOptions = {}) {
+  public async AttachElement(options: EmbeddedSpreadsheetOptions = {}) {
 
     options = {
       ...this.ParseOptionAttributes(),
@@ -303,8 +303,8 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
 
     // set a local variable so we don't have to keep testing the member
 
-    this.sheet = new EmbeddedSpreadsheet<USER_DATA_TYPE>(options);
-
+    this.sheet = await EmbeddedSpreadsheet.CreateInstance<USER_DATA_TYPE>(options);
+    
     if (this.root) {
       this.CreateLayout(this.sheet, this.root);
     }

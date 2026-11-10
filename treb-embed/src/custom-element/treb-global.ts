@@ -53,16 +53,21 @@ export class TREBGlobal {
    * 
    * Just ignore this parameter if you don't need it.
    * 
+   * this method is now async.
+   * 
    * @typeParam USER_DATA_TYPE - type for the `user_data` field in the 
    * spreadsheet instance
    */
-  public CreateSpreadsheet<USER_DATA_TYPE = unknown>(options: EmbeddedSpreadsheetOptions): EmbeddedSpreadsheet<USER_DATA_TYPE> {
+  public async CreateSpreadsheet<USER_DATA_TYPE = unknown>(options: EmbeddedSpreadsheetOptions): Promise<EmbeddedSpreadsheet<USER_DATA_TYPE>> {
     const container = options.container;
     const instance = new SpreadsheetConstructor<USER_DATA_TYPE>(container);
-    instance.AttachElement(options);
+    
+    await instance.AttachElement(options);
+
     if (!instance.sheet) {
       throw new Error('construction failed');
     }
+    
     return instance.sheet;
   }
 

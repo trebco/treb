@@ -567,9 +567,12 @@ export const ThemeColorTable = (theme_color: number, tint = .7): TableTheme => {
  * I keep trying to change this to just read CSS variables, but that does
  * not do the same thing.
  * 
+ * UPDATE this is going to be async so we can manage fonts. it'll have to
+ * filter up the call tree
+ * 
  * @internal
  */
-export const LoadThemeProperties = (container: HTMLElement, use_font_stacks = false): Theme => {
+export const LoadThemeProperties = async (container: HTMLElement, use_font_stacks = false): Promise<Theme> => {
     
   const theme: Theme = JSON.parse(JSON.stringify(DefaultTheme));
   const DOM = DOMContext.GetInstance(container.ownerDocument);

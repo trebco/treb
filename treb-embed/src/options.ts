@@ -65,12 +65,15 @@ export interface EmbeddedSpreadsheetOptions {
    */
   expand?: boolean;
 
-  /** 
+  /* 
    * key in localStorage for persisting document. 
    * @deprecated - this was renamed to local_storage for clarity. if both
    * storage_key and local_storage are set we will use the value in local_storage.
-   */
+   * 
+   * removed in v40
+   *
   storage_key?: string|boolean;
+  */
 
   /**
    * persist user changes to document in browser localStorage.
@@ -123,11 +126,14 @@ export interface EmbeddedSpreadsheetOptions {
    */
   inline_document?: TREBDocument;
 
-  /** 
+  /*
    * fetch network document (URI) 
    * @deprecated - use `document`
-   */
+   * 
+   * removed in v40
+   *
   network_document?: string;
+  */
 
   /** freeze rows */
   freeze_rows?: number;

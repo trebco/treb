@@ -1480,7 +1480,7 @@ export class Grid extends GridBase {
   /**
    * @param initial first call, from the grid Initialize() method
    */
-  public UpdateTheme(initial = false, additional_properties?: Partial<Theme /*ExtendedTheme*/ >): void {
+  public async UpdateTheme(initial = false, additional_properties?: Partial<Theme /*ExtendedTheme*/ >): Promise<void> {
 
     if (!initial) {
       for (const key of Object.keys(this.theme) as Array<keyof Theme>) {
@@ -1491,7 +1491,7 @@ export class Grid extends GridBase {
     let composite: Theme = JSON.parse(JSON.stringify(DefaultTheme));
 
     if (this.view_node) {
-      const theme_properties = LoadThemeProperties(this.view_node, this.options.support_font_stacks);
+      const theme_properties = await LoadThemeProperties(this.view_node, this.options.support_font_stacks);
       composite = {...theme_properties};
     }
 
@@ -1571,7 +1571,7 @@ export class Grid extends GridBase {
   /**
    * @param container html container element
    */
-  public Initialize(view_node: HTMLElement, toll_initial_render = false): void {
+  public async Initialize(view_node: HTMLElement, toll_initial_render = false): Promise<void> {
 
     if (!this.tile_renderer || !this.selection_renderer) {
       return;
@@ -1586,10 +1586,7 @@ export class Grid extends GridBase {
 
     this.view_node = view_node;
 
-    // MOVE
-
-    // this.ApplyTheme();
-    this.UpdateTheme(true);
+    await this.UpdateTheme(true);
 
     const higher_level_container = view_node.querySelector('.treb-spreadsheet-body') as HTMLElement;
     const container = higher_level_container.querySelector('div') as HTMLElement;
