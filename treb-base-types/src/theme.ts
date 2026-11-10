@@ -612,11 +612,11 @@ export const LoadThemeProperties = async (container: HTMLElement, deprecated_par
           ];
           const loaded = await Promise.all(promises);
           if (loaded.flat().length === 4) {
-            console.info("Using", face);
+            // console.info("Using", face);
             break;
           }
           else {
-            console.info("Loading", face, "failed");
+            // console.info("Loading", face, "failed");
           }
         }
         catch (err) {
