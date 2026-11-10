@@ -25,7 +25,8 @@ import { ColorFunctions } from './color';
 
 import { DOMContext } from './dom-utilities';
 import { Measurement } from 'treb-utils';
-import { font_stack_names, type FontStack, GenerateFontStack } from './font-stack';
+
+// import { font_stack_names, type FontStack, GenerateFontStack } from './font-stack';
 
 /*
  * so this is a little strange. we use CSS to populate a theme object,
@@ -157,8 +158,9 @@ export interface Theme {
   /** dark color for offset (against light background) */
   offset_dark: string;
 
-  /** precalculated font stacks */
+  /* * precalculated font stacks * /
   font_stacks: Record<string, FontStack>;
+  */
 
 }
 
@@ -172,7 +174,7 @@ export const DefaultTheme: Theme = {
   offset_cache: {},
   offset_light: '#fff',
   offset_dark: '#000',
-  font_stacks: {},
+  // font_stacks: {},
   grid_cell_font_size: { value: 10, unit: 'pt' },
 };
 
@@ -572,7 +574,7 @@ export const ThemeColorTable = (theme_color: number, tint = .7): TableTheme => {
  * 
  * @internal
  */
-export const LoadThemeProperties = async (container: HTMLElement, use_font_stacks = false): Promise<Theme> => {
+export const LoadThemeProperties = async (container: HTMLElement, deprecated_parameter = false, preload_fonts = true): Promise<Theme> => {
     
   const theme: Theme = JSON.parse(JSON.stringify(DefaultTheme));
   const DOM = DOMContext.GetInstance(container.ownerDocument);
@@ -589,11 +591,48 @@ export const LoadThemeProperties = async (container: HTMLElement, use_font_stack
   const CSS: (classes: string) => CSSStyleDeclaration = ElementCSS.bind(0, node);
 
   let css = CSS('grid-cells');
-  theme.grid_cell = StyleFromCSS(css, false);
+
+  if (preload_fonts) {
+
+    // for now, preloading fontts means loading 4 variants: normal and italic
+    // at 400 and 700. we'll stop as soon as we hit something, which should
+    // allow it to use calibri on windows and other fonts on other operating
+    // systems. although this will probably use calibri on OSX if you have 
+    // office installed. not sure if I care about that.
+
+    if (css.fontFamily) {
+      const split = css.fontFamily.split(/,/g).map(face => face.trim());
+      for (const face of split) {
+        try {
+          const promises = [
+            document.fonts.load(`400 20px ${face}`),
+            document.fonts.load(`700 20px ${face}`),
+            document.fonts.load(`400 italic 20px ${face}`),
+            document.fonts.load(`400 italic 20px ${face}`),
+          ];
+          const loaded = await Promise.all(promises);
+          if (loaded.flat().length === 4) {
+            console.info("Using", face);
+            break;
+          }
+          else {
+            console.info("Loading", face, "failed");
+          }
+        }
+        catch (err) {
+          console.info("ERR", err);
+        }
+      }    
+    }
+
+  }
+
+  theme.grid_cell = StyleFromCSS(css, true);
   theme.grid_color = css.stroke || '';
   theme.grid_cell_font_size = ParseFontSize(css.fontSize||'');
 
-  // console.info({theme});
+  /*
+  console.info({theme});
 
   if (use_font_stacks) {
     for (const key of font_stack_names) {
@@ -610,7 +649,7 @@ export const LoadThemeProperties = async (container: HTMLElement, use_font_stack
     
   }
   // console.info(theme.font_stacks);
-  
+  */
   
   css = CSS('grid-headers');
   theme.headers = StyleFromCSS(css, true);

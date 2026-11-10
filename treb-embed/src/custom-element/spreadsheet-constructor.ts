@@ -321,9 +321,6 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
     const resizeObserver = new ResizeObserver(() => sheet.Resize());
     resizeObserver.observe(root);
 
-    // const resizeObserver = new ResizeObserver(() => sheet.Resize());
-    // resizeObserver.observe(root);
-
     // handle sidebar collapse
 
     this.layout_element = root.querySelector('.treb-main') as HTMLElement;

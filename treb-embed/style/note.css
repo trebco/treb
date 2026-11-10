@@ -46,8 +46,8 @@
 
     /* themeable properties */
 
-    font-family: var(--treb-font-stack);
-
+    /* FIXME */
+    /* font-family: var(--treb-font-stack); */
 
     border: 1px solid var(--treb-note-border-color);
     color: var(--treb-note-color);
@@ -78,7 +78,8 @@
 
     /* themeable properties */
 
-    font-family: var(--treb-font-stack); /* can't we inherit? ... */
+    /* FIXME */
+    /* font-family: var(--treb-font-stack); / * can't we inherit? ... */
 
     border: 1px solid var(--treb-note-border-color);
     color: var(--treb-note-color);

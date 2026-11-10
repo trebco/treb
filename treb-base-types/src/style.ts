@@ -565,9 +565,10 @@ export const Style = {
     }
 
 
-    const font_face = properties.font_face || 'stack:default';
+    const font_face = properties.font_face || theme.grid_cell?.font_face || '';
     // let stack_scale = 1;
 
+    /*
     // check if this is a stack
     if (font_face.startsWith('stack:')) {
       let stack = theme.font_stacks[font_face.substring(6) || 'default'];
@@ -589,12 +590,14 @@ export const Style = {
         variants = stack.variants;
       }
     }
-    else {
+    else */ {
       font_size = Style.CompositeFontSize(base, properties.font_size || { unit: 'pt', value: 10 }, scale);
       parts.push(font_size.value.toFixed(2) + font_size.unit);
       parts.push(font_face || '');
     }
-   
+
+    //  console.info("F", { font: parts.join(' '), variants, base, size: properties.font_size, scale, stack_size, font_size });
+
     return { font: parts.join(' '), variants, base, size: properties.font_size, scale, stack_size, font_size };
 
   },

@@ -1585,7 +1585,6 @@ export class Grid extends GridBase {
     // going to rename to clarify.
 
     this.view_node = view_node;
-
     await this.UpdateTheme(true);
 
     const higher_level_container = view_node.querySelector('.treb-spreadsheet-body') as HTMLElement;

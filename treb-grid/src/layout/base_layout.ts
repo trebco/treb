@@ -1013,6 +1013,7 @@ export abstract class BaseLayout {
 
         if (annotation.data.style?.font_face && annotation.data.style.font_face.startsWith('stack:')) { 
           const name = annotation.data.style.font_face.substring(6);
+          /*
           const stack = theme.font_stacks[name];
           if(stack) {
             view.node.classList.add('treb-inherit-font');
@@ -1024,7 +1025,9 @@ export abstract class BaseLayout {
               view.node.style.fontVariant = stack.variants;
             }
           }
-          else {
+          else 
+          */
+          {
             view.node.classList.remove('treb-inherit-font');
             view.node.style.fontFamily = '';
             view.node.style.fontVariant = '';

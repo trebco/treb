@@ -31,6 +31,7 @@
 .treb-main.treb-main {
 
   --primary-selection-color-unfocused: #acc0cf;
+  font-family: vat(--treb-ui-font-family, inherit);
 
   /** 
    * move primary selection focus color to focus-within on the top-level 
@@ -484,24 +485,6 @@
     }
 
   }
-
-
-
-  /* *
-   * special override for windows, using calibri (which is too small).
-   * you should still be able to override with a regular theme style,
-   * or (potentially) also override for windows specifically. fancy!
-   * /
-  &.treb-ua-windows .grid-cells {
-    font-size: var(--treb-grid-font-size-windows, var(--treb-grid-font-size, 12pt));
-    font-family: var(--treb-grid-font-family-windows, var(--treb-grid-font-family, "Calibri", $font-stack)); // does this actually work? is this included? (...)
-  }
-
-  &.treb-ua-osx .grid-cells {
-    font-size: var(--treb-grid-font-size-osx, var(--treb-grid-font-size, 10pt)); // slightly smaller default
-    font-family: var(--treb-grid-font-family-osx, var(--treb-grid-font-family, inherit));
-  }
-  */
 
   /**
    *

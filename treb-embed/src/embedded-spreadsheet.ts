@@ -1388,7 +1388,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       source = 'inline-document'; // LoadSource.INLINE_DOCUMENT;
     }
 
-    const instance = new EmbeddedSpreadsheet<USER_DATA_TYPE>({
+    const instance = new this<USER_DATA_TYPE>({
       options, 
       grid, 
       model, 
@@ -1396,6 +1396,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       custom_grid: base_options.custom_grid,
       toll_initial_render: !!(data || options.document),
     }, has_parent_model);
+
+    await instance.ready;
 
     instance._ready_state.push(...ready_state);
 

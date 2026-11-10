@@ -128,11 +128,7 @@ $z-index-mask:                     9999;
   // does not necessarily make sense.
   */
 
-  /*
-  // this is getting clobbered below?
-  */
-
-  font-family: var(--treb-default-font, system-ui, var(--font-stack));
+  font-family: var(--treb-ui-font-family, inherit);
 
   /*
   // reset in case we inherit something
@@ -145,8 +141,6 @@ $z-index-mask:                     9999;
   */
 
   color-scheme: var(--treb-color-scheme, inherit);
-
-  font-family: var(--font-stack);
 
   font-style: normal;
   font-weight: normal;
@@ -177,7 +171,7 @@ $z-index-mask:                     9999;
     all: revert;
     
     box-sizing: border-box;
-    font-family: var(--treb-default-font, system-ui, var(--font-stack));
+    font-family: var(--treb-ui-font-family, inherit);
 
   }
 

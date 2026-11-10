@@ -19,6 +19,16 @@
  * 
  */
 
+/*
+ * on windows, if you have calibri installed, we'll use that. by default
+ * it's very small though, so we'll scale up to match other fonts.
+ */
+ 
+@font-face { font-family: 'Rescaled Calibri'; src: local('Calibri'); font-weight: 400 500; font-style: normal; font-display: swap; size-adjust: 113%; }
+@font-face { font-family: 'Rescaled Calibri'; src: local('Calibri Italic'); font-weight: 400 500; font-style: italic; font-display: swap; size-adjust: 113%; }
+@font-face { font-family: 'Rescaled Calibri'; src: local('Calibri Bold'); font-weight: 600 700; font-style: normal; font-display: swap; size-adjust: 113%; }
+@font-face { font-family: 'Rescaled Calibri'; src: local('Calibri Bold Italic'); font-weight: 600 700; font-style: italic; font-display: swap; size-adjust: 113%; }
+
 /**
  * theme colors. all color variables used in the stylesheets are defined
  * here; stylesheets reference these with var() and no fallback. colors
@@ -29,10 +39,14 @@
  * set variables on :root, treb-spreadsheet, .treb-main, or any containing
  * element; the closest definition wins.
  *
- * fonts are not included here (yet).
  */
 
 :where(:root) {
+
+  /** font for grid, use @font-face */
+
+  --treb-grid-font-family: "Rescaled Calibri", system-ui, sans-serif;
+  --treb-ui-font-family: system-ui, sans-serif;
 
   /* --- grid, selections, autocomplete, tabs, formula bar (theme-defaults.css) --- */
 
