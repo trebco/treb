@@ -171,7 +171,7 @@ $z-index-mask:                     9999;
     all: revert;
     
     box-sizing: border-box;
-    font-family: var(--treb-ui-font-family, inherit);
+    font-family: inherit;
 
   }
 
