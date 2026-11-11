@@ -608,7 +608,7 @@ export const LoadThemeProperties = async (container: HTMLElement, deprecated_par
             document.fonts.load(`400 20px ${face}`),
             document.fonts.load(`700 20px ${face}`),
             document.fonts.load(`400 italic 20px ${face}`),
-            document.fonts.load(`400 italic 20px ${face}`),
+            document.fonts.load(`700 italic 20px ${face}`),
           ];
           const loaded = await Promise.all(promises);
           if (loaded.flat().length === 4) {
