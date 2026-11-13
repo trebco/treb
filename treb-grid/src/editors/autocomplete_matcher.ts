@@ -83,7 +83,10 @@ export class AutocompleteMatcher {
   private function_names: string[] = [];
   // private function_map: {[index: string]: FunctionDescriptor} = {};
 
-  private argument_separator = Localization.argument_separator.charCodeAt(0);
+  // ugh we were caching this and not updating. could be
+  // an accessor, although it's only used in one place
+
+  // private argument_separator = Localization.argument_separator.charCodeAt(0);
 
   /**
    * making this public (and scrubbing the type). we need it public so we 
@@ -186,8 +189,6 @@ export class AutocompleteMatcher {
     if (parsed.function) {
       const func = this.function_map.get(parsed.function.toLowerCase());
       if (func) {
-        // if (func.canonical_name) result.tooltip = func.canonical_name;
-        // else result.tooltip = tt.toUpperCase();
 
         const truncated_arguments = func.arguments || [];
         while (truncated_arguments.length && !truncated_arguments[truncated_arguments.length - 1].name) {
@@ -215,6 +216,8 @@ export class AutocompleteMatcher {
    * not handled: escaped quotes (not even sure what the syntax for that is)
    */
   public ParseTooltip(expression: string): TooltipParserResult {
+
+    const argument_separator = Localization.argument_separator.charCodeAt(0);
 
     // these two things are actually unrelated, we just need to push/pop them at the same time
     const stack: Array<{
@@ -247,7 +250,7 @@ export class AutocompleteMatcher {
             argument = 0;
             break;
     
-          case this.argument_separator:
+          case argument_separator:
             argument++;
             break;
     
