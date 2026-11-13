@@ -68,7 +68,8 @@ import {
 
 import { 
   Parser, DecimalMarkType, 
-  ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
+  ArgumentSeparatorType, QuotedSheetNameRegex, 
+  type RenderOptions} from 'treb-parser';
 
 import 'extended-function-lib';
 import { Calculator } from 'treb-calculator';
@@ -6896,20 +6897,28 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       target_argument_separator = ArgumentSeparatorType.Comma;
     }
 
-    const translate = (formula: string): string | undefined => {
+    const translate = (formula: string, english_booleans = false): string | undefined => {
       const parse_result = parser.Parse(formula);
       if (!parse_result.expression) { return undefined; }
+
+      const options: Partial<RenderOptions> = {
+        missing: '', 
+        convert_decimal: target_decimal_mark, 
+        convert_argument_separator: target_argument_separator,
+      };
+
+      if (english_booleans) {
+        options.boolean_false = 'FALSE';
+        options.boolean_true = 'TRUE';
+      }
+
       return '=' + parser.Render(
-        parse_result.expression, { 
-          missing: '', 
-          convert_decimal: target_decimal_mark, 
-          convert_argument_separator: target_argument_separator,
-        });
+        parse_result.expression, options);
     };
 
     if (data.macro_functions) {
       for (const macro_function of data.macro_functions) {
-        const translated = translate(macro_function.function_def);
+        const translated = translate(macro_function.function_def, true);
         if (translated) {
           macro_function.function_def = translated;
         }
@@ -6918,7 +6927,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     if (data.named) {
       for (const named of data.named) {
-        const translated = translate(named.expression);
+        const translated = translate(named.expression, true);
         if (translated) {
           named.expression = translated;
         }
@@ -6934,7 +6943,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         if (sheet_data.annotations) {
           for (const annotation of (sheet_data.annotations)) {
             if (annotation.formula) {
-              const translated = translate(annotation.formula);
+              const translated = translate(annotation.formula, true);
               if (translated) {
                 annotation.formula = translated;
               }
@@ -6950,7 +6959,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
             for (const cell of cells) {
               if (cell.value && typeof cell.value === 'string' && cell.value[0] === '=') {
-                const translated = translate(cell.value.slice(1));
+                const translated = translate(cell.value.slice(1), true);
                 if (translated) {
                   cell.value = translated;
                 }

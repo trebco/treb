@@ -3240,7 +3240,14 @@ export class Grid extends GridBase {
             const annotation = this.editing_annotation;
             this.ClearAdditionalSelections();
             this.ClearSelection(this.active_selection);
-            annotation.data.formula = event.value ? this.FixFormula(event.value) : '';
+
+            let formula = event.value || '';
+            if (formula) {
+              formula = this.model.UntranslateFunction(this.FixFormula(formula));
+            }
+
+            // annotation.data.formula = event.value ? this.FixFormula(event.value) : '';
+            annotation.data.formula = formula || '';
 
             if (!this.pending_reset_selection) {
               const node = this.editing_annotation.view[this.view_index]?.node;
@@ -6906,7 +6913,7 @@ export class Grid extends GridBase {
     const formula = (this.selected_annotation && this.selected_annotation.data.formula) ?
       this.selected_annotation.data.formula : '';
 
-    this.UpdateFormulaBarFormula(formula);
+    this.UpdateFormulaBarFormula(this.model.TranslateFunction(formula));
     this.layout.ShowSelections(false);
 
   }
