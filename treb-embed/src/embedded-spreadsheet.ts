@@ -679,14 +679,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /**
-   * the constructor is now private. use the static factory method. 
-   * @internal
+   * the constructor is now protected. use the static factory method. 
    * 
    * @param has_parent_model: indicates this is a split view, and there's a 
    * parent. in that case we do less initialization. this is a replacement 
    * for gating on `options.model` which we used to use for the same purpose
    */
-  constructor(members: {
+  protected constructor(members: {
         options: EmbeddedSpreadsheetOptions & { local_storage: string|undefined },
         calculator: Calculator,
         grid: Grid,
