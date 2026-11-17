@@ -33,22 +33,6 @@ import { UnlotusDate } from './format';
  * FIXME: move this somewhere else, this is the format library
  */
 
-// tslint:disable:no-bitwise
-
-/* * hints is a bitfield * /
-export enum Hints {
-  None =        0x00,
-  Nan =         0x01,
-  Exponential = 0x02,
-  Percent =     0x04,
-  Currency =    0x08,
-  Grouping =    0x10,
-  Parens =      0x20,
-  Date =        0x40,
-  Time =        0x80,
-}
-*/
-
 export interface Hints {
   Nan?: boolean;
   Exponential?: boolean;
