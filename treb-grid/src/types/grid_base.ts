@@ -58,7 +58,6 @@ import { DefaultGridOptions, type GridOptions } from './grid_options';
 
 import { BorderConstants } from './border_constants';
 
-import { CommandKey } from './grid_command';
 import type { Command, ActivateSheetCommand, 
                DeleteSheetCommand, UpdateBordersCommand, SheetSelection } from './grid_command';
 import type { UpdateFlags } from './update_flags';
@@ -190,14 +189,14 @@ export class GridBase {
       }) {
 
     this.ExecCommand({
-      key: CommandKey.RemoveConditionalFormat,
+      key: 'remove-conditional-format',
       ...options,
     });
   }
 
   public AddConditionalFormat(format: ConditionalFormat) {
     this.ExecCommand({
-      key: CommandKey.AddConditionalFormat,
+      key: 'add-conditional-format',
       format,
     });
   }
@@ -205,7 +204,7 @@ export class GridBase {
   /** remove a table. doesn't remove any data, just removes the overlay. */
   public RemoveTable(table: Table) {
     this.ExecCommand({
-      key: CommandKey.RemoveTable,
+      key: 'remove-table',
       table,
     });
   }
@@ -242,7 +241,7 @@ export class GridBase {
     }
 
     this.ExecCommand({
-      key: CommandKey.InsertTable,
+      key: 'insert-table',
       area: JSON.parse(JSON.stringify(area)),
       totals,
       sortable,
@@ -261,7 +260,7 @@ export class GridBase {
     const name = (typeof sheet === 'string') ? sheet : undefined;
 
     this.ExecCommand({
-      key: CommandKey.ActivateSheet,
+      key: 'activate-sheet',
       index,
       name,
       user,
@@ -274,7 +273,7 @@ export class GridBase {
    */
   public ActivateSheetID(id: number): void {
     this.ExecCommand({
-      key: CommandKey.ActivateSheet,
+      key: 'activate-sheet',
       id,
     });
   }
@@ -294,7 +293,7 @@ export class GridBase {
   public DuplicateSheet(index?: number, name?: string, insert_before?: number|string): void {
 
     const command: DuplicateSheetCommand = {
-      key: CommandKey.DuplicateSheet,
+      key: 'duplicate-sheet',
       new_name: name,
       insert_before,
     };
@@ -312,7 +311,7 @@ export class GridBase {
 
   public AddSheet(name?: string): void {
     this.ExecCommand({
-      key: CommandKey.AddSheet,
+      key: 'add-sheet',
       name,
       show: true,
     });
@@ -336,7 +335,7 @@ export class GridBase {
     }
 
     this.ExecCommand({
-      key: CommandKey.DeleteSheet,
+      key: 'delete-sheet',
       index,
     });
 
@@ -358,7 +357,7 @@ export class GridBase {
     }
 
     this.ExecCommand({
-      key: CommandKey.AddSheet,
+      key: 'add-sheet',
       insert_index: index,
       name,
       show: true,
@@ -368,7 +367,7 @@ export class GridBase {
 
   public DeleteSheetID(id: number): void {
     this.ExecCommand({
-      key: CommandKey.DeleteSheet,
+      key: 'delete-sheet',
       id,
     });
   }
@@ -377,7 +376,7 @@ export class GridBase {
    * clear sheet, reset all data
    */
   public Reset(): void {
-    this.ExecCommand({ key: CommandKey.Reset });
+    this.ExecCommand({ key: 'reset' });
   }
 
   /**
@@ -393,7 +392,7 @@ export class GridBase {
     */
 
     this.ExecCommand({
-      key: CommandKey.SetLink,
+      key: 'set-link',
       area: address,
       reference,
     });
@@ -409,7 +408,7 @@ export class GridBase {
     const commands: ShowSheetCommand[] = [];
     for (let index = 0; index < this.model.sheets.length; index++) {
       commands.push({
-        key: CommandKey.ShowSheet,
+        key: 'show-sheet',
         index,
         show: true,
       });
@@ -420,7 +419,7 @@ export class GridBase {
   public ShowSheet(index: number|string = 0, show = true): void {
 
     const command: ShowSheetCommand = {
-      key: CommandKey.ShowSheet,
+      key: 'show-sheet',
       show,
     };
 
@@ -443,7 +442,7 @@ export class GridBase {
     // 
 
     this.ExecCommand({
-      key: CommandKey.SortTable,
+      key: 'sort-table',
       table: JSON.parse(JSON.stringify(table)), 
       ...DefaultTableSortOptions,
       ...options,
@@ -461,7 +460,7 @@ export class GridBase {
    */
   public InsertRows(before_row = 0, count = 1): void {
     this.ExecCommand({
-      key: CommandKey.InsertRows,
+      key: 'insert-rows',
       before_row,
       count,
     });
@@ -536,9 +535,9 @@ export class GridBase {
     // be data only. Famous last words.
     
     this.ExecCommand([
-      { key: CommandKey.Reset },
+      { key: 'reset' },
       {
-        key: CommandKey.SetRange,
+        key: 'set-range',
         area: { start: { row: 0, column: 0 }, end },
         value: arr,
       },
@@ -547,7 +546,7 @@ export class GridBase {
       // (rebuilding tiles); in that case, this will be duplicative. maybe
       // should use setTimeout or some sort of queue...
 
-      // { key: CommandKey.ResizeColumns }, // auto
+      // { key: 'resize-columns' }, // auto
     ]);
 
   }
@@ -558,7 +557,7 @@ export class GridBase {
    */
   public InsertColumns(before_column = 0, count = 1): void {
     this.ExecCommand({
-      key: CommandKey.InsertColumns,
+      key: 'insert-columns',
       before_column,
       count,
     });
@@ -567,7 +566,7 @@ export class GridBase {
   /** move sheet (X) before sheet (Y) */
   public ReorderSheet(index: number, move_before: number): void {
     this.ExecCommand({
-      key: CommandKey.ReorderSheet,
+      key: 'reorder-sheet',
       index,
       move_before,
     });
@@ -575,7 +574,7 @@ export class GridBase {
 
   public ShowGridLines(sheet: Sheet, show?: boolean) {
     this.ExecCommand({
-      key: CommandKey.ShowGridlines,
+      key: 'show-gridlines',
       sheet, 
       show,
     });
@@ -586,7 +585,7 @@ export class GridBase {
    */
   public RenameSheet(sheet: Sheet, name: string): void {
     this.ExecCommand({
-      key: CommandKey.RenameSheet,
+      key: 'rename-sheet',
       new_name: name,
       id: sheet.id,
     });
@@ -599,7 +598,7 @@ export class GridBase {
    */
   public Freeze(rows = 0, columns = 0, highlight_transition = true): void {
     this.ExecCommand({
-      key: CommandKey.Freeze,
+      key: 'freeze',
       rows,
       columns,
       highlight_transition,
@@ -611,7 +610,7 @@ export class GridBase {
    */
   public SetRowHeight(row?: number | number[], height?: number, shrink = true): void {
     this.ExecCommand({
-      key: CommandKey.ResizeRows,
+      key: 'resize-rows',
       row,
       height,
       shrink,
@@ -628,7 +627,7 @@ export class GridBase {
    */
   public SetColumnWidth(column?: number | number[], width?: number, allow_shrinking?: boolean): void {
     this.ExecCommand({
-      key: CommandKey.ResizeColumns,
+      key: 'resize-columns',
       column,
       width,
       allow_shrinking,
@@ -680,7 +679,7 @@ export class GridBase {
 
     if (show_rows) {
       command.push({          
-        key: CommandKey.ResizeRows, 
+        key: 'resize-rows', 
         sheet_id: sheet.id,
         row: show_rows,
         height: sheet.default_row_height,
@@ -688,7 +687,7 @@ export class GridBase {
     }
     if (hide_rows) {
       command.push({
-        key: CommandKey.ResizeRows, 
+        key: 'resize-rows', 
         sheet_id: sheet.id,
         row: hide_rows,
         height: 0,
@@ -1172,7 +1171,7 @@ export class GridBase {
 
     if (is_active) {
       // console.info('activate @', index);
-      this.ActivateSheetInternal({ key: CommandKey.ActivateSheet, index });
+      this.ActivateSheetInternal({ key: 'activate-sheet', index });
     }
 
     return requires_recalc;
@@ -1922,7 +1921,7 @@ export class GridBase {
           for (let j = i + 1; j < list.length; j++) {
             if (list[j].visible) {
               this.ActivateSheetInternal({
-                key: CommandKey.ActivateSheet,
+                key: 'activate-sheet',
                 index: j,
               });
               return;
@@ -1934,7 +1933,7 @@ export class GridBase {
           for (let j = 0; j< list.length; j++) {
             if (list[j].visible) {
               this.ActivateSheetInternal({
-                key: CommandKey.ActivateSheet,
+                key: 'activate-sheet',
                 index: j,
               });
               return;
@@ -1972,25 +1971,25 @@ export class GridBase {
       switch (command.key) {
         
         // nothing
-        case CommandKey.Null:
-        case CommandKey.TabColor:
-        case CommandKey.ShowHeaders:
-        case CommandKey.ShowSheet:
-        case CommandKey.AddSheet:
-        case CommandKey.DuplicateSheet:
-        case CommandKey.DeleteSheet:
-        case CommandKey.ActivateSheet:
-        case CommandKey.RenameSheet:
-        case CommandKey.ReorderSheet:
-        case CommandKey.Reset:
-        case CommandKey.CreateAnnotation:
-        case CommandKey.RemoveAnnotation:
-        case CommandKey.ShowGridlines:
+        case 'null':
+        case 'tab-color':
+        case 'show-headers':
+        case 'show-sheet':
+        case 'add-sheet':
+        case 'duplicate-sheet':
+        case 'delete-sheet':
+        case 'activate-sheet':
+        case 'rename-sheet':
+        case 'reorder-sheet':
+        case 'reset':
+        case 'create-annotation':
+        case 'remove-annotation':
+        case 'show-gridlines':
           break;
 
         /*
         // both
-        case CommandKey.Clear:
+        case 'clear':
           if (command.area) {
             if (!command.area.start.sheet_id) {
               command.area.start.sheet_id = id;
@@ -2005,44 +2004,44 @@ export class GridBase {
         */
 
         // special cases
-        case CommandKey.SortTable:
-        case CommandKey.RemoveTable:
+        case 'sort-table':
+        case 'remove-table':
           if (!command.table.area.start.sheet_id) {
             command.table.area.start.sheet_id = id;
           }
           break;
 
-        case CommandKey.AddConditionalFormat:
+        case 'add-conditional-format':
           if (!command.format.area.start.sheet_id) {
             command.format.area.start.sheet_id = id;
           }
           break;
 
         // field
-        case CommandKey.ResizeRows:
-        case CommandKey.ResizeColumns:
-        case CommandKey.InsertColumns:
-        case CommandKey.InsertRows:
-        case CommandKey.Freeze:
+        case 'resize-rows':
+        case 'resize-columns':
+        case 'insert-columns':
+        case 'insert-rows':
+        case 'freeze':
           if (!command.sheet_id) {
             command.sheet_id = id;
           }          
           break;
 
         // area: Area|Address (may be optional)
-        case CommandKey.Clear:
-        case CommandKey.SetNote:
-        case CommandKey.SetLink:
-        case CommandKey.Indent:
-        case CommandKey.UpdateBorders:
-        case CommandKey.MergeCells:
-        case CommandKey.UnmergeCells:
-        case CommandKey.DataValidation:
-        case CommandKey.SetRange:
-        case CommandKey.UpdateStyle:
-        case CommandKey.SetName:
-        case CommandKey.Select:
-        case CommandKey.InsertTable:
+        case 'clear':
+        case 'set-note':
+        case 'set-link':
+        case 'indent':
+        case 'update-borders':
+        case 'merge-cells':
+        case 'unmerge-cells':
+        case 'data-validation':
+        case 'set-range':
+        case 'update-style':
+        case 'set-name':
+        case 'select':
+        case 'insert-table':
 
         // note that remove conditional format could have a format
         // object (with an area) instead of an area. but in that case,
@@ -2051,7 +2050,7 @@ export class GridBase {
         // want to add it. so we only handle the area case.
 
         // eslint-disable-next-line no-fallthrough
-        case CommandKey.RemoveConditionalFormat:
+        case 'remove-conditional-format':
 
           if (command.area) {
             if (IsCellAddress(command.area)) {
@@ -2084,7 +2083,7 @@ export class GridBase {
 
   public TabColor(sheet: Sheet, color?: Color) {
     this.ExecCommand({
-      key: CommandKey.TabColor,
+      key: 'tab-color',
       sheet,
       color,
     });
@@ -3767,10 +3766,10 @@ export class GridBase {
 
     for (const command of commands) {
 
-      // console.log(CommandKey[command.key], JSON.stringify(command));
+      // console.log(command.key, JSON.stringify(command));
 
       switch (command.key) {
-        case CommandKey.Reset:
+        case 'reset':
 
           // not sure how well this fits in with the command queue. it
           // doesn't look like it sends any events, so what's the point?
@@ -3787,7 +3786,7 @@ export class GridBase {
           this.ResetInternal();
           break;
 
-        case CommandKey.Clear:
+        case 'clear':
           if (command.area) {
             const area = new Area(command.area.start, command.area.end);
             this.ClearAreaInternal(area);
@@ -3796,7 +3795,7 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.Select:
+        case 'select':
 
           // nobody (except one routine) is using commands for selection.
           // not sure why or why not, or if that's a problem. (it's definitely
@@ -3808,7 +3807,7 @@ export class GridBase {
 
           break;
 
-        case CommandKey.Freeze:
+        case 'freeze':
 
           // COEDITING: ok
 
@@ -3824,7 +3823,7 @@ export class GridBase {
 
           break;
 
-        case CommandKey.AddConditionalFormat:
+        case 'add-conditional-format':
           {
 
             const sheet = this.FindSheet(command.format.area);
@@ -3846,7 +3845,7 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.RemoveConditionalFormat:
+        case 'remove-conditional-format':
 
           {
             let sheet: Sheet|undefined;
@@ -3906,7 +3905,7 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.InsertTable:
+        case 'insert-table':
 
           // the most important thing here is validating that we can
           // create the table in the target area.
@@ -3987,7 +3986,7 @@ export class GridBase {
           break;
 
 
-        case CommandKey.RemoveTable:
+        case 'remove-table':
 
           // this is pretty easy, we can do it inline
 
@@ -4027,7 +4026,7 @@ export class GridBase {
 
           break;
 
-        case CommandKey.MergeCells:
+        case 'merge-cells':
           {
             // COEDITING: ok
 
@@ -4059,7 +4058,7 @@ export class GridBase {
 
           break;
 
-        case CommandKey.UnmergeCells:
+        case 'unmerge-cells':
           {
             // COEDITING: ok
 
@@ -4118,7 +4117,7 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.Indent:
+        case 'indent':
           {
             let area: Area|undefined;
             const sheet = this.FindSheet(command.area);
@@ -4151,7 +4150,7 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.UpdateStyle:
+        case 'update-style':
           {
             // COEDITING: handles sheet ID properly
 
@@ -4199,7 +4198,7 @@ export class GridBase {
 
           break;
 
-        case CommandKey.DataValidation:
+        case 'data-validation':
 
           // COEDITING: ok
 
@@ -4209,7 +4208,7 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.SetName:
+        case 'set-name':
 
           // it seems like we're allowing overwriting names if those
           // names exist as expressions or named ranges. however we
@@ -4240,7 +4239,7 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.UpdateBorders:
+        case 'update-borders':
           {
             // COEDITING: ok
 
@@ -4260,7 +4259,7 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.ShowSheet:
+        case 'show-sheet':
 
           // COEDITING: we probably don't want this to pass through
           // when coediting, but it won't break anything. you can filter.
@@ -4270,7 +4269,7 @@ export class GridBase {
           flags.structure_event = true;
           break;
 
-        case CommandKey.TabColor:
+        case 'tab-color':
           command.sheet.tab_color = command.color;
 
           // NOTE: the flag.sheets originally did not update tab colors,
@@ -4284,7 +4283,7 @@ export class GridBase {
           flags.structure_event = true;
           break;
 
-        case CommandKey.ReorderSheet:
+        case 'reorder-sheet':
           {
             // COEDITING: seems OK, irrespective of active sheet
 
@@ -4313,7 +4312,7 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.RenameSheet:
+        case 'rename-sheet':
           {
             // COEDITING: seems OK, irrespective of active sheet
 
@@ -4326,27 +4325,27 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.ShowGridlines:
+        case 'show-gridlines':
           if (this.ShowGridlinesInternal(command)) {
             flags.structure_event = true;
           }
           break;
 
-        case CommandKey.RemoveAnnotation:
+        case 'remove-annotation':
           this.RemoveAnnotationInternal(command);
           flags.structure_event = true;
           flags.structure_rebuild_required = true;
           flags.annotation_event = true;
           break;          
 
-        case CommandKey.CreateAnnotation:
+        case 'create-annotation':
           this.CreateAnnotationInternal(command);
           flags.structure_event = true;
           flags.structure_rebuild_required = true;
           flags.annotation_event = true;
           break;
 
-        case CommandKey.ResizeRows:
+        case 'resize-rows':
 
           // moving this to a method so we can specialize: non-UI grid
           // should not support autosize (it can't)
@@ -4381,13 +4380,13 @@ export class GridBase {
 
           break;
 
-        case CommandKey.ResizeColumns:
+        case 'resize-columns':
 
           this.ResizeColumnsInternal(command);
           flags.structure_event = true;
           break;
 
-        case CommandKey.ShowHeaders:
+        case 'show-headers':
 
           // FIXME: now that we don't support 2-level headers (or anything
           // other than 1-level headers), headers should be managed by/move into
@@ -4398,7 +4397,7 @@ export class GridBase {
           this.flags.repaint = true;
           break;
 
-        case CommandKey.InsertRows:
+        case 'insert-rows':
 
           // COEDITING: annotations are broken
 
@@ -4407,7 +4406,7 @@ export class GridBase {
           flags.structure_rebuild_required = true;
           break;
 
-        case CommandKey.InsertColumns:
+        case 'insert-columns':
 
           // COEDITING: annotations are broken
 
@@ -4416,8 +4415,8 @@ export class GridBase {
           flags.structure_rebuild_required = true;
           break;
 
-        case CommandKey.SetLink:
-        case CommandKey.SetNote:
+        case 'set-link':
+        case 'set-note':
           {
             // COEDITING: ok
 
@@ -4438,7 +4437,7 @@ export class GridBase {
                 area = new Area(command.area);
               }
 
-              if (command.key === CommandKey.SetNote) {
+              if (command.key === 'set-note') {
                 cell.SetNote(command.note);
               }
               else {
@@ -4466,7 +4465,7 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.SortTable:
+        case 'sort-table':
           {
             // console.info(command.table.area.spreadsheet_label);
             const area = this.SortTableInternal(command);
@@ -4489,7 +4488,7 @@ export class GridBase {
           break;
   
 
-        case CommandKey.SetRange:
+        case 'set-range':
           {
             // COEDITING: handles sheet ID properly
             // FIXME: areas should check sheet
@@ -4525,7 +4524,7 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.DeleteSheet:
+        case 'delete-sheet':
 
           // COEDITING: looks fine
 
@@ -4535,7 +4534,7 @@ export class GridBase {
           flags.structure_rebuild_required = true;
           break;
 
-        case CommandKey.DuplicateSheet:
+        case 'duplicate-sheet':
 
           // FIXME: what happens to named ranges? we don't have sheet-local names...
 
@@ -4546,7 +4545,7 @@ export class GridBase {
           flags.structure_rebuild_required = true;
           break;
 
-        case CommandKey.AddSheet:
+        case 'add-sheet':
 
           // COEDITING: this won't break, but it shouldn't change the 
           // active sheet if this is a remote command. is there a way
@@ -4557,7 +4556,7 @@ export class GridBase {
             const id = this.AddSheetInternal(command.name, command.insert_index); // default name
             if (typeof id === 'number' && command.show) {
               this.ActivateSheetInternal({
-                key: CommandKey.ActivateSheet,
+                key: 'activate-sheet',
                 id,
               });
             }
@@ -4568,12 +4567,12 @@ export class GridBase {
           }
           break;
 
-        case CommandKey.ActivateSheet:
+        case 'activate-sheet':
           this.ActivateSheetInternal(command);
           break;
 
         default:
-          console.warn(`unhandled command: ${CommandKey[command.key]} (${command.key})`);
+          console.warn(`unhandled command: ${command.key}`);
       }
     }
 

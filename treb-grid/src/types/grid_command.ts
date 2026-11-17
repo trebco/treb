@@ -34,71 +34,21 @@ import type { Annotation, AnnotationData, ConditionalFormat, Sheet } from 'treb-
  *
  */
 
-/**
- * commands are symbolic for (hopefully) faster switching. we use a
- * discriminated union for build-time parameter checks. see individual
- * command interfaces for comments.
- */
-export enum CommandKey {
-
-  /** use an empty value so all commands are non-zero */
-  Null = 0,
-
-  InsertRows,
-  InsertColumns,
-  ResizeRows,
-  ResizeColumns,
-  Select,
-  SetRange,
-  UpdateStyle,
-  UpdateBorders,
-  Indent,
-  MergeCells,
-  UnmergeCells,
-  Clear,
-  UpdateTheme,
-  SetNote,
-  SetLink,
-  Freeze,
-  SetName,
-  ShowHeaders,
-  AddSheet,
-  DuplicateSheet,
-  DeleteSheet,
-  ActivateSheet,
-  RenameSheet,
-  ReorderSheet,
-  ShowSheet,
-  DataValidation,
-  Reset,
-  SortTable,
-  InsertTable,
-  RemoveTable,
-
-  AddConditionalFormat,
-  RemoveConditionalFormat,
-
-  TabColor,
-  CreateAnnotation,
-  RemoveAnnotation,
-  ShowGridlines,
-
-}
 
 export interface ShowGridLinesCommand {
-  key: CommandKey.ShowGridlines,
+  key: 'show-gridlines',
   sheet: Sheet,
   show?: boolean,
 }
 
 export interface RemoveAnnotationCommand {
-  key: CommandKey.RemoveAnnotation;
+  key: 'remove-annotation';
   sheet: Sheet;
   annotation: Annotation;
 }
 
 export interface CreateAnnotationCommand {
-  key: CommandKey.CreateAnnotation;
+  key: 'create-annotation';
   sheet: Sheet;
   properties: Partial<AnnotationData>;
   add_to_sheet?: boolean;
@@ -119,7 +69,7 @@ export interface SheetSelection {
  * show or hide sheet.
  */
 export interface ShowSheetCommand extends SheetSelection {
-  key: CommandKey.ShowSheet;
+  key: 'show-sheet';
   show: boolean;
 }
 
@@ -142,7 +92,7 @@ export interface CommandBase {
  * insert a table at the given location
  */
 export interface InsertTableCommand {
-  key: CommandKey.InsertTable,
+  key: 'insert-table',
   area: IArea,
 
   /** optionally include a totals row */
@@ -165,7 +115,7 @@ export interface InsertTableCommand {
  * remove the table
  */
 export interface RemoveTableCommand {
-  key: CommandKey.RemoveTable,
+  key: 'remove-table',
   table: Table,
 }
 
@@ -175,7 +125,7 @@ export interface RemoveTableCommand {
  * to me, but hey).
  */
 export interface SortTableCommand {
-  key: CommandKey.SortTable,
+  key: 'sort-table',
   table: Table,
   column: number,
   asc: boolean;
@@ -190,7 +140,7 @@ export interface SortTableCommand {
  * when (and only when) auto-sizing, i.e. height is undefined
  */
 export interface ResizeRowsCommand {
-  key: CommandKey.ResizeRows;
+  key: 'resize-rows';
   row?: number|number[];
   height?: number;
   shrink?: boolean;
@@ -202,7 +152,7 @@ export interface ResizeRowsCommand {
  * width means "auto size".
  */
 export interface ResizeColumnsCommand {
-  key: CommandKey.ResizeColumns;
+  key: 'resize-columns';
   column?: number|number[];
   width?: number;
 
@@ -216,7 +166,7 @@ export interface ResizeColumnsCommand {
 
 /** insert one or more rows at the given insert point */
 export interface InsertRowsCommand {
-  key: CommandKey.InsertRows;
+  key: 'insert-rows';
   before_row: number;
   count: number;
   sheet_id?: number;
@@ -224,7 +174,7 @@ export interface InsertRowsCommand {
 
 /** insert one or more columns at the given insert point */
 export interface InsertColumnsCommand {
-  key: CommandKey.InsertColumns;
+  key: 'insert-columns';
   before_column: number;
   count: number;
   sheet_id?: number;
@@ -232,7 +182,7 @@ export interface InsertColumnsCommand {
 
 /** show or hide headers */
 export interface ShowHeadersCommand {
-  key: CommandKey.ShowHeaders;
+  key: 'show-headers';
   show: boolean;
 }
 
@@ -250,7 +200,7 @@ export interface ShowHeadersCommand {
  * 
  */
 export interface SetNameCommand {
-  key: CommandKey.SetName;
+  key: 'set-name';
   name: string;
   area?: IArea;
   expression?: ExpressionUnit;
@@ -258,7 +208,7 @@ export interface SetNameCommand {
 }
 
 export interface DataValidationCommand {
-  key: CommandKey.DataValidation;
+  key: 'data-validation';
   area: IArea;
 
   range?: IArea;
@@ -271,7 +221,7 @@ export interface DataValidationCommand {
  * we need some indication of primary/alternative
  */
 export interface SelectCommand {
-  key: CommandKey.Select;
+  key: 'select';
 
   /** missing area implies clear selection (-> no selection) */
   area?: IArea;
@@ -282,7 +232,7 @@ export interface SelectCommand {
 
 /** set data in cell or area */
 export interface SetRangeCommand {
-  key: CommandKey.SetRange;
+  key: 'set-range';
   area: IArea|ICellAddress;
 
   /** set as array (usually control-enter) */
@@ -305,7 +255,7 @@ export interface SetRangeCommand {
  * area, not the outside of each cell.
  */
 export interface UpdateBordersCommand {
-  key: CommandKey.UpdateBorders;
+  key: 'update-borders';
   area: IArea;
   borders: BorderConstants;
   // color?: string; // pending
@@ -316,14 +266,14 @@ export interface UpdateBordersCommand {
 }
 
 export interface IndentCommand {
-  key: CommandKey.Indent,
+  key: 'indent',
   area: IArea,
   delta: number,
 }
 
 /** update style in area. area can be cell(s), sheet, row(s), column(s) */
 export interface UpdateStyleCommand {
-  key: CommandKey.UpdateStyle;
+  key: 'update-style';
   area: IArea|ICellAddress;
   style: CellStyle;
   delta?: boolean;
@@ -331,7 +281,7 @@ export interface UpdateStyleCommand {
 
 /** merge the given cells */
 export interface MergeCellsCommand {
-  key: CommandKey.MergeCells;
+  key: 'merge-cells';
   area: IArea;
 }
 
@@ -341,19 +291,19 @@ export interface MergeCellsCommand {
  * unmerge those (generally useful when working with selections).
  */
 export interface UnmergeCellsCommand {
-  key: CommandKey.UnmergeCells;
+  key: 'unmerge-cells';
   area: IArea;
 }
 
 /** set or clear note at given address. */
 export interface SetNoteCommand {
-  key: CommandKey.SetNote;
+  key: 'set-note';
   area: ICellAddress;
   note?: string;
 }
 
 export interface SetLinkCommand {
-  key: CommandKey.SetLink;
+  key: 'set-link';
   area: ICellAddress;
   reference?: string;
 }
@@ -375,7 +325,7 @@ export interface SetLinkCommand {
  * 
  */
 export interface ClearCommand {
-  key: CommandKey.Clear;
+  key: 'clear';
   area: IArea;
   // sheet_id?: number;
 }
@@ -384,7 +334,7 @@ export interface ClearCommand {
  * reset everything. 
  */
 export interface ResetCommand {
-  key: CommandKey.Reset;
+  key: 'reset';
 }
 
 /**
@@ -392,7 +342,7 @@ export interface ResetCommand {
  * highlight defaults to TRUE.
  */
 export interface FreezeCommand {
-  key: CommandKey.Freeze;
+  key: 'freeze';
   rows: number;
   columns: number;
   highlight_transition?: boolean;
@@ -405,16 +355,16 @@ export interface FreezeCommand {
  * you lose synchronization
  * /
 export interface UpdateThemeCommand {
-  key: CommandKey.UpdateTheme;
+  key: 'update-theme';
 }
 */
 
 export interface NullCommand {
-  key: CommandKey.Null;
+  key: 'null';
 }
 
 export interface AddSheetCommand {
-  key: CommandKey.AddSheet;
+  key: 'add-sheet';
   insert_index?: number;
   name?: string;
   
@@ -423,13 +373,13 @@ export interface AddSheetCommand {
 }
 
 export interface DuplicateSheetCommand extends SheetSelection {
-  key: CommandKey.DuplicateSheet;
+  key: 'duplicate-sheet';
   new_name?: string;
   insert_before?: string|number;
 }
 
 export interface DeleteSheetCommand extends SheetSelection {
-  key: CommandKey.DeleteSheet;
+  key: 'delete-sheet';
 }
 
 /**
@@ -438,7 +388,7 @@ export interface DeleteSheetCommand extends SheetSelection {
  * pass no selector it will select index 0.
  */
 export interface ActivateSheetCommand extends SheetSelection {
-  key: CommandKey.ActivateSheet;
+  key: 'activate-sheet';
 
   /** ... */
   tab_bar_event?: boolean;
@@ -454,7 +404,7 @@ export interface ActivateSheetCommand extends SheetSelection {
  * have to be a little careful about name old/new
  */
 export interface RenameSheetCommand extends SheetSelection {
-  key: CommandKey.RenameSheet;
+  key: 'rename-sheet';
   new_name: string; // required
 }
 
@@ -463,7 +413,7 @@ export interface RenameSheetCommand extends SheetSelection {
  * list length, moves to end.
  */
 export interface ReorderSheetCommand {
-  key: CommandKey.ReorderSheet;
+  key: 'reorder-sheet';
   index: number;
   move_before: number;
 }
@@ -472,12 +422,12 @@ export interface ReorderSheetCommand {
  * add conditional format
  */
 export interface AddConditionalFormatCommand {
-  key: CommandKey.AddConditionalFormat;
+  key: 'add-conditional-format';
   format: ConditionalFormat;
 }
 
 export interface TabColorCommand {
-  key: CommandKey.TabColor;
+  key: 'tab-color';
   sheet: Sheet;
   color?: Color;
 }
@@ -489,7 +439,7 @@ export interface TabColorCommand {
  */
 export interface RemoveConditionalFormatCommand {
 
-  key: CommandKey.RemoveConditionalFormat;
+  key: 'remove-conditional-format';
 
   /** if format is omitted, we will remove all formats from the target range */
   format?: ConditionalFormat;
@@ -549,6 +499,9 @@ export type Command =
   | AddConditionalFormatCommand
   | RemoveConditionalFormatCommand
   ) ; // & Ephemeral;
+
+/** the set of command keys, derived from the command union */
+export type CommandKey = Command['key'];
 
 /**
  * record type for recording/logging commands

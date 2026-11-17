@@ -111,8 +111,6 @@ import type {
   RemoveAnnotationCommand,
   ShowGridLinesCommand
 } from './grid_command';
-import { CommandKey
-} from './grid_command';
 
 import { DOMContext } from 'treb-base-types';
 import { GridBase } from './grid_base';
@@ -690,7 +688,7 @@ export class Grid extends GridBase {
     }
 
     this.ExecCommand({
-      key: CommandKey.SetNote,
+      key: 'set-note',
       area: address,
       note,
     });
@@ -717,7 +715,7 @@ export class Grid extends GridBase {
         focus?: boolean ) {
 
     this.ExecCommand({
-      key: CommandKey.CreateAnnotation,
+      key: 'create-annotation',
       properties,
       add_to_sheet,
       offset,
@@ -1142,7 +1140,7 @@ export class Grid extends GridBase {
    */
   public RemoveAnnotation(annotation: Annotation, sheet = this.active_sheet): void {
     this.ExecCommand({
-      key: CommandKey.RemoveAnnotation,
+      key: 'remove-annotation',
       annotation,
       sheet,
     });
@@ -1199,7 +1197,7 @@ export class Grid extends GridBase {
    */
   public ShowHeaders(show = true): void {
     this.ExecCommand({
-      key: CommandKey.ShowHeaders,
+      key: 'show-headers',
       show,
     });
   }
@@ -1761,7 +1759,7 @@ export class Grid extends GridBase {
     this.layout.HideDropdownCaret();
 
     this.ExecCommand({
-      key: CommandKey.MergeCells,
+      key: 'merge-cells',
       area: area || this.primary_selection.area,
     });
   }
@@ -1778,7 +1776,7 @@ export class Grid extends GridBase {
     this.layout.HideDropdownCaret();
 
     this.ExecCommand({
-      key: CommandKey.UnmergeCells,
+      key: 'unmerge-cells',
       area: area || this.primary_selection.area,
     });
 
@@ -1900,7 +1898,7 @@ export class Grid extends GridBase {
     // console.info({target, data});
 
     const command: DataValidationCommand = {
-      key: CommandKey.DataValidation,
+      key: 'data-validation',
       area: { start: area.start, end: area.end },
       error,
     };
@@ -1983,7 +1981,7 @@ export class Grid extends GridBase {
     }
         
     const command: SetNameCommand = {
-      key: CommandKey.SetName,
+      key: 'set-name',
       name,
       scope,
     };
@@ -2406,10 +2404,10 @@ export class Grid extends GridBase {
      // single value, easiest
     if (!Array.isArray(data)) {
       if (recycle || array) {
-        this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array, r1c1 });
+        this.ExecCommand({ key: 'set-range', area: range, value: data, array, r1c1 });
       }
       else {
-        this.ExecCommand({ key: CommandKey.SetRange, area: range.start, value: data, array, r1c1 });
+        this.ExecCommand({ key: 'set-range', area: range.start, value: data, array, r1c1 });
       }
 
     }
@@ -2504,7 +2502,7 @@ export class Grid extends GridBase {
 
       if (transpose) { data = this.Transpose(data); }
 
-      this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array, r1c1 });
+      this.ExecCommand({ key: 'set-range', area: range, value: data, array, r1c1 });
 
     }
 
@@ -2536,7 +2534,7 @@ export class Grid extends GridBase {
     Sheet.UpdateStyle(properties);
 
     this.ExecCommand({
-      key: CommandKey.UpdateStyle,
+      key: 'update-style',
       area,
       style: properties,
       delta,
@@ -2591,7 +2589,7 @@ export class Grid extends GridBase {
     }
 
     this.ExecCommand({
-      key: CommandKey.UpdateBorders,
+      key: 'update-borders',
       color: { text: color },
       area,
       borders,
@@ -2609,7 +2607,7 @@ export class Grid extends GridBase {
     }
 
     this.ExecCommand({
-      key: CommandKey.Indent,
+      key: 'indent',
       area, 
       delta,
     });
@@ -2629,7 +2627,7 @@ export class Grid extends GridBase {
     }
 
     this.ExecCommand({
-      key: CommandKey.UpdateBorders,
+      key: 'update-borders',
       color,
       area,
       borders,
@@ -2798,7 +2796,7 @@ export class Grid extends GridBase {
       if (sheet === this.active_sheet) {
         if (force) {
           this.ActivateSheetInternal({
-            key: CommandKey.ActivateSheet,
+            key: 'activate-sheet',
             id: sheet.id,
             force: true,
           });
@@ -2810,7 +2808,7 @@ export class Grid extends GridBase {
     // invalid -- jump to 0
 
     this.ActivateSheetInternal({
-      key: CommandKey.ActivateSheet,
+      key: 'activate-sheet',
       index: 0,
     });
     
@@ -3102,7 +3100,7 @@ export class Grid extends GridBase {
         const sheet = get_sheet(target_area.start.sheet_id);
         if (sheet.columns >= target_area.end.column && sheet.rows >= target_area.end.row) {
           this.ExecCommand({
-            key: CommandKey.Select,
+            key: 'select',
             area: target_area,
           });
           return;
@@ -3595,7 +3593,7 @@ export class Grid extends GridBase {
         // call with height = undefined, means auto-size
 
         this.ExecCommand({
-          key: CommandKey.ResizeRows,
+          key: 'resize-rows',
           row: rows,
         });
 
@@ -3745,7 +3743,7 @@ export class Grid extends GridBase {
           this.layout.SetRowHeight(row, original_height);
 
           this.ExecCommand({
-            key: CommandKey.ResizeRows,
+            key: 'resize-rows',
             row: rows,
             height: height / this.scale,
           });
@@ -3867,7 +3865,7 @@ export class Grid extends GridBase {
         // call with width = undefined, means auto-size
 
         this.ExecCommand({
-          key: CommandKey.ResizeColumns,
+          key: 'resize-columns',
           column: columns,
         });
 
@@ -4011,7 +4009,7 @@ export class Grid extends GridBase {
           }
 
           this.ExecCommand({
-            key: CommandKey.ResizeColumns,
+            key: 'resize-columns',
             column: columns,
             width: width, //  / this.scale,
           });
@@ -4505,7 +4503,7 @@ export class Grid extends GridBase {
           // click functions must use canonical (english) names.
 
           this.ExecCommand({
-            key: CommandKey.SetRange,
+            key: 'set-range',
             value: result.value,
             area: address,
           });
@@ -4730,7 +4728,7 @@ export class Grid extends GridBase {
     // special case: top-left is array and source_area is the whole, exact array
     if (cells[0][0].area && cells[0][0].area.Equals(source_area)) {
         this.ExecCommand({
-          key: CommandKey.SetRange,
+          key: 'set-range',
           value: cells[0][0].value,
           array: true,
           area: target_area,
@@ -4751,11 +4749,11 @@ export class Grid extends GridBase {
       // remove the table, then re-insert, preserving flags
 
       this.ExecCommand([{
-          key: CommandKey.RemoveTable,
+          key: 'remove-table',
           table,
         },
         {
-          key: CommandKey.InsertTable,
+          key: 'insert-table',
           area: target_area,
           sortable,
           totals,
@@ -4891,7 +4889,7 @@ export class Grid extends GridBase {
     // from existing cell data, which should be in canonical form.
 
     const commands: Command[] = [{
-      key: CommandKey.SetRange,
+      key: 'set-range',
       value: transposed ? this.Transpose(data) : data,
       array: false,
       area: target_area,
@@ -4902,7 +4900,7 @@ export class Grid extends GridBase {
     for (let row = 0; row < style.length; row++) {
       for (let column = 0; column < style[row].length; column++) {
         commands.push({
-          key: CommandKey.UpdateStyle,
+          key: 'update-style',
           area: {
             row: row + target_area.start.row, 
             column: column + target_area.start.column },
@@ -5672,7 +5670,7 @@ export class Grid extends GridBase {
   private DeleteSelection(selection: GridSelection) {
     if (selection.empty) return;
     const area = this.active_sheet.RealArea(selection.area);
-    this.ExecCommand({ key: CommandKey.Clear, area });
+    this.ExecCommand({ key: 'clear', area });
   }
 
 
@@ -5789,7 +5787,7 @@ export class Grid extends GridBase {
 
     if (apply_style) {
       commands.push({
-        key: CommandKey.UpdateStyle,
+        key: 'update-style',
         style: apply_style,
         delta: true,
         area: array ? selection.area : selection.target,
@@ -5840,7 +5838,7 @@ export class Grid extends GridBase {
               }
               if (number_format) {
                 commands.push({
-                  key: CommandKey.UpdateStyle,
+                  key: 'update-style',
                   area: array ? selection.area : target, style: { number_format }, delta: true
                 });
               }
@@ -5924,7 +5922,7 @@ export class Grid extends GridBase {
               };
 
               commands.push({
-                key: CommandKey.UpdateStyle,
+                key: 'update-style',
                 area: array ? selection.area : target, style, delta: true
               });
             }
@@ -6012,7 +6010,7 @@ export class Grid extends GridBase {
 
       if (number_format) {
         commands.push({
-          key: CommandKey.UpdateStyle,
+          key: 'update-style',
           area: array ? selection.area : target,
           style: { number_format },
           delta: true,
@@ -6036,7 +6034,7 @@ export class Grid extends GridBase {
     // before calling SetRange.
 
     commands.push({
-      key: CommandKey.SetRange,
+      key: 'set-range',
       area: array ? selection.area : target,
       array,
       value: is_function ? this.model.UntranslateFunction(value || '') : parse_result.value,
@@ -7325,7 +7323,7 @@ export class Grid extends GridBase {
     // using a dropdown (can you? ...)
 
     this.ExecCommand({
-      key: CommandKey.SetRange,
+      key: 'set-range',
       area,
       value,
     });
@@ -7550,7 +7548,7 @@ export class Grid extends GridBase {
     if (!this.primary_selection.empty) {
       const area = this.active_sheet.RealArea(this.primary_selection.area);
       // this.model.sheet.ClearArea(area);
-      this.ExecCommand({ key: CommandKey.Clear, area });
+      this.ExecCommand({ key: 'clear', area });
     }
     else if (this.selected_annotation) {
       this.RemoveAnnotation(this.selected_annotation);
@@ -7732,7 +7730,7 @@ export class Grid extends GridBase {
 
           // FIXME: command
           // this.model.sheet.ClearArea(paste_area, true);
-          commands.push({ key: CommandKey.Clear, area: paste_area });
+          commands.push({ key: 'clear', area: paste_area });
 
           const offsets = {
             rows: paste_area.start.row - source_area.start.row,
@@ -7770,7 +7768,7 @@ export class Grid extends GridBase {
               // in canonical form on the clipboard.
 
               const command: SetRangeCommand = {
-                key: CommandKey.SetRange,
+                key: 'set-range',
                 value: data,
                 array: true,
                 area: target_array,
@@ -7796,12 +7794,12 @@ export class Grid extends GridBase {
                 // we do not need to translate here -- the data should be 
                 // in canonical form on the clipboard.
 
-                commands.push({ key: CommandKey.SetRange, value: data, area: target_address });
+                commands.push({ key: 'set-range', value: data, area: target_address });
               }
 
             }
 
-            commands.push({ key: CommandKey.UpdateStyle, style: cell_info.style || {}, area: target_address });
+            commands.push({ key: 'update-style', style: cell_info.style || {}, area: target_address });
 
           });
 
@@ -7810,7 +7808,7 @@ export class Grid extends GridBase {
               if (typeof width === 'number') {
                 const column = index + paste_area.start.column;
                 commands.push({
-                  key: CommandKey.ResizeColumns, 
+                  key: 'resize-columns', 
                   column, 
                   width,
                 });
@@ -7823,7 +7821,7 @@ export class Grid extends GridBase {
               if (typeof height === 'number') {
                 const row = index + paste_area.start.row;
                 commands.push({
-                  key: CommandKey.ResizeRows,
+                  key: 'resize-rows',
                   row,
                   height,
                 });
@@ -7887,7 +7885,7 @@ export class Grid extends GridBase {
             else {
               const current = this.active_sheet.cells.GetCell(target_area.start, false);
               if (current && current.type !== ValueType.undefined) {
-                commands.push({ key: CommandKey.Clear, area: target_area.Clone() });
+                commands.push({ key: 'clear', area: target_area.Clone() });
               }
             }
           }
@@ -8309,7 +8307,7 @@ export class Grid extends GridBase {
       // activate sheet, if necessary
       if (command.area.start.sheet_id && command.area.start.sheet_id !== this.active_sheet.id) {
         this.ActivateSheetInternal({
-          key: CommandKey.ActivateSheet,
+          key: 'activate-sheet',
           id: command.area.start.sheet_id,
         });
       }
