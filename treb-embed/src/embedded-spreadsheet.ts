@@ -63,7 +63,7 @@ import type {
 
 
 import {
-  Grid, BorderConstants, ErrorCode, UA,
+  Grid, type BorderConstants, ErrorCode, UA,
 } from 'treb-grid';
 
 import { 
@@ -98,7 +98,7 @@ import { Heuristics } from 'treb-data-model';
 
 // --- local -------------------------------------------------------------------
 
-import { Dialog, DialogType } from './progress-dialog';
+import { Dialog } from './progress-dialog';
 import { Spinner } from './spinner';
 import { type EmbeddedSpreadsheetOptions, DefaultOptions, type ExportOptions } from './options';
 import { type TREBDocument, SaveFileType, type LoadSource, type EmbeddedSheetEvent, type InsertTableOptions, type SelectionEvent } from './types';
@@ -825,7 +825,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
           case 'error':
             this.dialog?.ShowDialog({
-              type: DialogType.error,
+              type: 'error',
               ...this.TranslateGridError(event.code),
               timeout: 3000,
               close_box: true,
@@ -1015,7 +1015,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             case 'error':
               /*
               this.dialog?.ShowDialog({
-                type: DialogType.error,
+                type: 'error',
                 ...this.TranslateGridError(event.code),
                 timeout: 3000,
                 close_box: true,
@@ -2188,7 +2188,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         let command = event.command.substring(7) as BorderConstants;
         
         if (event.command === 'border-double-bottom') {
-          command = BorderConstants.Bottom;
+          command = 'bottom';
           width = 2;
         }
 
@@ -2478,7 +2478,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
                     `changes in the sidebar.`,
             close_box: true,
             timeout: 5000,
-            type: DialogType.info,
+            type: 'info',
           });
           break;
 
@@ -3692,7 +3692,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         title: `Reverting to original`,
         close_box: true,
         timeout: 3000,
-        type: DialogType.info,
+        type: 'info',
       });
       */
 
@@ -3716,7 +3716,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       title: `Can't revert -- no document is set in options`,
       close_box: true,
       timeout: 3000,
-      type: DialogType.error,
+      type: 'error',
     });
     
   }
@@ -3766,7 +3766,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           close_box: true,
           message: 'The worker cannot run from the filesystem, please use a web server.',
           timeout: 3000,
-          type: DialogType.error,
+          type: 'error',
         });
       }
 
@@ -3958,7 +3958,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         title: 'Error loading file',
         close_box: true,
         message: 'The network document returned an error',
-        type: DialogType.error,
+        type: 'error',
         timeout: 3000,
       });
       this.Reset();
@@ -4711,7 +4711,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // API v1 OK
 
     this.dialog?.ShowDialog({
-      type: DialogType.about,
+      type: 'about',
     });
   }
 
@@ -5983,7 +5983,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     if (this.options.max_file_size && file.size > this.options.max_file_size) {
       this.dialog?.ShowDialog({
-        type: DialogType.error,
+        type: 'error',
         message: 'This file exceeds the allowed image size. Please try a smaller image.',
         title: 'Error adding image',
         timeout: 3000,
@@ -6087,7 +6087,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
               message: process.env.XLSX_SUPPORT ? 
                 'Please make sure your file is a valid XLSX, CSV or TREB file.' :
                 'Please make sure your file is a valid CSV or TREB file.' ,
-              type: DialogType.error,
+              type: 'error',
               timeout: 3000,
             });
             console.error(err);

@@ -19,15 +19,7 @@
  * 
  */
 
-export enum DialogType {
-  default = '', 
-  info = 'info',
-  error = 'error',
-  warning = 'warning',
-  success = 'success',
-  about = 'about',
-  initial = 'initial',
-}
+export type DialogType = ''|'info'|'error'|'warning'|'success'|'about'|'initial';
 
 export interface MessageDialogOptions {
   title?: string;
@@ -69,12 +61,12 @@ export class Dialog {
   private pending_dialog_resoltion: ResolutionFunction[] = [];
 
   private options_: Partial<MessageDialogOptions> = {
-    type: DialogType.initial,
+    type: 'initial',
   };
 
   private set options(options: Partial<MessageDialogOptions>) {
 
-    if (options.type === DialogType.about) {
+    if (options.type === 'about') {
       options.close_box = true;
       options.icon = true;
     }

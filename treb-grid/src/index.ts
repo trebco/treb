@@ -25,7 +25,7 @@ export * from './types/grid_events';
 export * from './types/clipboard_data2';
 export type { GridOptions } from './types/grid_options';
 export type { Command } from './types/grid_command';
-export { BorderConstants } from './types/border_constants';
+export type { BorderConstants } from './types/border_constants';
 export type { FunctionDescriptor, ArgumentDescriptor } from './editors/autocomplete_matcher';
 export { UA } from './util/ua';
 export type { SetRangeOptions } from './types/set_range_options';

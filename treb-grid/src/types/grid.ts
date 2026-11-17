@@ -94,7 +94,7 @@ import { Annotation, type AnnotationData, Sheet } from 'treb-data-model';
 
 import { FormulaBar } from '../editors/formula_bar';
 import type { GridOptions } from './grid_options';
-import { BorderConstants } from './border_constants';
+import type { BorderConstants } from './border_constants';
 import { UA } from '../util/ua';
 import { Autocomplete } from '../editors/autocomplete';
 
@@ -2577,14 +2577,14 @@ export class Grid extends GridBase {
    * @param color
    * @param width
    * /
-  public ApplyBorders(area?: Area, borders: BorderConstants = BorderConstants.None, color?: string, width = 1): void {
+  public ApplyBorders(area?: Area, borders: BorderConstants = 'none', color?: string, width = 1): void {
 
     if (!area) {
       if (this.primary_selection.empty) { return; }
       area = this.primary_selection.area;
     }
 
-    if (borders === BorderConstants.None) {
+    if (borders === 'none') {
       width = 0;
     }
 
@@ -2615,14 +2615,14 @@ export class Grid extends GridBase {
   }
 
   /** updated API method, probably change the name */
-  public ApplyBorders2(area?: Area, borders: BorderConstants = BorderConstants.None, color?: Color, width = 1): void {
+  public ApplyBorders2(area?: Area, borders: BorderConstants = 'none', color?: Color, width = 1): void {
 
     if (!area) {
       if (this.primary_selection.empty) { return; }
       area = this.primary_selection.area;
     }
 
-    if (borders === BorderConstants.None) {
+    if (borders === 'none') {
       width = 0;
     }
 

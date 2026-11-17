@@ -56,7 +56,6 @@ import { ErrorCode } from './grid_events';
 import type { CommandRecord, CreateAnnotationCommand, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, RemoveAnnotationCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowGridLinesCommand, ShowSheetCommand, SortTableCommand } from './grid_command';
 import { DefaultGridOptions, type GridOptions } from './grid_options';
 
-import { BorderConstants } from './border_constants';
 
 import type { Command, ActivateSheetCommand, 
                DeleteSheetCommand, UpdateBordersCommand, SheetSelection } from './grid_command';
@@ -2425,7 +2424,7 @@ export class GridBase {
    protected ApplyBordersInternal(command: UpdateBordersCommand) {
 
     const borders = command.borders;
-    const width = (command.borders === BorderConstants.None)
+    const width = (command.borders === 'none')
       ? 0 : command.width;
 
     const area = new Area(command.area.start, command.area.end);
@@ -2484,22 +2483,22 @@ export class GridBase {
     }
     
     // inside all/none
-    if (borders === BorderConstants.None || borders === BorderConstants.All) {
+    if (borders === 'none' || borders === 'all') {
       sheet.UpdateAreaStyle(area, {
         ...top, ...bottom, ...left, ...right,
       }, true);
     }
 
     // top
-    if (borders === BorderConstants.Top || borders === BorderConstants.Outside) {
+    if (borders === 'top' || borders === 'outside') {
       if (!area.entire_column) {
         sheet.UpdateAreaStyle(area.top, { ...top }, true);
       }
     }
 
     // mirror top (CLEAR)
-    if (borders === BorderConstants.None || borders === BorderConstants.All ||
-      borders === BorderConstants.Outside || borders === BorderConstants.Top) {
+    if (borders === 'none' || borders === 'all' ||
+      borders === 'outside' || borders === 'top') {
       if (!area.entire_column) {
         if (area.start.row) {
           sheet.UpdateAreaStyle(new Area(
@@ -2510,15 +2509,15 @@ export class GridBase {
     }
 
     // bottom
-    if (borders === BorderConstants.Bottom || borders === BorderConstants.Outside) {
+    if (borders === 'bottom' || borders === 'outside') {
       if (!area.entire_column) {
         sheet.UpdateAreaStyle(area.bottom, { ...bottom }, true);
       }
     }
 
     // mirror bottom (CLEAR)
-    if (borders === BorderConstants.None || borders === BorderConstants.All ||
-      borders === BorderConstants.Outside || borders === BorderConstants.Bottom) {
+    if (borders === 'none' || borders === 'all' ||
+      borders === 'outside' || borders === 'bottom') {
       if (!area.entire_column) {
         sheet.UpdateAreaStyle(new Area(
           { row: area.end.row + 1, column: area.start.column },
@@ -2527,15 +2526,15 @@ export class GridBase {
     }
 
     // left
-    if (borders === BorderConstants.Left || borders === BorderConstants.Outside) {
+    if (borders === 'left' || borders === 'outside') {
       if (!area.entire_row) {
         sheet.UpdateAreaStyle(area.left, { ...left }, true);
       }
     }
 
     // mirror left (CLEAR)
-    if (borders === BorderConstants.None || borders === BorderConstants.All ||
-      borders === BorderConstants.Outside || borders === BorderConstants.Left) {
+    if (borders === 'none' || borders === 'all' ||
+      borders === 'outside' || borders === 'left') {
       if (!area.entire_row) {
         if (area.start.column) {
           sheet.UpdateAreaStyle(new Area(
@@ -2546,15 +2545,15 @@ export class GridBase {
     }
 
     // right
-    if (borders === BorderConstants.Right || borders === BorderConstants.Outside) {
+    if (borders === 'right' || borders === 'outside') {
       if (!area.entire_row) {
         sheet.UpdateAreaStyle(area.right, { ...right }, true);
       }
     }
 
     // mirror right (CLEAR)
-    if (borders === BorderConstants.None || borders === BorderConstants.All ||
-      borders === BorderConstants.Outside || borders === BorderConstants.Right) {
+    if (borders === 'none' || borders === 'all' ||
+      borders === 'outside' || borders === 'right') {
       if (!area.entire_row) {
         sheet.UpdateAreaStyle(new Area(
           { row: area.start.row, column: area.end.column + 1 },
