@@ -20,7 +20,7 @@
  */
 
 import type { CellStyle, Color } from './style';
-import type { SerializedValueType } from './value-type';
+import type { ValueType } from './value-type';
 import type { IArea } from './area';
 import type { AnnotationLayout } from './layout';
 import type { Table } from './table';
@@ -29,10 +29,10 @@ import type { DataValidation, AnnotationType, ConditionalFormat } from 'treb-dat
 export interface CellParseResult {
   row: number;
   column: number;
-  type: SerializedValueType; // ValueType,
+  type: ValueType;
   value: number|string|undefined|boolean;
   calculated?: number|string|undefined|boolean;
-  calculated_type?: SerializedValueType; // ValueType,
+  calculated_type?: ValueType;
   style_ref?: number;
   hyperlink?: string;
   validation?: DataValidation;

@@ -20,7 +20,7 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import { Box, IsCellAddress, type UnionValue, ValueType } from 'treb-base-types';
+import { Box, IsCellAddress, type UnionValue } from 'treb-base-types';
 import { UnionIsMetadata } from '../expression-calculator';
 
 const match_arguments = [{
@@ -39,16 +39,16 @@ export const InformationFunctionLibrary: FunctionMap = {
       metadata: true,
     }],
     fn: (reference: UnionValue) => {
-      if (reference.type === ValueType.array) {
+      if (reference.type === 'array') {
 
         // logically, if the first cell in the array is a reference,
         // then it's a reference. there has to be one, though.
 
         if (reference.value.length && reference.value[0]?.length) {
           const check = reference.value[0][0];
-          if (UnionIsMetadata(check) && check.type === ValueType.object) {
+          if (UnionIsMetadata(check) && check.type === 'object') {
             return {
-              type: ValueType.boolean, 
+              type: 'boolean', 
               value: IsCellAddress(check.value.address),
             };
           }
@@ -56,9 +56,9 @@ export const InformationFunctionLibrary: FunctionMap = {
 
       }
       if (UnionIsMetadata(reference)) {
-        if (reference.type === ValueType.object) {
+        if (reference.type === 'object') {
           return {
-            type: ValueType.boolean, 
+            type: 'boolean', 
             value: IsCellAddress(reference.value.address),
           };
         }
@@ -75,20 +75,20 @@ export const InformationFunctionLibrary: FunctionMap = {
     }],
     fn: (reference: UnionValue) => {
       let count = 0;
-      if (reference.type === ValueType.array) {
+      if (reference.type === 'array') {
         for (const column of reference.value) {
           for (const cell of column) {
-            if (UnionIsMetadata(cell) && cell.type === ValueType.object && cell.value.value === undefined) {
+            if (UnionIsMetadata(cell) && cell.type === 'object' && cell.value.value === undefined) {
               count++;
             }
           }
         }
       }
-      else if (UnionIsMetadata(reference) && reference.type === ValueType.object && reference.value === undefined) {
+      else if (UnionIsMetadata(reference) && reference.type === 'object' && reference.value === undefined) {
         count++;
       }
       return {
-        type: ValueType.number,
+        type: 'number',
         value: count,
       }
     },
@@ -104,11 +104,11 @@ export const InformationFunctionLibrary: FunctionMap = {
     }],
     fn: (value: UnionValue) => {
       let result = false;
-      if (UnionIsMetadata(value) && value.type === ValueType.object) {
+      if (UnionIsMetadata(value) && value.type === 'object') {
         result = value.value.value === undefined;
       }
       return { 
-        type: ValueType.boolean, 
+        type: 'boolean', 
         value: result,
       };
     },
@@ -117,19 +117,19 @@ export const InformationFunctionLibrary: FunctionMap = {
   IsNumber: {
     description: 'Returns true if the reference is a number',
     arguments: match_arguments,
-    fn: (value: UnionValue) => ({ type: ValueType.boolean, value: value.type === ValueType.number }),
+    fn: (value: UnionValue) => ({ type: 'boolean', value: value.type === 'number' }),
   },
 
   IsLogical: {
     description: 'Returns true if the reference is a logical TRUE or FALSE',
     arguments: match_arguments,
-    fn: (value: UnionValue) => ({ type: ValueType.boolean, value: value.type === ValueType.boolean }),
+    fn: (value: UnionValue) => ({ type: 'boolean', value: value.type === 'boolean' }),
   },
 
   IsText: {
     description: 'Returns true if the reference is text',
     arguments: match_arguments,
-    fn: (value: UnionValue) => ({ type: ValueType.boolean, value: value.type === ValueType.string }),
+    fn: (value: UnionValue) => ({ type: 'boolean', value: value.type === 'string' }),
   },
 
   /* needs more data
@@ -142,7 +142,7 @@ export const InformationFunctionLibrary: FunctionMap = {
     fn: (ref: UnionValue): UnionValue => {
       console.info("RR", ref);
       return { 
-        type: ValueType.boolean, 
+        type: 'boolean', 
         value: ref?.value && typeof ref.value.value === 'string' && ref.value.value[0] === '=',
       };
     },

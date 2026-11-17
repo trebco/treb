@@ -22,7 +22,7 @@
 import type { RangeScale } from 'treb-utils';
 import type { Area } from './rectangle';
 import type { UnitAddress } from 'treb-parser';
-import { ValueType, type ArrayUnion, type CellValue, type ExtendedUnion, type UnionValue } from 'treb-base-types';
+import type { ArrayUnion, CellValue, ExtendedUnion, UnionValue } from 'treb-base-types';
 
 export interface ReferenceMetadata {
   type: 'metadata';
@@ -74,7 +74,7 @@ export const IsSeries = (value?: unknown): value is ReferenceSeries => {
 
 export const IsArrayUnion = (value?: unknown): value is ArrayUnion => {
   return (!!value && (typeof value === 'object')
-    && (value as UnionValue).type === ValueType.array
+    && (value as UnionValue).type === 'array'
     && Array.isArray((value as ArrayUnion).value));
 };
 

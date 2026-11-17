@@ -1,5 +1,5 @@
 
-import { Box, type UnionValue, ValueType } from 'treb-base-types';
+import { Box, type UnionValue } from 'treb-base-types';
 import { ValueError } from 'treb-calculator';
 import type { FunctionMap } from 'treb-calculator';
 
@@ -28,8 +28,8 @@ function FlattenByColumn(data: UnionValue[][]): UnionValue[] {
 function FilterFlattened(flat: UnionValue[], ignore: number): UnionValue[] {
   if (ignore === 0) return flat;
   return flat.filter(v => {
-    if ((ignore & 1) && v.type === ValueType.undefined) return false;
-    if ((ignore & 2) && v.type === ValueType.error) return false;
+    if ((ignore & 1) && v.type === 'undefined') return false;
+    if ((ignore & 2) && v.type === 'error') return false;
     return true;
   });
 }
@@ -62,7 +62,7 @@ export default {
     ],
     fn: (array?: UnionValue, rows?: number, columns?: number): UnionValue => {
 
-      if (!array || array.type !== ValueType.array) return ValueError();
+      if (!array || array.type !== 'array') return ValueError();
 
       // ArrayUnion.value is column-major: value[col][row]
       const data = array.value;
@@ -103,7 +103,7 @@ export default {
         result.push(data[c].slice(row_start, row_end));
       }
 
-      return { type: ValueType.array, value: result };
+      return { type: 'array', value: result };
     },
   },
 
@@ -117,7 +117,7 @@ export default {
     ],
     fn: (array?: UnionValue, rows?: number, columns?: number, pad_with?: UnionValue): UnionValue => {
 
-      if (!array || array.type !== ValueType.array) return ValueError();
+      if (!array || array.type !== 'array') return ValueError();
 
       // column-major: value[col][row]
       const data = array.value;
@@ -146,7 +146,7 @@ export default {
         result.push(col);
       }
 
-      return { type: ValueType.array, value: result };
+      return { type: 'array', value: result };
     },
   },
 
@@ -159,7 +159,7 @@ export default {
     ],
     fn: (vector?: UnionValue, wrap_count?: number, pad_with?: UnionValue): UnionValue => {
 
-      if (!vector || vector.type !== ValueType.array || !wrap_count || wrap_count < 1) return ValueError();
+      if (!vector || vector.type !== 'array' || !wrap_count || wrap_count < 1) return ValueError();
 
       const data = vector.value;
       if (data.length === 0) return ValueError();
@@ -179,7 +179,7 @@ export default {
         result.push(col);
       }
 
-      return { type: ValueType.array, value: result };
+      return { type: 'array', value: result };
     },
   },
 
@@ -192,7 +192,7 @@ export default {
     ],
     fn: (array?: UnionValue, ignore?: number, scan_by_column?: number): UnionValue => {
 
-      if (!array || array.type !== ValueType.array) return ValueError();
+      if (!array || array.type !== 'array') return ValueError();
 
       const data = array.value;
       if (data.length === 0) return ValueError();
@@ -203,7 +203,7 @@ export default {
       const filtered = FilterFlattened(flat, ignore ?? 0);
       if (filtered.length === 0) return ValueError();
 
-      return { type: ValueType.array, value: [filtered] };
+      return { type: 'array', value: [filtered] };
     },
   },
 
@@ -216,7 +216,7 @@ export default {
     ],
     fn: (array?: UnionValue, ignore?: number, scan_by_column?: number): UnionValue => {
 
-      if (!array || array.type !== ValueType.array) return ValueError();
+      if (!array || array.type !== 'array') return ValueError();
 
       const data = array.value;
       if (data.length === 0) return ValueError();
@@ -227,7 +227,7 @@ export default {
       const filtered = FilterFlattened(flat, ignore ?? 0);
       if (filtered.length === 0) return ValueError();
 
-      return { type: ValueType.array, value: filtered.map(v => [v]) };
+      return { type: 'array', value: filtered.map(v => [v]) };
     },
   },
 
@@ -240,7 +240,7 @@ export default {
     ],
     fn: (vector?: UnionValue, wrap_count?: number, pad_with?: UnionValue): UnionValue => {
 
-      if (!vector || vector.type !== ValueType.array || !wrap_count || wrap_count < 1) return ValueError();
+      if (!vector || vector.type !== 'array' || !wrap_count || wrap_count < 1) return ValueError();
 
       const data = vector.value;
       if (data.length === 0) return ValueError();
@@ -260,7 +260,7 @@ export default {
         result.push(col);
       }
 
-      return { type: ValueType.array, value: result };
+      return { type: 'array', value: result };
     },
   },
 
@@ -271,7 +271,7 @@ export default {
     ],
     fn: (array?: UnionValue): UnionValue => {
 
-      if (!array || array.type !== ValueType.array) return ValueError();
+      if (!array || array.type !== 'array') return ValueError();
 
       // column-major: data[col][row]
       const data = array.value;
@@ -285,7 +285,7 @@ export default {
 
       for (let c = 0; c < col_count; c++) {
         for (let r = 0; r < row_count; r++) {
-          if (data[c][r].type !== ValueType.undefined) {
+          if (data[c][r].type !== 'undefined') {
             if (r > last_row) last_row = r;
             if (c > last_col) last_col = c;
           }
@@ -299,7 +299,7 @@ export default {
         result.push(data[c].slice(0, last_row + 1));
       }
 
-      return { type: ValueType.array, value: result };
+      return { type: 'array', value: result };
     },
   },
 
@@ -312,7 +312,7 @@ export default {
     ],
     fn: (array?: UnionValue, by_col?: number, exactly_once?: number): UnionValue => {
 
-      if (!array || array.type !== ValueType.array) return ValueError();
+      if (!array || array.type !== 'array') return ValueError();
 
       // column-major: data[col][row]
       const data = array.value;
@@ -330,7 +330,7 @@ export default {
         const indices = UniqueIndices(keys, once_only);
         if (indices.length === 0) return ValueError();
 
-        return { type: ValueType.array, value: indices.map(i => data[i]) };
+        return { type: 'array', value: indices.map(i => data[i]) };
       }
 
       const row_count = data[0].length;
@@ -351,7 +351,7 @@ export default {
       for (let c = 0; c < col_count; c++) {
         result.push(indices.map(i => data[c][i]));
       }
-      return { type: ValueType.array, value: result };
+      return { type: 'array', value: result };
     },
   },
 } satisfies FunctionMap;

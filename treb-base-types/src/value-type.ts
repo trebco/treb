@@ -89,139 +89,87 @@ export const IsFunctionType = (value: unknown) => {
   return (typeof value === 'object' && (value as { type: string }).type === 'function');
 };
 
+/**
+ * switching from enum to string union type
+ */
+export type ValueType
+  = 'undefined'
+  | 'formula'
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'object'
+  | 'function'
+  | 'error'
+  | 'complex'
+  | 'array'
+  | 'dimensioned_quantity'
+  ;
+
+/**
+ * test whether a value type is set. both undefined and 'undefined' mean
+ * the cell (or calculated value) is empty. use this instead of testing
+ * the type for truthiness: 'undefined' is a non-empty string, so it's
+ * truthy (the old enum value was 0, which was falsy).
+ */
+export const HasValueType = (type?: ValueType): type is Exclude<ValueType, 'undefined'> => {
+  return !!type && type !== 'undefined';
+};
+
 /** 
- * this is the list of value types. internally, we use an enum. I don't 
- * want to change that, at least not at the moment, but that presents a
- * problem for exporting types.
- * 
- * we'll switch to string types for import/export, although we still support
- * importing the old numeric enum types for backwards compatibility.
- * 
- * @internal
- * 
+ * in case we need backwards compatibility. this maps the new string
+ * union values to the original ValueType values (was a numerical enum
+ * with defined values)
  */
-export const ValueTypeList = [
-  'undefined',
-  'formula',
-  'string',
-  'number',
-  'boolean',
-  'object',
-  'function',
-  'error',
-  'complex',
-  'array',
-  'dimensioned_quantity',
-] as const;
-
-/**
- * string types for import/export
- * 
- * @internalRemarks
- * 
- * temporarily switching to literal, see what happens to API
- * 
- */
-export type SerializedValueType = // typeof ValueTypeList[number];
-  'undefined' |
-  'formula' |
-  'string' |
-  'number' |
-  'boolean' |
-  'object' |
-  'function' |
-  'error' |
-  'complex' |
-  'array' |
-  'dimensioned_quantity' ;
-
-
-/**
- * this enum goes back a long way and is pretty ingrained, so I don't 
- * want to change it (at least not right now). but if we're exporting types, 
- * using enums is a problem.
- * 
- * what we will do is keep the enum internally but switch the exported type
- * to a string. the problem then becomes keeping the types matched up 
- * properly. I can't arrive at a good way of doing that automatically. 
- * 
- * old comments:
- * 
- * undefined is 0 so we can test it as falsy.
- *
- * we're passing this type information out to calculators, so it needs
- * to have known values. DO NOT MODIFY EXISTING INDEXES, or at least be
- * aware of the implications. definitely do not change undefined => 0.
- */
-export enum ValueType {
-  undefined = 0,
-
-  // formula is a string; we usually test the first character === '='
-  formula = 1,
-  string = 2,
-  number = 3,
-  boolean = 4,
-
-  // we don't actually use this type, it's here for matching only
-  // OK we use it all the time now
-  object = 5,
-
-  function = 6, // why was this inserted in the middle?
-
-  // error is a STRING VALUE... object errors are layered on top? is that 
-  // correct? (...) it sort of makes sense... since we have separate typing
-  error = 7,
-
-  // complex is pretty stable by now
-  complex = 8,
-
-  // this is new though. this is not a cell value, it's 
-  // only for union types. perhaps we should move or rename 
-  // this array, and then cells could have a subset?
-  array = 9,
-
-  // adding DQ to union
-  dimensioned_quantity = 10,
-
-}
+export const ValueTypeMap: Record<number, ValueType> = {
+  0: 'undefined',
+  1: 'formula',
+  2: 'string',
+  3: 'number',
+  4: 'boolean',
+  5: 'object',
+  6: 'function',
+  7: 'error',
+  8: 'complex',
+  9: 'array',
+  10: 'dimensioned_quantity',
+} as const;
 
 /** @internal */
 export const GetValueType = (value: unknown): ValueType => {
 
-  switch (typeof value){
-    
+  const type = typeof value;
+
+  switch (type){
     case 'undefined':
-      return ValueType.undefined;
-
     case 'number':
-      return ValueType.number;
-
     case 'boolean':
-      return ValueType.boolean;
+      return type;
 
     case 'object':
       if (value === null) {
-        return ValueType.undefined;
+        return 'undefined';
       }
       else if (IsFunctionType(value)) {
-        return ValueType.function;
+        return 'function';
       }
       else if (IsComplex(value)) {
-        return ValueType.complex;
+        return 'complex';
       }
       else if (IsDimensionedQuantity(value)) {
-        return ValueType.dimensioned_quantity;
+        return 'dimensioned_quantity';
       }
-      return ValueType.object;
+      return 'object';
 
     case 'string':
-      if (value[0] === '=') {
-        return ValueType.formula;
+      if (String(value)[0] === '=') {
+        return 'formula';
       }
-      return ValueType.string;
+      return 'string';
 
     default: // function or symbol
-      return ValueType.error;
+      return 'error';
 
   }
+  
 }

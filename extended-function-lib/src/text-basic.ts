@@ -1,5 +1,4 @@
 import { Box, type UnionValue } from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 import type { FunctionMap } from 'treb-calculator';
 import { ValueError } from 'treb-calculator';
 
@@ -103,7 +102,7 @@ export default {
       { name: 'value', description: 'The value to test', boxed: true },
     ],
     fn: (value?: UnionValue): UnionValue => {
-      if (value && value.type === ValueType.string) {
+      if (value && value.type === 'string') {
         return value;
       }
       return Box('');

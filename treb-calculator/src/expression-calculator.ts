@@ -29,7 +29,7 @@ import type { Cell, ICellAddress,
          DimensionedQuantityUnion,
          IArea,
          FunctionUnion} from 'treb-base-types';
-import { ValueType, GetValueType, Area } from 'treb-base-types';
+import { GetValueType, HasValueType, Area } from 'treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference, 
          UnitImplicitCall,
@@ -63,16 +63,16 @@ export type ExtendedExpressionUnit = ExpressionWithCachedFunction<ExpressionUnit
 
 // FIXME: move
 // FIXME: this is sloppy
-export const UnionIsExpressionUnit = (test: UnionValue /*UnionOrArray*/): test is { type: ValueType.object, value: ExpressionUnit } => {
+export const UnionIsExpressionUnit = (test: UnionValue /*UnionOrArray*/): test is { type: 'object', value: ExpressionUnit } => {
   return !Array.isArray(test) 
-      && test.type === ValueType.object
+      && test.type === 'object'
       && (!!(test.value as ExpressionUnit).type);
 };
 
 // FIXME: move
 // FIXME: this is sloppy
-export const UnionIsMetadata = (test: UnionValue /*UnionOrArray*/): test is { type: ValueType.object, value: ReferenceMetadata } => {
-  return test.type === ValueType.object && test.key === 'metadata';
+export const UnionIsMetadata = (test: UnionValue /*UnionOrArray*/): test is { type: 'object', value: ReferenceMetadata } => {
+  return test.type === 'object' && test.key === 'metadata';
 };
 
 // FIXME: move
@@ -166,7 +166,7 @@ export class ExpressionCalculator {
 
     if (!cell) {
       return () => { 
-        return { type: ValueType.number, value: 0 };
+        return { type: 'number', value: 0 };
       };
     }
 
@@ -311,7 +311,7 @@ export class ExpressionCalculator {
       }
 
       const cell_data = sheet.CellData(address);
-      const value = cell_data.calculated_type ? cell_data.calculated : cell_data.value;
+      const value = HasValueType(cell_data.calculated_type) ? cell_data.calculated : cell_data.value;
 
       const metadata: ReferenceMetadata = {
         type: 'metadata',
@@ -335,7 +335,7 @@ export class ExpressionCalculator {
         ...transform(cell_data, address),
       };
 
-      return { type: ValueType.object, value: metadata, key: 'metadata' };
+      return { type: 'object', value: metadata, key: 'metadata' };
 
     }
     else if (range) {
@@ -361,7 +361,7 @@ export class ExpressionCalculator {
           const cell_data = sheet.CellData({row, column});
           address = {...range.start, row, column};
 
-          const value = cell_data.calculated_type ? cell_data.calculated : cell_data.value;
+          const value = HasValueType(cell_data.calculated_type) ? cell_data.calculated : cell_data.value;
 
           const metadata = {
             type: 'metadata',
@@ -372,7 +372,7 @@ export class ExpressionCalculator {
           };
 
           column_result.push({
-            type: ValueType.object,
+            type: 'object',
             value: metadata,
             key: 'metadata',
           });
@@ -381,7 +381,7 @@ export class ExpressionCalculator {
         range_result.push(column_result);
       }
       
-      return {type: ValueType.array, value: range_result};
+      return {type: 'array', value: range_result};
 
     }
 
@@ -506,19 +506,19 @@ export class ExpressionCalculator {
 
     const mapped: ExpressionUnit[] = args.map(arg => {
       switch (arg.type) {
-        case ValueType.number:
-        case ValueType.boolean:
-        case ValueType.string:
+        case 'number':
+        case 'boolean':
+        case 'string':
           return {
             type: 'literal', value: arg.value, id: 0, position: 0,
           }
   
-        case ValueType.error:
+        case 'error':
           return {
             type: 'literal', value: '#' + arg.value, id: 0, position: 0,
           }
   
-        case ValueType.array:
+        case 'array':
           {
             const values: UnitArray['values'] = [];
             for (let c = 0; c < arg.value.length; c++) {
@@ -527,9 +527,9 @@ export class ExpressionCalculator {
               for (let r = 0; r < col.length; r++ ) {
                 const val = col[r];
                 switch (val.type) {
-                  case ValueType.boolean:
-                  case ValueType.number:
-                  case ValueType.string:
+                  case 'boolean':
+                  case 'number':
+                  case 'string':
                     mapped_col.push(val.value || undefined);
                     break;
                   default:
@@ -547,7 +547,7 @@ export class ExpressionCalculator {
             };
           }
   
-        case ValueType.undefined:
+        case 'undefined':
           return {
             type: 'missing', id: 0,
           };
@@ -594,7 +594,7 @@ export class ExpressionCalculator {
 
       const result = this.CalculateExpression(expr.call as ExtendedExpressionUnit);
 
-      if (result.type === ValueType.function) {
+      if (result.type === 'function') {
         return this.ImplicitCallTail(result, expr.args)
       }
 
@@ -712,7 +712,7 @@ export class ExpressionCalculator {
 
         // if function, wrong branch
         if (arg_index === skip_argument_index) { 
-          return descriptor.boxed ? { type: ValueType.undefined } : undefined;
+          return descriptor.boxed ? { type: 'undefined' } : undefined;
         }
 
         // note on type here: we're iterating over the arguments 
@@ -720,7 +720,7 @@ export class ExpressionCalculator {
         // in this case, wouldn't this be a missing type? (...)
         if (typeof arg === 'undefined') { 
           if (if_function && arg_index === 0) { skip_argument_index = 1; }
-          return descriptor.boxed ? { type: ValueType.undefined } : undefined;
+          return descriptor.boxed ? { type: 'undefined' } : undefined;
         }
 
         // FIXME (address): what about named ranges (actually those will work),
@@ -731,7 +731,7 @@ export class ExpressionCalculator {
 
         if (descriptor.address) {
           return descriptor.boxed ? {
-            type: ValueType.string,
+            type: 'string',
             value: this.parser.Render(arg).replace(/\$/g, ''),
           } : this.parser.Render(arg).replace(/\$/g, '');
         }
@@ -742,7 +742,7 @@ export class ExpressionCalculator {
 
           const result = this.CalculateExpression(arg as ExtendedExpressionUnit);
 
-          if (result.type === ValueType.error) { // array check is implicit since array is a type
+          if (result.type === 'error') { // array check is implicit since array is a type
             if (descriptor.allow_error) {
               return result; // always boxed
             }
@@ -752,11 +752,11 @@ export class ExpressionCalculator {
 
           // can't shortcut if you have an array (or we need to test all the values)
 
-          if (if_function && arg_index === 0 && result.type !== ValueType.array){
+          if (if_function && arg_index === 0 && result.type !== 'array'){
 
             let result_truthy = false; 
 
-            if (result.type === ValueType.string) {
+            if (result.type === 'string') {
               const lowercase = (result.value as string).toLowerCase().trim();
               result_truthy = lowercase !== 'false' && lowercase !== 'f';
             }
@@ -771,7 +771,7 @@ export class ExpressionCalculator {
             return result;
           }
 
-          if (result.type === ValueType.array) {
+          if (result.type === 'array') {
             return (result as ArrayUnion).value.map(row => row.map(value => value.value));            
           }
           else {
@@ -864,7 +864,7 @@ export class ExpressionCalculator {
     return (expr: UnitDimensionedQuantity): UnionValue => {
       const expression = this.CalculateExpression(expr.expression as ExtendedExpressionUnit);
       return {
-        type: ValueType.dimensioned_quantity,
+        type: 'dimensioned_quantity',
         value: {
           value: expression.value,
           unit: expr.unit.name,
@@ -889,13 +889,13 @@ export class ExpressionCalculator {
     case '-':
       {
         const func = Primitives.Subtract;
-        const zero = { type: ValueType.number, value: 0 } as NumberUnion;
+        const zero = { type: 'number', value: 0 } as NumberUnion;
 
         return (expr: UnitUnary) => {
           const operand = this.CalculateExpression(expr.operand as ExtendedExpressionUnit);
-          if (operand.type === ValueType.array) {
+          if (operand.type === 'array') {
             return {
-              type: ValueType.array,
+              type: 'array',
               value: (operand as ArrayUnion).value.map(column => column.map(value => func(zero, value))),
             };
           }
@@ -922,7 +922,7 @@ export class ExpressionCalculator {
               // calculating? (TODO/FIXME)
 
               const calculated = this.CellFunction2(expr.operand)();
-              if (calculated.type === ValueType.array) {
+              if (calculated.type === 'array') {
 
                 const row = this.context.address.row ?? -1;
                 const column = this.context.address.column ?? -1;
@@ -961,7 +961,7 @@ export class ExpressionCalculator {
 
               }
 
-              // return { type: ValueType.string, value: 'implicit (spill)' };
+              // return { type: 'string', value: 'implicit (spill)' };
             }
             break;
 
@@ -993,7 +993,7 @@ export class ExpressionCalculator {
 
         if (address) {
           if (return_reference) {
-            return { type: ValueType.object, value: address,
+            return { type: 'object', value: address,
             }
           }
           return this.CellFunction2(address)();
@@ -1001,7 +1001,7 @@ export class ExpressionCalculator {
 
         const operand = this.CalculateExpression(expr.operand as ExtendedExpressionUnit);
 
-        if (operand.type === ValueType.array) {
+        if (operand.type === 'array') {
           return operand.value[0][0];
         }
 
@@ -1067,14 +1067,14 @@ export class ExpressionCalculator {
         // function do that? ...CHECK/TODO/FIXME
 
         col[r] = fn(
-          left_values[c][r] || { type: ValueType.undefined }, 
-          right_values[c][r] || { type: ValueType.undefined });
+          left_values[c][r] || { type: 'undefined' }, 
+          right_values[c][r] || { type: 'undefined' });
         
       }
       value.push(col);
     }
 
-    return { type: ValueType.array, value };
+    return { type: 'array', value };
 
   }
 
@@ -1134,12 +1134,12 @@ export class ExpressionCalculator {
       // this works, but it's not volatile so it doesn't update on 
       // a language change; maybe language change should force a recalc? (...)
 
-      if (a.type === ValueType.error) { return a; }
-      if (b.type === ValueType.error) { return b; }
+      if (a.type === 'error') { return a; }
+      if (b.type === 'error') { return b; }
     
       const strings = [a, b].map(x => {
-        if (x.type === ValueType.undefined) { return ''; }
-        if (x.type === ValueType.boolean) {
+        if (x.type === 'undefined') { return ''; }
+        if (x.type === 'boolean') {
           if (x.value) {
             return this.data_model.language_model?.boolean_true || 'TRUE';
           }
@@ -1151,7 +1151,7 @@ export class ExpressionCalculator {
       });
 
       return {
-        type: ValueType.string, 
+        type: 'string', 
         value: `${strings[0]}${strings[1]}`,
       };
     
@@ -1193,14 +1193,14 @@ export class ExpressionCalculator {
 
         // check for arrays. do elementwise operations.
 
-        if (left.type === ValueType.array) {
-          if (right.type === ValueType.array) {
+        if (left.type === 'array') {
+          if (right.type === 'array') {
             return this.ElementwiseBinaryExpression(fn, left as ArrayUnion, right as ArrayUnion);
           }
-          return this.ElementwiseBinaryExpression(fn, left as ArrayUnion, {type: ValueType.array, value: [[right]]});
+          return this.ElementwiseBinaryExpression(fn, left as ArrayUnion, {type: 'array', value: [[right]]});
         }
-        else if (right.type === ValueType.array) {
-          return this.ElementwiseBinaryExpression(fn, {type: ValueType.array, value: [[left]]}, right as ArrayUnion);
+        else if (right.type === 'array') {
+          return this.ElementwiseBinaryExpression(fn, {type: 'array', value: [[left]]}, right as ArrayUnion);
         }
         
         return fn(left, right);
@@ -1241,14 +1241,14 @@ export class ExpressionCalculator {
     switch (upper_case){
     case 'FALSE':
     // case 'F':
-      return () => {return {value: false, type: ValueType.boolean}};
+      return () => {return {value: false, type: 'boolean'}};
 
     case 'TRUE':
     // case 'T':
-      return () => {return {value: true, type: ValueType.boolean}};
+      return () => {return {value: true, type: 'boolean'}};
 
     case 'UNDEFINED':
-      return () => {return {value: undefined, type: ValueType.undefined}}; // why do we support this?
+      return () => {return {value: undefined, type: 'undefined'}}; // why do we support this?
     }
 
     return () => {
@@ -1355,7 +1355,7 @@ export class ExpressionCalculator {
       return (expr.fn = this.Identifier(expr))(); // check
 
     case 'missing':
-      return (expr.fn = () => { return { value: undefined, type: ValueType.undefined } as UndefinedUnion })(); // check
+      return (expr.fn = () => { return { value: undefined, type: 'undefined' } as UndefinedUnion })(); // check
 
     case 'dimensioned':
       return (expr.fn = this.ResolveDimensionedQuantity())(expr);
@@ -1370,7 +1370,7 @@ export class ExpressionCalculator {
 
     case 'complex':
       {
-        const literal = {value: {real: expr.real, imaginary: expr.imaginary}, type: ValueType.complex } as ComplexUnion;
+        const literal = {value: {real: expr.real, imaginary: expr.imaginary}, type: 'complex' } as ComplexUnion;
         return (expr.fn = () => literal)();  // check
       }
 
@@ -1381,7 +1381,7 @@ export class ExpressionCalculator {
       {
         return (expr.fn = () => {
           return { 
-            type: ValueType.array,
+            type: 'array',
             value: expr.values.map((row) => (Array.isArray(row) ? row : [row]).map((value) => {
               return { type: GetValueType(value), value } as UnionValue;
             })),

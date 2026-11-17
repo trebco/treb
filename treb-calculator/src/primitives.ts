@@ -20,7 +20,6 @@
  */
 
 import type { Complex, ComplexUnion, UnionValue} from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 import { DivideByZeroError, ValueError } from './function-error';
 
 import * as ComplexLib from './complex-math';
@@ -43,14 +42,14 @@ type NumericTuple = [
  * return it. if it's undefined, return a complex number with the given 
  * real value. 
  */
-const EnsureComplex = (a?: UnionValue, real = 0): { type: ValueType.complex, value: {real: number, imaginary: number}} => {
+const EnsureComplex = (a?: UnionValue, real = 0): { type: 'complex', value: {real: number, imaginary: number}} => {
 
-  if (a && a.type === ValueType.complex) {
-    return a as {type: ValueType.complex, value: {real: number, imaginary: number}};
+  if (a && a.type === 'complex') {
+    return a as {type: 'complex', value: {real: number, imaginary: number}};
   }
 
   return {
-    type: ValueType.complex,
+    type: 'complex',
     value: {
       real,
       imaginary: 0,
@@ -64,32 +63,32 @@ const EnsureComplex = (a?: UnionValue, real = 0): { type: ValueType.complex, val
  */
 const BoxComplex = (value: Complex): UnionValue => {
   return value.imaginary ? 
-    { type: ValueType.complex, value } : 
-    { type: ValueType.number, value: value.real };
+    { type: 'complex', value } : 
+    { type: 'number', value: value.real };
 }
 
 const NumericTypes = (a: UnionValue, b: UnionValue): NumericTuple => {
 
-  if (a.type === ValueType.error) { return [0, 0, a]; }
-  if (b.type === ValueType.error) { return [0, 0, b]; }
+  if (a.type === 'error') { return [0, 0, a]; }
+  if (b.type === 'error') { return [0, 0, b]; }
 
   const result: NumericTuple = [0, 0];
 
   // FIXME: what about empty string? should === 0?
 
   switch (a.type) {
-    case ValueType.number: 
+    case 'number': 
       result[0] = a.value as number; 
       break;
 
-    case ValueType.boolean: 
+    case 'boolean': 
       result[0] = a.value ? 1 : 0; 
       break;
 
-    case ValueType.undefined: 
+    case 'undefined': 
       break;
 
-    case ValueType.complex: 
+    case 'complex': 
       result[3] = a; 
       break;
 
@@ -98,18 +97,18 @@ const NumericTypes = (a: UnionValue, b: UnionValue): NumericTuple => {
   }
 
   switch (b.type) {
-    case ValueType.number: 
+    case 'number': 
       result[1] = b.value as number; 
       break;
 
-    case ValueType.boolean: 
+    case 'boolean': 
       result[1] = b.value ? 1 : 0; 
       break;
 
-    case ValueType.undefined: 
+    case 'undefined': 
       break;
     
-    case ValueType.complex: 
+    case 'complex': 
       result[4] = b; 
       break;
 
@@ -140,7 +139,7 @@ export const Add = (a: UnionValue, b: UnionValue): UnionValue => {
       });
   }
 
-  return { value: x + y, type: ValueType.number };
+  return { value: x + y, type: 'number' };
 };
 
 export const Subtract = (a: UnionValue, b: UnionValue): UnionValue => {
@@ -156,7 +155,7 @@ export const Subtract = (a: UnionValue, b: UnionValue): UnionValue => {
       });
   }
 
-  return { value: x - y, type: ValueType.number };
+  return { value: x - y, type: 'number' };
 };
 
 /** 
@@ -175,7 +174,7 @@ const PowerGated = (a: UnionValue, b: UnionValue): UnionValue => {
   const value = Math.pow(x, y);
   if (isNaN(value)) { return ValueError(); }
 
-  return { type: ValueType.number, value };
+  return { type: 'number', value };
   
 };
 
@@ -204,7 +203,7 @@ const PowerComplex = (a: UnionValue, b: UnionValue): UnionValue => {
   const value = Math.pow(x, y);
   if (isNaN(value)) { return ValueError(); }
 
-  return { type: ValueType.number, value };
+  return { type: 'number', value };
 
 };
 
@@ -220,7 +219,7 @@ export const Power = (a: UnionValue, b: UnionValue): UnionValue => {
   const value = Math.pow(x, y);
   if (isNaN(value)) { return ValueError(); }
 
-  return { type: ValueType.number, value };
+  return { type: 'number', value };
   
 };
 */
@@ -237,7 +236,7 @@ export const Multiply = (a: UnionValue, b: UnionValue): UnionValue => {
     return BoxComplex(ComplexLib.Multiply(c1.value, c2.value));
   }
 
-  return { value: x * y, type: ValueType.number };
+  return { value: x * y, type: 'number' };
 };
 
 export const Divide = (a: UnionValue, b: UnionValue): UnionValue => {
@@ -254,7 +253,7 @@ export const Divide = (a: UnionValue, b: UnionValue): UnionValue => {
   if (y === 0) {
     return DivideByZeroError();
   }
-  return { value: x / y, type: ValueType.number };
+  return { value: x / y, type: 'number' };
 };
 
 export const Modulo = (a: UnionValue, b: UnionValue): UnionValue => {
@@ -263,66 +262,66 @@ export const Modulo = (a: UnionValue, b: UnionValue): UnionValue => {
   if (y === 0) {
     return DivideByZeroError();
   }
-  return { value: x % y, type: ValueType.number };
+  return { value: x % y, type: 'number' };
 };
 
 /*
 export const Concatenate = (a: UnionValue, b: UnionValue): UnionValue => {
-  if (a.type === ValueType.error) { return a; }
-  if (b.type === ValueType.error) { return b; }
+  if (a.type === 'error') { return a; }
+  if (b.type === 'error') { return b; }
 
   return {
-    type: ValueType.string, 
-    value: `${a.type === ValueType.undefined ? '' : a.value}${b.type === ValueType.undefined ? '' : b.value}`,
+    type: 'string', 
+    value: `${a.type === 'undefined' ? '' : a.value}${b.type === 'undefined' ? '' : b.value}`,
   };
 
 };
 */
 
 export const Equals = (a: UnionValue, b: UnionValue): UnionValue => {
-  if (a.type === ValueType.error) { return a; }
-  if (b.type === ValueType.error) { return b; }
+  if (a.type === 'error') { return a; }
+  if (b.type === 'error') { return b; }
   
   // empty cells equal 0 (real or complex) and ""
 
-  if ((a.type === ValueType.undefined && (b.value === '' || b.value === 0 || (b.type === ValueType.complex && b.value.real === 0 && b.value.imaginary === 0)))
-      || (b.type === ValueType.undefined && (a.value === '' || a.value === 0 || (a.type === ValueType.complex && a.value.real === 0 && a.value.imaginary === 0)))) {
-    return { type: ValueType.boolean, value: true, };
+  if ((a.type === 'undefined' && (b.value === '' || b.value === 0 || (b.type === 'complex' && b.value.real === 0 && b.value.imaginary === 0)))
+      || (b.type === 'undefined' && (a.value === '' || a.value === 0 || (a.type === 'complex' && a.value.real === 0 && a.value.imaginary === 0)))) {
+    return { type: 'boolean', value: true, };
   }
 
-  if (a.type === ValueType.complex) {
-    if (b.type === ValueType.complex) {
-      return { type: ValueType.boolean, value: ((a.value.imaginary === b.value.imaginary) && (a.value.real === b.value.real)) };
+  if (a.type === 'complex') {
+    if (b.type === 'complex') {
+      return { type: 'boolean', value: ((a.value.imaginary === b.value.imaginary) && (a.value.real === b.value.real)) };
     }
     else {
-      return { type: ValueType.boolean, value: ((!a.value.imaginary) && (a.value.real === b.value)) };
+      return { type: 'boolean', value: ((!a.value.imaginary) && (a.value.real === b.value)) };
     }
   }
-  else if (b.type === ValueType.complex) {
-    return { type: ValueType.boolean, value: ((!b.value.imaginary) && (a.value === b.value.real)) };
+  else if (b.type === 'complex') {
+    return { type: 'boolean', value: ((!b.value.imaginary) && (a.value === b.value.real)) };
   }
 
   // this is standard (icase) string equality. we might also need
   // to handle wildcard string matching, although it's not the 
   // default case for = operators.
 
-  if (a.type === ValueType.string && b.type === ValueType.string) {
+  if (a.type === 'string' && b.type === 'string') {
     return { 
-      type: ValueType.boolean, 
+      type: 'boolean', 
       value: a.value.toLowerCase() === b.value.toLowerCase(),
     };
   }
 
-  return { type: ValueType.boolean, value: a.value == b.value }; // note ==
+  return { type: 'boolean', value: a.value == b.value }; // note ==
 };
 
 export const NotEquals = (a: UnionValue, b: UnionValue): UnionValue => {
   const result = Equals(a, b);
-  if (result.type === ValueType.error) {
+  if (result.type === 'error') {
     return result;
   }
   return {
-    type: ValueType.boolean,
+    type: 'boolean',
     value: !result.value,
   };
 };
@@ -332,21 +331,21 @@ export const NotEquals = (a: UnionValue, b: UnionValue): UnionValue => {
  * not sure if that is over-optimization (it is).
  * /
 export const NotEquals = (a: UnionValue, b: UnionValue): UnionValue => {
-  if (a.type === ValueType.error) { return a; }
-  if (b.type === ValueType.error) { return b; }
+  if (a.type === 'error') { return a; }
+  if (b.type === 'error') { return b; }
   
   // empty cells equal 0 and ""
   // FIXME: should also equal a complex with 0+0i
 
-  if ((a.type === ValueType.undefined && (b.value === '' || b.value === 0))
-      || (b.type === ValueType.undefined && (a.value === '' || a.value === 0))) {
+  if ((a.type === 'undefined' && (b.value === '' || b.value === 0))
+      || (b.type === 'undefined' && (a.value === '' || a.value === 0))) {
 
-    return { type: ValueType.boolean, value: false, };
+    return { type: 'boolean', value: false, };
   }
 
-  if (a.type === ValueType.complex || b.type === ValueType.complex) {
+  if (a.type === 'complex' || b.type === 'complex') {
     return { 
-      type: ValueType.boolean, 
+      type: 'boolean', 
       value: !((a.type === b.type) &&
         a.value.real == b.value.real &&          // ==
         a.value.imaginary == b.value.imaginary)  // ==
@@ -354,7 +353,7 @@ export const NotEquals = (a: UnionValue, b: UnionValue): UnionValue => {
 
   }
 
-  return { type: ValueType.boolean, value: a.value != b.value }; // note ==
+  return { type: 'boolean', value: a.value != b.value }; // note ==
 };
 */
 
@@ -363,26 +362,26 @@ export const NotEquals = (a: UnionValue, b: UnionValue): UnionValue => {
 // worthwhile
 
 export const GreaterThan = (a: UnionValue, b: UnionValue): UnionValue => {
-  if (a.type === ValueType.error) { return a; }
-  if (b.type === ValueType.error) { return b; }
+  if (a.type === 'error') { return a; }
+  if (b.type === 'error') { return b; }
 
-  if (a.type === ValueType.complex || b.type === ValueType.complex) {
+  if (a.type === 'complex' || b.type === 'complex') {
     return ValueError();
   }
 
-  return { type: ValueType.boolean, value: (a.value||0) > (b.value||0) };
+  return { type: 'boolean', value: (a.value||0) > (b.value||0) };
 };
 
 const Comparable = (a: UnionValue, b: UnionValue) => {
 
-  if (a.type === ValueType.complex ||
-    a.type === ValueType.array ||
-    a.type === ValueType.dimensioned_quantity ||
-    a.type === ValueType.object ||
-    b.type === ValueType.complex ||
-    b.type === ValueType.array ||
-    b.type === ValueType.dimensioned_quantity ||
-    b.type === ValueType.object 
+  if (a.type === 'complex' ||
+    a.type === 'array' ||
+    a.type === 'dimensioned_quantity' ||
+    a.type === 'object' ||
+    b.type === 'complex' ||
+    b.type === 'array' ||
+    b.type === 'dimensioned_quantity' ||
+    b.type === 'object' 
   ) {
     return false;
   }
@@ -391,39 +390,39 @@ const Comparable = (a: UnionValue, b: UnionValue) => {
 }
 
 export const GreaterThanEqual = (a: UnionValue, b: UnionValue): UnionValue => {
-  if (a.type === ValueType.error) { return a; }
-  if (b.type === ValueType.error) { return b; }
+  if (a.type === 'error') { return a; }
+  if (b.type === 'error') { return b; }
 
   if (!Comparable(a, b)) { return ValueError(); }
 
-  return { type: ValueType.boolean, value: (a.value||0) >= (b.value||0) };
+  return { type: 'boolean', value: (a.value||0) >= (b.value||0) };
 
 };
 
 export const LessThan = (a: UnionValue, b: UnionValue): UnionValue => {
-  if (a.type === ValueType.error) { return a; }
-  if (b.type === ValueType.error) { return b; }
+  if (a.type === 'error') { return a; }
+  if (b.type === 'error') { return b; }
 
   if (!Comparable(a, b)) { return ValueError(); }
 
-  //if (a.type === ValueType.complex || b.type === ValueType.complex) {
+  //if (a.type === 'complex' || b.type === 'complex') {
   //  return ValueError();
   //}
 
-  return { type: ValueType.boolean, value: (a.value||0) < (b.value||0) };
+  return { type: 'boolean', value: (a.value||0) < (b.value||0) };
 };
 
 export const LessThanEqual = (a: UnionValue, b: UnionValue): UnionValue => {
-  if (a.type === ValueType.error) { return a; }
-  if (b.type === ValueType.error) { return b; }
+  if (a.type === 'error') { return a; }
+  if (b.type === 'error') { return b; }
 
-  //if (a.type === ValueType.complex || b.type === ValueType.complex) {
+  //if (a.type === 'complex' || b.type === 'complex') {
   //  return ValueError();
   //}
 
   if (!Comparable(a, b)) { return ValueError(); }
 
-  return { type: ValueType.boolean, value: (a.value||0) <= (b.value||0) };
+  return { type: 'boolean', value: (a.value||0) <= (b.value||0) };
 };
 
 export const UseComplex = () => {

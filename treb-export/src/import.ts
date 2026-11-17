@@ -31,7 +31,7 @@ import { DecimalMarkType, Parser } from 'treb-parser';
 import type { RangeType, AddressType, HyperlinkType } from './address-type';
 import { is_range, ShiftRange, InRange, is_address } from './address-type';
 import { type ImportedSheetData, type AnchoredAnnotation, type CellParseResult, type AnnotationLayout, type Corner as LayoutCorner, type IArea, type GradientStop, type Color, type HTMLColor, type ThemeColor, Area } from 'treb-base-types';
-import type { SerializedValueType } from 'treb-base-types';
+import type { ValueType } from 'treb-base-types';
 import type { Sheet} from './workbook-sheet';
 import type { CellAnchor } from './drawing/drawing';
 // import { type GenericDOMElement, XMLUtils } from './xml-utils';
@@ -185,10 +185,10 @@ export class Importer {
     // console.info(element);
 
     let value: undefined | number | boolean | string;
-    let type: SerializedValueType = 'undefined';
+    let type: ValueType = 'undefined';
 
     let calculated_value: undefined | number | boolean | string;
-    let calculated_type: SerializedValueType = 'undefined';
+    let calculated_type: ValueType = 'undefined';
     
     // QUESTIONS:
     //
@@ -1543,12 +1543,12 @@ export class Importer {
               row: number;
               column: number;
               value: string;
-              type: SerializedValueType;
+              type: ValueType;
             } = {
               row: translated.row - 1, 
               column: translated.col - 1,
               value: constructed_function, 
-              type: 'formula', // ValueType.formula,
+              type: 'formula', // 'formula',
             };
 
             let matched = false;
@@ -1556,7 +1556,7 @@ export class Importer {
             for (const element of data) {
               if (element.row === result.row && element.column === result.column) {
                 matched = true;
-                element.type = 'formula'; // ValueType.formula;
+                element.type = 'formula'; // 'formula';
                 element.value = constructed_function;
                 break;
               }

@@ -20,7 +20,6 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import { ValueType } from 'treb-base-types';
 import { ArgumentError } from '../function-error';
 
 export const RegexFunctionLibrary: FunctionMap = {
@@ -75,7 +74,7 @@ export const RegexFunctionLibrary: FunctionMap = {
           {
             const result = text.match(rex);
             return {
-              type: ValueType.string,
+              type: 'string',
               value: (result === null) ? '' : result[0] ?? '',
             }
           }
@@ -86,9 +85,9 @@ export const RegexFunctionLibrary: FunctionMap = {
             // console.info({result});
 
             return {
-              type: ValueType.array,
+              type: 'array',
               value: [result.map(entry => ({
-                type: ValueType.string,
+                type: 'string',
                 value: entry[0] || '',
               }))],
             }
@@ -98,17 +97,17 @@ export const RegexFunctionLibrary: FunctionMap = {
             const result = text.match(rex);
             if (result === null) {
               return {
-                type: ValueType.string,
+                type: 'string',
                 value: '',
               };
             }
 
             const arr = Array.from(result).slice(1);
             return {
-              type: ValueType.array,
+              type: 'array',
               value: [
                 arr.map(value => ({
-                  type: ValueType.string,
+                  type: 'string',
                   value,
                 }))
               ],
@@ -160,7 +159,7 @@ export const RegexFunctionLibrary: FunctionMap = {
 
       if (occurrence === 0) {
         return {
-          type: ValueType.string,
+          type: 'string',
           value: text.replaceAll(rex, replacement), // huh?
         };
       }
@@ -178,7 +177,7 @@ export const RegexFunctionLibrary: FunctionMap = {
       });
 
       return {
-        type: ValueType.string,
+        type: 'string',
         value,
       };
 
@@ -206,7 +205,7 @@ export const RegexFunctionLibrary: FunctionMap = {
     fn: (text: string, pattern: string, icase = false) => {
       const rex = new RegExp(pattern, icase ? 'i' : undefined);
       return { 
-        type: ValueType.boolean,
+        type: 'boolean',
         value: rex.test(text),
       };
     },

@@ -26,7 +26,7 @@ import type { ICellAddress,
          Theme,
          HorizontalAlign,
          ExtendedCelLStyle} from 'treb-base-types';
-import { TextPartFlag, Style, ValueType, Area, Rectangle, ResolveThemeColor, IsDefinedColor } from 'treb-base-types';
+import { TextPartFlag, Style, HasValueType, Area, Rectangle, ResolveThemeColor, IsDefinedColor } from 'treb-base-types';
 
 import type { Tile } from '../types/tile';
 import type { FormattedString} from 'treb-parser';
@@ -809,8 +809,8 @@ export class TileRenderer {
     // is), but sheet doesn't have a reference to data model (and because
     // sheets are owned by data model, I don't want to add a circular ref).
 
-    if (cell.rendered_type === ValueType.boolean) {
-      const value = cell.calculated_type ? cell.calculated : cell.value;
+    if (cell.rendered_type === 'boolean') {
+      const value = HasValueType(cell.calculated_type) ? cell.calculated : cell.value;
       cell.formatted = value ? (this.model.language_model?.boolean_true || 'TRUE') : (this.model.language_model?.boolean_false || 'FALSE');
     }
 
@@ -842,10 +842,10 @@ export class TileRenderer {
 
       if (!align) {
         align = (
-          cell.type === ValueType.number || 
-          cell.calculated_type === ValueType.number ||
-          cell.type === ValueType.complex || 
-          cell.calculated_type === ValueType.complex
+          cell.type === 'number' || 
+          cell.calculated_type === 'number' ||
+          cell.type === 'complex' || 
+          cell.calculated_type === 'complex'
         ) ? 'right' : 'left';
       }
      
@@ -925,7 +925,7 @@ export class TileRenderer {
 
       // ALSO we don't show leading apostrophes, as those indicate a string
 
-      if (cell.type === ValueType.string && formatted[0] === '\'') {
+      if (cell.type === 'string' && formatted[0] === '\'') {
         formatted = formatted.slice(1);
       }
 
@@ -1828,12 +1828,12 @@ export class TileRenderer {
     let clip = false;
 
     const is_number = (
-        cell.type === ValueType.number || 
-        cell.calculated_type === ValueType.number ||
-        cell.type === ValueType.complex || 
-        cell.calculated_type === ValueType.complex ||
-        cell.type === ValueType.dimensioned_quantity ||
-        cell.calculated_type === ValueType.dimensioned_quantity );
+        cell.type === 'number' || 
+        cell.calculated_type === 'number' ||
+        cell.type === 'complex' || 
+        cell.calculated_type === 'complex' ||
+        cell.type === 'dimensioned_quantity' ||
+        cell.calculated_type === 'dimensioned_quantity' );
 
     let horizontal_align = style.horizontal_align;
     if (!horizontal_align) {
@@ -1854,8 +1854,8 @@ export class TileRenderer {
 
     if (overflow) {
 
-      const can_overflow = (cell.type !== ValueType.number &&
-        cell.calculated_type !== ValueType.number &&
+      const can_overflow = (cell.type !== 'number' &&
+        cell.calculated_type !== 'number' &&
         !style.wrap &&
         !cell.merge_area);
 
@@ -1895,7 +1895,7 @@ export class TileRenderer {
           const target_cell = this.view.active_sheet.CellData(target_address);
           const target_width = this.layout.ColumnWidth(overflow_right_column);
           overflow_pixels_right -= target_width;
-          if (target_cell && !target_cell.type && !target_cell.calculated_type) {
+          if (target_cell && !HasValueType(target_cell.type) && !HasValueType(target_cell.calculated_type)) {
 
             overflow_backgrounds.push({
               address: target_address,
@@ -1939,7 +1939,7 @@ export class TileRenderer {
           const target_cell = this.view.active_sheet.CellData(target_address);
           const target_width = this.layout.ColumnWidth(overflow_left_column);
           overflow_pixels_left -= target_width;
-          if (target_cell && !target_cell.type && !target_cell.calculated_type) {
+          if (target_cell && !HasValueType(target_cell.type) && !HasValueType(target_cell.calculated_type)) {
 
             paint_left -= target_width;
 
@@ -1975,7 +1975,7 @@ export class TileRenderer {
 
         // don't clip numbers, we are going to ### them
 
-        clip = !is_number; // (cell.type !== ValueType.number && cell.calculated_type !== ValueType.number);
+        clip = !is_number; // (cell.type !== 'number' && cell.calculated_type !== 'number');
 
       }
 
@@ -2176,10 +2176,10 @@ export class TileRenderer {
     if ((style as ExtendedCelLStyle).databar?.hide_values) {
       // ...
     }
-    else if ((cell.type === ValueType.number || 
-         cell.calculated_type === ValueType.number || 
-         cell.type === ValueType.complex || 
-         cell.calculated_type === ValueType.complex) && overflow) {
+    else if ((cell.type === 'number' || 
+         cell.calculated_type === 'number' || 
+         cell.type === 'complex' || 
+         cell.calculated_type === 'complex') && overflow) {
 
       // number overflow is easy
 

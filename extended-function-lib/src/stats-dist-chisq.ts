@@ -1,6 +1,5 @@
 
 import { Box, type UnionValue } from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 import type { FunctionMap } from 'treb-calculator';
 import { ValueError } from 'treb-calculator';
 import { Lgamma, RegularizedGammaP } from './stats-special-functions';
@@ -118,7 +117,7 @@ export default {
     ],
     fn: (actual?: UnionValue, expected?: UnionValue): UnionValue => {
       if (!actual || !expected) return ValueError();
-      if (actual.type !== ValueType.array || expected.type !== ValueType.array) return ValueError();
+      if (actual.type !== 'array' || expected.type !== 'array') return ValueError();
 
       const a_cols = actual.value;
       const e_cols = expected.value;
@@ -134,7 +133,7 @@ export default {
         for (let r = 0; r < num_rows; r++) {
           const o = a_cols[c][r];
           const e = e_cols[c][r];
-          if (o.type !== ValueType.number || e.type !== ValueType.number) return ValueError();
+          if (o.type !== 'number' || e.type !== 'number') return ValueError();
           if (e.value === 0) return ValueError();
           const diff = o.value - e.value;
           chi_sq += diff * diff / e.value;

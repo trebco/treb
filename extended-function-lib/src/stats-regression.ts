@@ -1,5 +1,4 @@
 import { Box, type UnionValue } from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 import type { FunctionMap } from 'treb-calculator';
 import { DivideByZeroError, ValueError } from 'treb-calculator';
 import { extractNumbers, extractNumberPairs, mean } from './stats-array-utils';
@@ -26,7 +25,7 @@ function DefaultXs(n: number): number[] {
 }
 
 function ExtractOrDefault(v: UnionValue | undefined, n: number): number[] | null {
-  if (!v || v.type === ValueType.undefined) return DefaultXs(n);
+  if (!v || v.type === 'undefined') return DefaultXs(n);
   const nums = extractNumbers(v);
   return nums.length === n ? nums : null;
 }
@@ -170,7 +169,7 @@ export default {
       if (!xs) return ValueError();
 
       const reg = linearRegression(xs, ys);
-      return { type: ValueType.array, value: [[Box(reg.slope)], [Box(reg.intercept)]] };
+      return { type: 'array', value: [[Box(reg.slope)], [Box(reg.intercept)]] };
     },
   },
 
@@ -194,7 +193,7 @@ export default {
 
       const ln_ys = ys.map(y => Math.log(y));
       const reg = linearRegression(xs, ln_ys);
-      return { type: ValueType.array, value: [[Box(Math.exp(reg.slope))], [Box(Math.exp(reg.intercept))]] };
+      return { type: 'array', value: [[Box(Math.exp(reg.slope))], [Box(Math.exp(reg.intercept))]] };
     },
   },
 
@@ -214,7 +213,7 @@ export default {
       if (!xs) return ValueError();
 
       let new_xs: number[];
-      if (new_x && new_x.type !== ValueType.undefined) {
+      if (new_x && new_x.type !== 'undefined') {
         new_xs = extractNumbers(new_x);
         if (new_xs.length === 0) return ValueError();
       } else {
@@ -223,7 +222,7 @@ export default {
 
       const reg = linearRegression(xs, ys);
       const col: UnionValue[] = new_xs.map(x => Box(reg.slope * x + reg.intercept));
-      return { type: ValueType.array, value: [col] };
+      return { type: 'array', value: [col] };
     },
   },
 
@@ -247,7 +246,7 @@ export default {
       if (!xs) return ValueError();
 
       let new_xs: number[];
-      if (new_x && new_x.type !== ValueType.undefined) {
+      if (new_x && new_x.type !== 'undefined') {
         new_xs = extractNumbers(new_x);
         if (new_xs.length === 0) return ValueError();
       } else {
@@ -257,7 +256,7 @@ export default {
       const ln_ys = ys.map(y => Math.log(y));
       const reg = linearRegression(xs, ln_ys);
       const col: UnionValue[] = new_xs.map(x => Box(Math.exp(reg.intercept + reg.slope * x)));
-      return { type: ValueType.array, value: [col] };
+      return { type: 'array', value: [col] };
     },
   },
 } satisfies FunctionMap;

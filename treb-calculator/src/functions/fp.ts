@@ -21,7 +21,7 @@
 
 import type { FunctionMap } from '../descriptors';
 import type { CellValue, FunctionUnion, UnionValue} from 'treb-base-types';
-import { Box, ValueType } from 'treb-base-types';
+import { Box } from 'treb-base-types';
 import { ArgumentError, ValueError } from '../function-error';
 import { FlattenCellValues } from '../utilities';
 
@@ -40,7 +40,7 @@ export const FPFunctionLibrary: FunctionMap = {
     ],
     fp: true,
     fn: function(rows: number, columns: number, lambda: FunctionUnion) {
-      if (rows > 0 && columns > 0 && lambda?.type === ValueType.function) {
+      if (rows > 0 && columns > 0 && lambda?.type === 'function') {
         const apply = this?.apply;
         if (!apply) {
           return ValueError();
@@ -51,15 +51,15 @@ export const FPFunctionLibrary: FunctionMap = {
           const values_col: UnionValue[] = [];
           for (let r = 0; r < rows; r++) {
             values_col.push(apply(lambda, [
-              { type: ValueType.number, value: r + 1 },
-              { type: ValueType.number, value: c + 1 },
+              { type: 'number', value: r + 1 },
+              { type: 'number', value: c + 1 },
             ]));
           }
           value.push(values_col);
         } 
 
         return {
-          type: ValueType.array,
+          type: 'array',
           value,
         };
 
@@ -117,7 +117,7 @@ export const FPFunctionLibrary: FunctionMap = {
       }
 
       return {
-        type: ValueType.array,
+        type: 'array',
         value: result,
       };
 
@@ -171,7 +171,7 @@ export const FPFunctionLibrary: FunctionMap = {
       }
 
       return {
-        type: ValueType.array,
+        type: 'array',
         value: result,
       };
 
@@ -250,7 +250,7 @@ export const FPFunctionLibrary: FunctionMap = {
       }
 
       return {
-        type: ValueType.array,
+        type: 'array',
         value: result,
       }
 
@@ -282,13 +282,13 @@ export const FPFunctionLibrary: FunctionMap = {
         return ValueError(); 
       }
 
-      if (lambda.type !== ValueType.function) {
+      if (lambda.type !== 'function') {
         return ArgumentError();
       }
 
-      if (data.type !== ValueType.array) {
+      if (data.type !== 'array') {
         data = {
-          type: ValueType.array, 
+          type: 'array', 
           value: [[data]],
         }
       }
@@ -334,13 +334,13 @@ export const FPFunctionLibrary: FunctionMap = {
         return ValueError(); 
       }
 
-      if (lambda.type !== ValueType.function) {
+      if (lambda.type !== 'function') {
         return ArgumentError();
       }
 
-      if (data.type !== ValueType.array) {
+      if (data.type !== 'array') {
         data = {
-          type: ValueType.array, 
+          type: 'array', 
           value: [[data]],
         }
       }
@@ -361,7 +361,7 @@ export const FPFunctionLibrary: FunctionMap = {
       }
 
       return {
-        type: ValueType.array,
+        type: 'array',
         value: results,
       }
 
@@ -387,13 +387,13 @@ export const FPFunctionLibrary: FunctionMap = {
     fn: function(data: UnionValue, lambda: FunctionUnion) {
       if (!this?.apply) { return ValueError(); }
 
-      if (lambda.type !== ValueType.function) {
+      if (lambda.type !== 'function') {
         return ArgumentError();
       }
 
-      if (data.type !== ValueType.array) {
+      if (data.type !== 'array') {
         data = {
-          type: ValueType.array,
+          type: 'array',
           value: [[data]],
         };
       }
@@ -408,12 +408,12 @@ export const FPFunctionLibrary: FunctionMap = {
           args.push(data.value[c][r]);
         }
         value[0].push(this.apply(lambda, [{
-          type: ValueType.array, value: [args],
+          type: 'array', value: [args],
         }]));
       }
       
       return {
-        type: ValueType.array,
+        type: 'array',
         value,
       }
 
@@ -440,13 +440,13 @@ export const FPFunctionLibrary: FunctionMap = {
     fn: function(data: UnionValue, lambda: FunctionUnion) {
       if (!this?.apply) { return ValueError(); }
 
-      if (lambda.type !== ValueType.function) {
+      if (lambda.type !== 'function') {
         return ArgumentError();
       }
 
-      if (data.type !== ValueType.array) {
+      if (data.type !== 'array') {
         data = {
-          type: ValueType.array,
+          type: 'array',
           value: [[data]],
         };
       }
@@ -461,12 +461,12 @@ export const FPFunctionLibrary: FunctionMap = {
           args.push(data.value[c][r]);
         }
         value.push([this.apply(lambda, [{
-          type: ValueType.array, value: [args],
+          type: 'array', value: [args],
         }])]);
       }
       
       return {
-        type: ValueType.array,
+        type: 'array',
         value,
       }
 
@@ -497,7 +497,7 @@ export const FPFunctionLibrary: FunctionMap = {
       }
       
       const lambda = args[args.length - 1];
-      if (lambda.type !== ValueType.function) {
+      if (lambda.type !== 'function') {
         return ArgumentError();
       }
 
@@ -508,9 +508,9 @@ export const FPFunctionLibrary: FunctionMap = {
 
       for (let i = 0; i < args.length - 1; i++) {
         const arg = args[i];
-        if (arg.type !== ValueType.array) {
+        if (arg.type !== 'array') {
           args[i] = {
-            type: ValueType.array,
+            type: 'array',
             value: [[arg]],
           };
         }
@@ -518,7 +518,7 @@ export const FPFunctionLibrary: FunctionMap = {
 
       const key = args[0];
       const results: UnionValue[][] = [];
-      if (key.type === ValueType.array) {
+      if (key.type === 'array') {
         for (let r = 0; r < key.value.length; r++) {
           const row = key.value[r];
           const results_row: UnionValue[] = [];
@@ -527,7 +527,7 @@ export const FPFunctionLibrary: FunctionMap = {
 
             for (let i = 1; i < args.length - 1; i++) {
               const arg = args[i];
-              if (arg.type === ValueType.array) {
+              if (arg.type === 'array') {
                 apply_args.push(arg.value[r][c])
               }
             }
@@ -539,7 +539,7 @@ export const FPFunctionLibrary: FunctionMap = {
       }
       
       return {
-        type: ValueType.array,
+        type: 'array',
         value: results,
       };
 

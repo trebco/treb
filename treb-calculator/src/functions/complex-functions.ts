@@ -21,7 +21,7 @@
 
 import type { FunctionMap } from '../descriptors';
 import type { CellValue, NumberUnion, UnionValue} from 'treb-base-types';
-import { IsComplex, ValueType } from 'treb-base-types';
+import { IsComplex } from 'treb-base-types';
 // import * as Utils from '../utilities';
 import { ValueError } from '../function-error';
 import { RectangularToPolar } from '../complex-math';
@@ -39,7 +39,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
     }],
     fn: (ref: UnionValue): UnionValue => {
       return { 
-        type: ValueType.boolean, 
+        type: 'boolean', 
         value: !!(ref?.value) && IsComplex((ref.value as {value?: CellValue}).value),
       };
     },
@@ -52,18 +52,18 @@ export const ComplexFunctionLibrary: FunctionMap = {
       { boxed: true, unroll: true },
     ],
     fn: (ref: UnionValue): UnionValue => {
-      if (ref.type === ValueType.number) {
+      if (ref.type === 'number') {
         return { ...ref };
       }
-      if (ref.type === ValueType.complex) {
+      if (ref.type === 'complex') {
         return {
-          type: ValueType.number,
+          type: 'number',
           value: ref.value.real || 0,
         };
       }
-      if (ref.type === ValueType.undefined || (ref.type === ValueType.string && ref.value === '')) {
+      if (ref.type === 'undefined' || (ref.type === 'string' && ref.value === '')) {
         return {
-          type: ValueType.number,
+          type: 'number',
           value: 0,
         };
       }
@@ -77,17 +77,17 @@ export const ComplexFunctionLibrary: FunctionMap = {
       { boxed: true, unroll: true, },
     ],
     fn: (ref: UnionValue): UnionValue => {
-      if (ref.type === ValueType.complex) {
+      if (ref.type === 'complex') {
         return {
-          type: ValueType.number,
+          type: 'number',
           value: ref.value.imaginary || 0,
         };
       }
-      if (ref.type === ValueType.number ||
-          ref.type === ValueType.undefined || 
-          (ref.type === ValueType.string && ref.value === '')) {
+      if (ref.type === 'number' ||
+          ref.type === 'undefined' || 
+          (ref.type === 'string' && ref.value === '')) {
         return {
-          type: ValueType.number,
+          type: 'number',
           value: 0,
         };
       }
@@ -110,7 +110,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
 
       if (complex.imaginary) {
         return {
-          type: ValueType.complex,
+          type: 'complex',
           value: {
             real: complex.real,
             imaginary: -complex.imaginary,
@@ -119,7 +119,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
       }
 
       return {
-        type: ValueType.number,
+        type: 'number',
         value: complex.real,
       };
 
@@ -133,18 +133,18 @@ export const ComplexFunctionLibrary: FunctionMap = {
     ],
     fn: (ref: UnionValue): UnionValue => {
       
-      if (ref.type === ValueType.complex) {
+      if (ref.type === 'complex') {
         return {
-          type: ValueType.number,
+          type: 'number',
           value: Math.atan2(ref.value.imaginary, ref.value.real),
         }
       }
 
-      if (ref.type === ValueType.number ||
-          ref.type === ValueType.undefined || 
-          (ref.type === ValueType.string && ref.value === '')) {
+      if (ref.type === 'number' ||
+          ref.type === 'undefined' || 
+          (ref.type === 'string' && ref.value === '')) {
         return {
-          type: ValueType.number,
+          type: 'number',
           value: Math.atan2(0, (ref as NumberUnion).value || 0), // this is clumsy now because typing has _improved_
         }
       }
@@ -161,7 +161,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
     ],
     fn: (r = 0, theta = 0): UnionValue => {
       return {
-        type: ValueType.complex,
+        type: 'complex',
         value: { 
           real: r * Math.cos(theta),
           imaginary: r * Math.sin(theta),
@@ -183,7 +183,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
       const complex = CoerceComplex(a);
       if (complex) {
         return {
-          type: ValueType.complex,
+          type: 'complex',
           value: complex,
         };
       }
@@ -210,14 +210,14 @@ export const ComplexFunctionLibrary: FunctionMap = {
     fn: (a: UnionValue): UnionValue => {
 
       // real -> complex
-      if (a.type === ValueType.number) {
+      if (a.type === 'number') {
 
         if (!a.value) {
           return ValueError();
         }
 
         a = {
-          type: ValueType.complex,
+          type: 'complex',
           value: {
             real: a.value,
             imaginary: 0,
@@ -226,11 +226,11 @@ export const ComplexFunctionLibrary: FunctionMap = {
       }
 
       // other zero -> complex
-      else if (a.type === ValueType.undefined || (a.type === ValueType.string && a.value === '')) {
+      else if (a.type === 'undefined' || (a.type === 'string' && a.value === '')) {
         return ValueError();
       }
 
-      if (a.type === ValueType.complex) {
+      if (a.type === 'complex') {
 
         // from polar form, the principal value is 
         // Log z = ln r + iθ
@@ -242,8 +242,8 @@ export const ComplexFunctionLibrary: FunctionMap = {
         };
 
         return (value.imaginary) ?
-          { type: ValueType.complex, value } :
-          { type: ValueType.number, value: value.real };
+          { type: 'complex', value } :
+          { type: 'number', value: value.real };
 
       }
       

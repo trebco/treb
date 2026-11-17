@@ -1,19 +1,18 @@
 import { Box, type UnionValue } from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 import type { FunctionMap } from 'treb-calculator';
 import { ValueError } from 'treb-calculator';
 
 function extractNumbers(v: UnionValue): number[] {
   const result: number[] = [];
-  if (v.type === ValueType.array) {
+  if (v.type === 'array') {
     for (const row of v.value) {
       for (const cell of row) {
-        if (cell.type === ValueType.number) {
+        if (cell.type === 'number') {
           result.push(cell.value);
         }
       }
     }
-  } else if (v.type === ValueType.number) {
+  } else if (v.type === 'number') {
     result.push(v.value);
   }
   return result;

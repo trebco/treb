@@ -31,7 +31,8 @@ import { Area, IsCellAddress } from './area';
 
 import { Cell } from './cell';
 import type { Table } from './table';
-import { type SerializedValueType, ValueType, GetValueType, ValueTypeList } from './value-type';
+// import { type SerializedValueType, ValueType, GetValueType, ValueTypeList } from './value-type';
+import { type ValueType, GetValueType, HasValueType, ValueTypeMap } from './value-type';
 import type { CellValue, UnionValue } from './union';
 import type { CellStyle } from './style';
 
@@ -82,10 +83,10 @@ export interface BaseCellData {
   area?: IArea;
   merge_area?: IArea;
   // validation?: DataValidation;
-  calculated_type?: SerializedValueType; //  ValueType;
+  calculated_type?: ValueType;
   note?: string;
   hyperlink?: string;
-  type?: SerializedValueType; // ValueType;
+  type?: ValueType;
   sheet_id?: number;
   spill?: IArea;
   // locked?: boolean;
@@ -154,14 +155,15 @@ export const IsNestedRowArray = (test: NestedRowData[]|NestedColumnData[]): test
 // ...
 
 
-/** 
+/* * 
  * this is the reverse map, i.e. type => number 
  * FIXME: why is this getting exported by the API generator?
  * FIXME: I get why it's dynamic, but for practical purposes why not just 
  * create a static map?
- */
+ * /
 const ValueTypeMap = 
   ValueTypeList.map((key, index) => ({ [key]: index })).reduce((set, value) => ({...set, ...value}), {}) as Record<SerializedValueType, ValueType>;
+*/
 
 
 /**
@@ -387,22 +389,20 @@ export class Cells {
     this.columns_ = columns;
   }
 
-  public SerializedTypeToValueType(type?: SerializedValueType|ValueType): ValueType|undefined {
-
-    if (!type) {
-      return undefined;
-    }
-
-    if (typeof type === 'number') {
-      return type as ValueType;
-    }
-
-    return ValueTypeMap[type] || undefined;
-
+  /**
+   * OK we expect strings from the ValueType union, but older files may
+   * have numbers from the enum days, so we need to handle that.
+   * @param type 
+   * @returns 
+   */
+  public SerializedTypeToValueType(type?: number|ValueType): ValueType|undefined {
+    const value_type = (typeof type === 'number') ? ValueTypeMap[type] : type;
+    return HasValueType(value_type) ? value_type : undefined;
   }
 
-  public ValueTypeToSerializedType(type?: ValueType): SerializedValueType|undefined {
-    return type ? ValueTypeList[type] : undefined;
+  /** becomes the identify function, ideally we should fix call sites (TODO) */
+  public ValueTypeToSerializedType(type?: ValueType): ValueType|undefined {
+    return HasValueType(type) ? type : undefined;
   }
 
   /**
@@ -632,7 +632,7 @@ export class Cells {
             && cell.table.area.start.row === row
             && cell.table.area.start.column === column;
 
-          const is_empty = cell ? (cell.type === ValueType.string && !cell.value) : true;
+          const is_empty = cell ? (cell.type === 'string' && !cell.value) : true;
 
           // NOTE: we added the check on calculated && calculated_value,
           // so we preserve rendered data for arrays. but that actually writes
@@ -649,8 +649,8 @@ export class Cells {
           // should preserve zeros.
 
           if (cell && (!is_empty || options.preserve_empty_strings) &&
-              (merge_head || cell.type || (cell.calculated_type && options.expand_arrays) ||
-                (cell.calculated_type && options.calculated_value) ||
+              (merge_head || HasValueType(cell.type) || (HasValueType(cell.calculated_type) && options.expand_arrays) ||
+                (HasValueType(cell.calculated_type) && options.calculated_value) ||
                 (cell.note) ||
                 // (cell.validation) ||
                 (options.decorated_cells && cell.style &&
@@ -670,14 +670,14 @@ export class Cells {
             }
             if (options.sheet_id) obj.sheet_id = options.sheet_id;
             if (options.calculated_value &&
-                typeof cell.calculated !== 'undefined') { // && cell.calculated_type !== ValueType.error) {
+                typeof cell.calculated !== 'undefined') { // && cell.calculated_type !== 'error') {
               obj.calculated = cell.calculated;
               if (cell.spill) {
                 obj.spill = cell.spill.toJSON();
               }
 
               // always preserve error type, because we can't infer
-              if (options.preserve_type || cell.calculated_type === ValueType.error) {
+              if (options.preserve_type || cell.calculated_type === 'error') {
                 obj.calculated_type = this.ValueTypeToSerializedType(cell.calculated_type);
               }
             }
@@ -952,7 +952,7 @@ export class Cells {
       if (this.data[from.row] && this.data[from.row][from.column]){
         return this.data[from.row][from.column].GetValue4();
       }
-      return { value: undefined, type: ValueType.undefined };
+      return { value: undefined, type: 'undefined' };
     }
 
     const value: UnionValue[][] = [];
@@ -962,7 +962,7 @@ export class Cells {
         const column: UnionValue[] = [];
         for ( let r = from.row; r <= to.row; r++ ){
           if (this.data[r] && this.data[r][c]) column.push(this.data[r][c].GetValue4());
-          else column.push({type: ValueType.undefined});
+          else column.push({type: 'undefined'});
         }
         value.push(column);
       }
@@ -972,13 +972,13 @@ export class Cells {
         const row: UnionValue[] = [];
         for ( let c = from.column; c <= to.column; c++ ){
           if (this.data[r] && this.data[r][c]) row.push(this.data[r][c].GetValue4());
-          else row.push({type: ValueType.undefined});
+          else row.push({type: 'undefined'});
         }
         value.push(row);
       }
     }
 
-    return {type: ValueType.array, value};
+    return {type: 'array', value};
 
   }
 

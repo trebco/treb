@@ -1,6 +1,5 @@
 
 import { Box, type UnionValue } from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 import type { FunctionMap } from 'treb-calculator';
 import { ValueError } from 'treb-calculator';
 import { Lgamma, RegularizedBetaI } from './stats-special-functions';

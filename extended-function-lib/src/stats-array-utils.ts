@@ -1,17 +1,16 @@
 import type { UnionValue } from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 
 export function extractNumbers(v: UnionValue): number[] {
   const result: number[] = [];
-  if (v.type === ValueType.array) {
+  if (v.type === 'array') {
     for (const row of v.value) {
       for (const cell of row) {
-        if (cell.type === ValueType.number) {
+        if (cell.type === 'number') {
           result.push(cell.value);
         }
       }
     }
-  } else if (v.type === ValueType.number) {
+  } else if (v.type === 'number') {
     result.push(v.value);
   }
   return result;
@@ -19,23 +18,23 @@ export function extractNumbers(v: UnionValue): number[] {
 
 export function extractNumbersA(v: UnionValue): number[] {
   const result: number[] = [];
-  if (v.type === ValueType.array) {
+  if (v.type === 'array') {
     for (const row of v.value) {
       for (const cell of row) {
-        if (cell.type === ValueType.number) {
+        if (cell.type === 'number') {
           result.push(cell.value);
-        } else if (cell.type === ValueType.boolean) {
+        } else if (cell.type === 'boolean') {
           result.push(cell.value ? 1 : 0);
-        } else if (cell.type === ValueType.string) {
+        } else if (cell.type === 'string') {
           result.push(0);
         }
       }
     }
-  } else if (v.type === ValueType.number) {
+  } else if (v.type === 'number') {
     result.push(v.value);
-  } else if (v.type === ValueType.boolean) {
+  } else if (v.type === 'boolean') {
     result.push(v.value ? 1 : 0);
-  } else if (v.type === ValueType.string) {
+  } else if (v.type === 'string') {
     result.push(0);
   }
   return result;

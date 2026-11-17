@@ -21,7 +21,6 @@
 
 import { DOMContext } from 'treb-base-types';
 import { NumberFormat, NumberFormatCache, ValueParser } from 'treb-format';
-import { ValueType } from 'treb-base-types';
 import { EventSource } from 'treb-utils';
 
 export interface ScaleEvent {
@@ -113,7 +112,7 @@ export class ScaleControl extends EventSource<ScaleEvent> {
           text = text.replace(/%/g, '');
 
           const value = ValueParser.TryParse(text);
-          if (value.type === ValueType.number) {
+          if (value.type === 'number') {
             this.UpdateScale(Number(value.value), true);
           }
           else {

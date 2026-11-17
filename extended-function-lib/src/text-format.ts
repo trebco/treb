@@ -1,23 +1,22 @@
 import { Box, type UnionValue } from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 import type { FunctionMap } from 'treb-calculator';
 import { ValueError, NAError } from 'treb-calculator';
 
 function FlattenToStrings(v: UnionValue): string[] {
   const result: string[] = [];
-  if (v.type === ValueType.array) {
+  if (v.type === 'array') {
     for (const row of v.value) {
       for (const cell of row) {
-        if (cell.type === ValueType.string) result.push(cell.value);
-        else if (cell.type === ValueType.number) result.push(String(cell.value));
-        else if (cell.type === ValueType.boolean) result.push(cell.value ? 'TRUE' : 'FALSE');
+        if (cell.type === 'string') result.push(cell.value);
+        else if (cell.type === 'number') result.push(String(cell.value));
+        else if (cell.type === 'boolean') result.push(cell.value ? 'TRUE' : 'FALSE');
       }
     }
-  } else if (v.type === ValueType.string) {
+  } else if (v.type === 'string') {
     result.push(v.value);
-  } else if (v.type === ValueType.number) {
+  } else if (v.type === 'number') {
     result.push(String(v.value));
-  } else if (v.type === ValueType.boolean) {
+  } else if (v.type === 'boolean') {
     result.push(v.value ? 'TRUE' : 'FALSE');
   }
   return result;
@@ -25,20 +24,20 @@ function FlattenToStrings(v: UnionValue): string[] {
 
 function FlattenToStringsWithBlanks(v: UnionValue): (string | null)[] {
   const result: (string | null)[] = [];
-  if (v.type === ValueType.array) {
+  if (v.type === 'array') {
     for (const row of v.value) {
       for (const cell of row) {
-        if (cell.type === ValueType.string) result.push(cell.value);
-        else if (cell.type === ValueType.number) result.push(String(cell.value));
-        else if (cell.type === ValueType.boolean) result.push(cell.value ? 'TRUE' : 'FALSE');
+        if (cell.type === 'string') result.push(cell.value);
+        else if (cell.type === 'number') result.push(String(cell.value));
+        else if (cell.type === 'boolean') result.push(cell.value ? 'TRUE' : 'FALSE');
         else result.push(null);
       }
     }
-  } else if (v.type === ValueType.string) {
+  } else if (v.type === 'string') {
     result.push(v.value);
-  } else if (v.type === ValueType.number) {
+  } else if (v.type === 'number') {
     result.push(String(v.value));
-  } else if (v.type === ValueType.boolean) {
+  } else if (v.type === 'boolean') {
     result.push(v.value ? 'TRUE' : 'FALSE');
   } else {
     result.push(null);
@@ -47,13 +46,13 @@ function FlattenToStringsWithBlanks(v: UnionValue): (string | null)[] {
 }
 
 function ExtractDelimiters(v: UnionValue | undefined): string[] {
-  if (!v || v.type === ValueType.undefined) return [];
-  if (v.type === ValueType.string) return [v.value];
-  if (v.type === ValueType.array) {
+  if (!v || v.type === 'undefined') return [];
+  if (v.type === 'string') return [v.value];
+  if (v.type === 'array') {
     const delims: string[] = [];
     for (const col of v.value) {
       for (const cell of col) {
-        if (cell.type === ValueType.string) delims.push(cell.value);
+        if (cell.type === 'string') delims.push(cell.value);
       }
     }
     return delims;
@@ -89,11 +88,11 @@ function SplitByDelimiters(text: string, delimiters: string[], case_insensitive:
 
 function FormatCellValue(v: UnionValue, strict: boolean): string {
   switch (v.type) {
-    case ValueType.string:
+    case 'string':
       return strict ? `"${v.value}"` : v.value;
-    case ValueType.number:
+    case 'number':
       return String(v.value);
-    case ValueType.boolean:
+    case 'boolean':
       return v.value ? 'TRUE' : 'FALSE';
     default:
       return '';
@@ -330,7 +329,7 @@ export default {
         result.push(col);
       }
 
-      return { type: ValueType.array, value: result };
+      return { type: 'array', value: result };
     },
   },
 
@@ -344,7 +343,7 @@ export default {
       if (!array) return ValueError();
       const strict = format === 1;
 
-      if (array.type !== ValueType.array) {
+      if (array.type !== 'array') {
         return Box(FormatCellValue(array, strict));
       }
 

@@ -22,7 +22,7 @@
 import type { GraphCallbacks } from './spreadsheet_vertex_base';
 import { SpreadsheetVertexBase } from './spreadsheet_vertex_base';
 import type { Cell, CellValue, ICellAddress, UnionValue } from 'treb-base-types';
-import { Area, Box, Errors, ValueType } from 'treb-base-types';
+import { Area, Box, Errors } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
 // import { ErrorType } from '../function-error';
@@ -51,7 +51,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
   public address?: ICellAddress;
 
   //public result: UnionOrArray = UndefinedUnion();
-  public result: UnionValue = {type: ValueType.undefined};
+  public result: UnionValue = {type: 'undefined'};
 
   public expression: ExpressionUnit = { type: 'missing', id: -1 };
   public expression_error = false;
@@ -167,7 +167,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
           // vertices -> white if they match
 
           if (this.reference && (
-              this.array_head || this.reference.type === ValueType.formula )) {
+              this.array_head || this.reference.type === 'formula' )) {
             this.reference.SetCalculationError(Errors.Loop);
           }
 
@@ -224,7 +224,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
 
     if (this.reference) {
 
-      if (this.reference.type === ValueType.formula) {
+      if (this.reference.type === 'formula') {
 
         this.short_circuit = false;
         const result = graph.CalculationCallback.call(graph, this);
@@ -249,11 +249,11 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
       if (this.array_head) {
         graph.SpreadCallback.call(graph, this, this.result);
       }
-      else if (this.reference.type === ValueType.formula) {
+      else if (this.reference.type === 'formula') {
 
         // adding check for spill, not withstanding the below
 
-        if (this.result.type === ValueType.array) {
+        if (this.result.type === 'array') {
 
           // note array of length 1 should not trigger spill behavior
           // (moved to callback method)
@@ -320,7 +320,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
           // function of our new polynomial methods, BUT, we should probably
           // handle it properly regardless.
 
-          // neven // const single = (this.result.type === ValueType.array) ? this.result.value[0][0] : this.result;
+          // neven // const single = (this.result.type === 'array') ? this.result.value[0][0] : this.result;
 
           // we are using object type in the returned value for sparklines...
           // so we can't drop it here. we could change rendering though. or

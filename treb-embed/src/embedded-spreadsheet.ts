@@ -87,7 +87,6 @@ import type {
 import {
   IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
   Localization, Style, type Color, ResolveThemeColor, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext,
-  ValueType, 
 } from 'treb-base-types';
 
 import { EventSource, ValidateURI } from 'treb-utils';
@@ -2012,7 +2011,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             column_area.RemoveHeaderRow();
             const cell = active_sheet.CellData(title.start);
             
-            const column_label = cell.calculated_type === ValueType.string || cell.type === ValueType.string ? 
+            const column_label = cell.calculated_type === 'string' || cell.type === 'string' ? 
                 title.spreadsheet_label : `"Series ${index}"`;
 
             series.push(`Series(${column_label},,${column_area.spreadsheet_label})`);
@@ -6484,9 +6483,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
                   }
 
                   switch (result.type) {
-                    case ValueType.number:
-                    case ValueType.string:
-                    case ValueType.complex:
+                    case 'number':
+                    case 'string':
+                    case 'complex':
                       target.textContent = format.Format(result.value);
                       break;
 

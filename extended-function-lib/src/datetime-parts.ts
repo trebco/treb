@@ -1,5 +1,4 @@
 import { Box, type UnionValue } from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 import type { FunctionMap } from 'treb-calculator';
 import { ValueError, NAError } from 'treb-calculator';
 import { DateToSerial, SerialToDate, DaysInMonth, Days360Us, Days360Eu, YearFrac } from './finance-date-utils';
@@ -48,8 +47,8 @@ function IsWeekend(dow: number, weekend_days: boolean[]): boolean {
 
 function ExtractHolidaySerials(holidays?: UnionValue): number[] {
   if (!holidays) return [];
-  if (holidays.type === ValueType.number) return [Math.trunc(holidays.value)];
-  if (holidays.type === ValueType.array) {
+  if (holidays.type === 'number') return [Math.trunc(holidays.value)];
+  if (holidays.type === 'array') {
     return extractNumbers(holidays).map(n => Math.trunc(n));
   }
   return [];

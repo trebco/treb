@@ -19,7 +19,7 @@
  * 
  */
 
-import { type UnionValue, ValueType } from 'treb-base-types';
+import { type UnionValue } from 'treb-base-types';
 import type { CompositeFunctionDescriptor } from 'treb-calculator/src/descriptors';
 
 /** 
@@ -29,7 +29,7 @@ import type { CompositeFunctionDescriptor } from 'treb-calculator/src/descriptor
  */
 const Identity = (...args: unknown[]): UnionValue => {
   return {
-    type: ValueType.object,
+    type: 'object',
     value: args,
     key: 'arguments',
   };
@@ -62,7 +62,7 @@ export const ChartFunctions: Record<ChartFunction|SupportFunction, CompositeFunc
     ],
     fn: (...args: unknown[]) => {
       return {
-        type: ValueType.object,
+        type: 'object',
         value: args,
         key: 'group',
       };
@@ -76,7 +76,7 @@ export const ChartFunctions: Record<ChartFunction|SupportFunction, CompositeFunc
     ],
     fn: (...args: unknown[]) => {
       return {
-        type: ValueType.object,
+        type: 'object',
         value: {
           value: args[0],
           label: args[1],
@@ -113,7 +113,7 @@ export const ChartFunctions: Record<ChartFunction|SupportFunction, CompositeFunc
     ],
     fn: (...args: unknown[]) => {
       return {
-        type: ValueType.object,
+        type: 'object',
         value: {
           label: args[0],
           x: args[1],
@@ -142,7 +142,7 @@ export const ChartFunctions: Record<ChartFunction|SupportFunction, CompositeFunc
     ],
     fn: (...args: unknown[]) => {
       return {
-        type: ValueType.object,
+        type: 'object',
         value: {
           label: args[0],
           x: args[1],

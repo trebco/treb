@@ -20,7 +20,7 @@
  */
 
 import type { ErrorUnion, UnionValue} from 'treb-base-types';
-import { type ErrorValue, Errors, ValueType } from 'treb-base-types';
+import { type ErrorValue, Errors } from 'treb-base-types';
 
 export interface FunctionError {
   error: ErrorValue;
@@ -29,47 +29,47 @@ export interface FunctionError {
 export const NotImplError: FunctionError = { error: Errors.NotImpl };
 
 export const NAError = (): UnionValue => {
-  return { type: ValueType.error, value: Errors.NA };
+  return { type: 'error', value: Errors.NA };
 }
 
 export const ExpressionError = (): UnionValue => {
-  return { type: ValueType.error, value: Errors.Expression };
+  return { type: 'error', value: Errors.Expression };
 }
 
 export const DataError = (): UnionValue => {
-  return { type: ValueType.error, value: Errors.Data };
+  return { type: 'error', value: Errors.Data };
 };
 
 export const DivideByZeroError = (): UnionValue => {
-  return { type: ValueType.error, value: Errors.Div0 };
+  return { type: 'error', value: Errors.Div0 };
 };
 
 export const ArgumentError = (): UnionValue => {
-  return { type: ValueType.error, value: Errors.Argument };
+  return { type: 'error', value: Errors.Argument };
 };
 
 export const ValueError = (): /* UnionValue */ ErrorUnion => {
-  return { type: ValueType.error, value: Errors.Value };
+  return { type: 'error', value: Errors.Value };
 };
 
 export const NumError = (): /* UnionValue */ ErrorUnion => {
-  return { type: ValueType.error, value: Errors.Num };
+  return { type: 'error', value: Errors.Num };
 };
 
 export const ReferenceError = (): UnionValue => {
-  return { type: ValueType.error, value: Errors.Reference };
+  return { type: 'error', value: Errors.Reference };
 };
 
 export const NameError = (): UnionValue => {
-  return { type: ValueType.error, value: Errors.Name };
+  return { type: 'error', value: Errors.Name };
 };
 
 export const SpillError = (): UnionValue => {
-  return { type: ValueType.error, value: Errors.Spill };
+  return { type: 'error', value: Errors.Spill };
 };
 
 export const UnknownError = (): UnionValue => {
-  return { type: ValueType.error, value: Errors.Unknown };
+  return { type: 'error', value: Errors.Unknown };
 };
 
 

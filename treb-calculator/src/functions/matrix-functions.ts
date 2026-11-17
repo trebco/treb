@@ -21,7 +21,7 @@
 
 import type { FunctionMap } from '../descriptors';
 import type { ArrayUnion, Complex, UnionValue} from 'treb-base-types';
-import { ValueType, ComplexOrReal } from 'treb-base-types';
+import { ComplexOrReal } from 'treb-base-types';
 import { ArgumentError, ValueError } from '../function-error';
 import * as ComplexMath from '../complex-math';
 
@@ -41,7 +41,7 @@ const ComplexMatrix = (input: UnionValue): ComplexMatrixType => {
   // if that were the case shouldn't it wrap up the outer value, and not 
   // the value property? ...
 
-  if (input.type === ValueType.array) {
+  if (input.type === 'array') {
     a = input.value;
   }
   else {
@@ -66,13 +66,13 @@ const ComplexMatrix = (input: UnionValue): ComplexMatrixType => {
     const row: Complex[] = [];
     for (let j = 0; j < n; j++) {
       const ref = a[i][j];
-      if (ref.type === ValueType.complex) {
+      if (ref.type === 'complex') {
         row.push({...ref.value});
       }
-      else if (ref.type === ValueType.number) {
+      else if (ref.type === 'number') {
         row.push({real: ref.value, imaginary: 0});
       }
-      else if (ref.type === ValueType.undefined || ref.value === '') {
+      else if (ref.type === 'undefined' || ref.value === '') {
         row.push({real: 0, imaginary: 0});
       }
       else {
@@ -137,7 +137,7 @@ export const MatrixFunctionLibrary: FunctionMap = {
       }
       
       return {
-        type: ValueType.array,
+        type: 'array',
         value: inverse.map(row => row.map(value => ComplexOrReal(value))),
       }
 
@@ -157,14 +157,14 @@ export const MatrixFunctionLibrary: FunctionMap = {
       }
 
       const mat: ArrayUnion = {
-        type: ValueType.array,
+        type: 'array',
         value: [],
       };
 
       for (let i = 0; i < n; i++) {
         const row: UnionValue[] = [];
         for (let j = 0; j < n; j++) {
-          row.push({ type: ValueType.number, value: (i === j ? 1 : 0) });
+          row.push({ type: 'number', value: (i === j ? 1 : 0) });
         }
         mat.value.push(row);
       }
@@ -203,7 +203,7 @@ export const MatrixFunctionLibrary: FunctionMap = {
       // convert to reals where possible
 
       return {
-        type: ValueType.array,
+        type: 'array',
         value: product.map(row => row.map(value => ComplexOrReal(value))),
       };
 

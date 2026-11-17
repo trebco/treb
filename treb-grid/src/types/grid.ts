@@ -36,7 +36,6 @@ import {
   Area, 
   Is2DArray, 
   Rectangle, 
-  ValueType, 
   Localization, 
   IsCellAddress, 
   LoadThemeProperties,
@@ -474,7 +473,7 @@ export class Grid extends GridBase {
 
       // seems like we're using a loop function unecessarily
       
-      if (r1c1 && value && cell.type === ValueType.formula) {
+      if (r1c1 && value && cell.type === 'formula') {
         value = this.FormatR1C1(value, { row, column })[0][0];
       }
 
@@ -5560,7 +5559,7 @@ export class Grid extends GridBase {
     const cells = this.active_sheet.cells;
 
     let cell = cells.GetCell(selection.target, false);
-    if (!cell || (cell.type === ValueType.undefined && !cell.area && !cell.spill)) {
+    if (!cell || (cell.type === 'undefined' && !cell.area && !cell.spill)) {
       return false;
     }
 
@@ -5594,20 +5593,20 @@ export class Grid extends GridBase {
       if (rows) {
         for (let column = selection.area.start.column; !has_value && column <= selection.area.end.column; column++) {
           cell = cells.GetCell({ row: test.row, column }, false);
-          has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area || !!cell.spill));
+          has_value = has_value || (!!cell && (cell.type !== 'undefined' || !!cell.area || !!cell.spill));
           if (!has_value && cell && cell.merge_area) {
             cell = cells.GetCell(cell.merge_area.start, false);
-            has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area || !!cell.spill));
+            has_value = has_value || (!!cell && (cell.type !== 'undefined' || !!cell.area || !!cell.spill));
           }
         }
       }
       else {
         for (let row = selection.area.start.row; !has_value && row <= selection.area.end.row; row++) {
           cell = cells.GetCell({ row, column: test.column }, false);
-          has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area || !!cell.spill));
+          has_value = has_value || (!!cell && (cell.type !== 'undefined' || !!cell.area || !!cell.spill));
           if (!has_value && cell && cell.merge_area) {
             cell = cells.GetCell(cell.merge_area.start, false);
-            has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area || !!cell.spill));
+            has_value = has_value || (!!cell && (cell.type !== 'undefined' || !!cell.area || !!cell.spill));
           }
         }
       }
@@ -5956,7 +5955,7 @@ export class Grid extends GridBase {
 
     if (expression?.type === 'complex') {
       parse_result = {
-        type: ValueType.complex,
+        type: 'complex',
         value: { 
           real: expression.real, 
           imaginary: expression.imaginary 
@@ -5965,7 +5964,7 @@ export class Grid extends GridBase {
     }
     else if (expression?.type === 'literal' && typeof expression.value === 'boolean') {
       parse_result = {
-        type: ValueType.boolean,
+        type: 'boolean',
         value: expression.value,
       };
     }
@@ -5973,7 +5972,7 @@ export class Grid extends GridBase {
       parse_result = ValueParser.TryParse(value);
     }
 
-    if (!is_function && parse_result.type === ValueType.number) {
+    if (!is_function && parse_result.type === 'number') {
 
       // const text = value.toString();
 
@@ -6376,7 +6375,7 @@ export class Grid extends GridBase {
 
     if (flush) {
 
-      if ((cell.type === ValueType.number || cell.rendered_type === ValueType.number) && cell.style &&
+      if ((cell.type === 'number' || cell.rendered_type === 'number') && cell.style &&
         cell.style.number_format && /(?:%|percent)/i.test(cell.style.number_format) &&
         (!event || this.IsNumeric(event.key.charCodeAt(0)))) {
 
@@ -7310,7 +7309,7 @@ export class Grid extends GridBase {
       // FIXME: complex? (...)
 
       const result = ValueParser.TryParse(value.toString());
-      if (result.type === ValueType.number) {
+      if (result.type === 'number') {
         value = result.value;
       }
     }
@@ -7485,7 +7484,7 @@ export class Grid extends GridBase {
 
           let text_value = '';
           if (cell.calculated !== undefined) {
-            if (cell.calculated_type === ValueType.complex) {
+            if (cell.calculated_type === 'complex') {
               text_value = ComplexToString(cell.calculated as Complex);
             }
             else {
@@ -7493,7 +7492,7 @@ export class Grid extends GridBase {
             }
           }
           else {
-            if (cell.type === ValueType.complex) {
+            if (cell.type === 'complex') {
               text_value = ComplexToString(cell.value as Complex);
             }
             else {
@@ -7744,7 +7743,7 @@ export class Grid extends GridBase {
               column: cell_info.address.column - source_area.start.column + paste_area.start.column,
             };
 
-            if (cell_info.type === ValueType.formula) {
+            if (cell_info.type === 'formula') {
               const parse_result = this.parser.Parse(data as string);
               if (parse_result.expression) {
                 data = '=' + this.parser.Render(parse_result.expression, {
@@ -7883,7 +7882,7 @@ export class Grid extends GridBase {
             }
             else {
               const current = this.active_sheet.cells.GetCell(target_area.start, false);
-              if (current && current.type !== ValueType.undefined) {
+              if (current && current.type !== 'undefined') {
                 commands.push({ key: 'clear', area: target_area.Clone() });
               }
             }

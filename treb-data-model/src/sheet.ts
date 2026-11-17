@@ -21,7 +21,7 @@
 
 // --- treb imports -----------------------------------------------------------
 
-import { ValueType, Cells, Style, 
+import { type ValueType, HasValueType, Cells, Style, 
   type CellStyle, 
   type PropertyKeys,
   type Color,
@@ -1529,14 +1529,14 @@ export class Sheet {
     // if cell has rendered type (i.e. not undefined), then it has
     // complete render data and we can return it as-is.
 
-    if (cell.rendered_type) return cell;
+    if (HasValueType(cell.rendered_type)) return cell;
 
     // otherwise we need to render it. if we have a calculated value, use that.
 
     let type: ValueType;
     let value: CellValue;
 
-    if (cell.calculated_type) {
+    if (HasValueType(cell.calculated_type)) {
       value = cell.calculated;
       type = cell.calculated_type;
     }
@@ -1554,11 +1554,11 @@ export class Sheet {
 
     // why is this done here? shouldn't it be done by/in the renderer?
 
-    if (!type || value === null || typeof value === 'undefined') {
+    if (!HasValueType(type) || value === null || typeof value === 'undefined') {
       cell.formatted = '';
-      cell.rendered_type = ValueType.string;
+      cell.rendered_type = 'string';
     }
-    else if (type === ValueType.number) {
+    else if (type === 'number') {
 
       // IE11. not sure of the effect of this.
 
@@ -1570,9 +1570,9 @@ export class Sheet {
         cell.formatted = // Style.Format(cell.style, value);
           this.FormatNumber(value, cell.style.number_format);
       }
-      cell.rendered_type = ValueType.number;
+      cell.rendered_type = 'number';
     }
-    else if (type === ValueType.error) {
+    else if (type === 'error') {
 
       // to support old-style models, if the type is error
       // but the value is a string, we can just show the 
@@ -1584,17 +1584,17 @@ export class Sheet {
       else {
         cell.formatted = Sheet.error_labels[value as number] || '#ERR?';
       }
-      cell.rendered_type = ValueType.error;
+      cell.rendered_type = 'error';
     }
-    else if (type === ValueType.boolean) {
+    else if (type === 'boolean') {
       cell.formatted = value.toString().toUpperCase(); // implicit locale?
-      cell.rendered_type = ValueType.boolean;
+      cell.rendered_type = 'boolean';
     }
-    else if (type === ValueType.formula && cell.calculated === undefined) {
+    else if (type === 'formula' && cell.calculated === undefined) {
       cell.formatted = '';
-      cell.rendered_type = ValueType.string;
+      cell.rendered_type = 'string';
     }
-    else if (type === ValueType.complex) {
+    else if (type === 'complex') {
 
       // formatting complex value (note for searching)
       // here testing "mathematical italic small i", "𝑖", U+1D456
@@ -1624,9 +1624,9 @@ export class Sheet {
         cell.formatted = format.FormatComplex(complex);
       }
 
-      cell.rendered_type = ValueType.complex;
+      cell.rendered_type = 'complex';
     }
-    else if (type === ValueType.dimensioned_quantity) {
+    else if (type === 'dimensioned_quantity') {
       
       // is this really what we want? NaN mm? or can we just do NaN?
 
@@ -1650,24 +1650,24 @@ export class Sheet {
           format.FormatDimensionedQuantity(value as DimensionedQuantity);
       }
 
-      cell.rendered_type = ValueType.dimensioned_quantity; // who cares about rendered_type? (...)
+      cell.rendered_type = 'dimensioned_quantity'; // who cares about rendered_type? (...)
 
     }
-    else if (type === ValueType.function) {
+    else if (type === 'function') {
 
       /*
       // FIXME: lock down this type (function)
 
       if ((cell.calculated as any)?.alt) {
         cell.formatted = (cell.calculated as any).alt.toString();
-        cell.rendered_type = ValueType.string;
+        cell.rendered_type = 'string';
       }
       else 
       */
      
       {
         cell.formatted = '𝑓()'; // FIXME
-        cell.rendered_type = ValueType.string;
+        cell.rendered_type = 'string';
       }
     }
     else {
@@ -1677,7 +1677,7 @@ export class Sheet {
       //    to @ (just show the text), but could be different
 
       cell.formatted = this.FormatNumber(value, cell.style.number_format);
-      cell.rendered_type = ValueType.string;
+      cell.rendered_type = 'string';
     }
 
     // now we can return it
@@ -3485,11 +3485,11 @@ export class Sheet {
         if (result && format.internal?.gradient) {
           const property: 'fill'|'text' = format.property ?? 'fill';
 
-          if (result.type === ValueType.array) {
+          if (result.type === 'array') {
             for (let row = area.start.row; row <= area.end.row; row++) {
               for (let column = area.start.column; column <= area.end.column; column++) {
                 const value = result.value[column - area.start.column][row - area.start.row];
-                if (value.type === ValueType.number) {
+                if (value.type === 'number') {
                   if (!temp[row]) { temp[row] = []; }
                   if (!temp[row][column] ) { temp[row][column] = []; }
                   const color = format.internal.gradient.Interpolate(value.value);
@@ -3498,7 +3498,7 @@ export class Sheet {
               }
             }
           }
-          else if (result.type === ValueType.number) {
+          else if (result.type === 'number') {
             const color = format.internal.gradient.Interpolate(result.value);
             for (let row = area.start.row; row <= area.end.row; row++) {
               if (!temp[row]) { temp[row] = []; }
@@ -3518,13 +3518,13 @@ export class Sheet {
 
         if (result) {
 
-          if (result.type === ValueType.array) {
+          if (result.type === 'array') {
             for (let row = area.start.row; row <= area.end.row; row++) {
               for (let column = area.start.column; column <= area.end.column; column++) {
                 const value = result.value[column - area.start.column][row - area.start.row];
-                if (value.type === ValueType.array) {
+                if (value.type === 'array') {
                   const [pct, zero] = value.value[0];
-                  if (pct.type === ValueType.number && zero.type === ValueType.number) {
+                  if (pct.type === 'number' && zero.type === 'number') {
 
                     if (!temp[row]) { temp[row] = []; }
                     if (!temp[row][column] ) { temp[row][column] = []; }
@@ -3558,11 +3558,11 @@ export class Sheet {
 
         if (result) {
 
-          if (result.type === ValueType.array) {
+          if (result.type === 'array') {
             for (let row = area.start.row; row <= area.end.row; row++) {
               for (let column = area.start.column; column <= area.end.column; column++) {
                 const value = result.value[column - area.start.column][row - area.start.row];
-                if (value && (value.type === ValueType.boolean || value.type === ValueType.number) && !!value.value) {
+                if (value && (value.type === 'boolean' || value.type === 'number') && !!value.value) {
                   if (!temp[row]) { temp[row] = []; }
                   if (!temp[row][column] ) { temp[row][column] = []; }
                   temp[row][column].push(format.style);
@@ -3571,7 +3571,7 @@ export class Sheet {
             }
           }
           else {
-            if (result.type === ValueType.boolean || result.type === ValueType.number) {
+            if (result.type === 'boolean' || result.type === 'number') {
               if(result.value) {
                 for (let row = area.start.row; row <= area.end.row; row++) {
                   if (!temp[row]) { temp[row] = []; }

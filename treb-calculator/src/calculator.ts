@@ -22,7 +22,7 @@
 import type { Cell, ICellAddress, ICellAddress2, UnionValue, EvaluateOptions,
          ArrayUnion, IArea, CellDataWithAddress, CellValue,
          Cells} from 'treb-base-types';
-import { Localization, Area, ValueType, IsCellAddress, Errors} from 'treb-base-types';
+import { Localization, Area, IsCellAddress, Errors} from 'treb-base-types';
          
 import type { ExpressionUnit, DependencyList, UnitRange, UnitAddress, UnitIdentifier, ParseResult } from 'treb-parser';
 import { Parser, DecimalMarkType, QuotedSheetNameRegex } from 'treb-parser';
@@ -289,7 +289,7 @@ export class Calculator extends Graph {
       const result: boolean[] = [];
       for (const col of value.value) {
         for (const entry of col) {
-          result.push(entry.type === ValueType.boolean && entry.value);
+          result.push(entry.type === 'boolean' && entry.value);
         }
       }
       return result;
@@ -326,7 +326,7 @@ export class Calculator extends Graph {
         { // if (Array.isArray(args[i])) {
 
           const step = CountIfInternal(criteria_range, args[i+1] as CellValue);
-          if (step.type !== ValueType.array) {
+          if (step.type !== 'array') {
             return step;
           }
           for (const [r, cell] of step.value[0].entries()) {
@@ -387,22 +387,22 @@ export class Calculator extends Graph {
 
       switch (type) {
         case 'min':
-          return { type: ValueType.number, value: min };
+          return { type: 'number', value: min };
 
         case 'max':
-          return { type: ValueType.number, value: max };
+          return { type: 'number', value: max };
 
         case 'count': 
-          return { type: ValueType.number, value: count };
+          return { type: 'number', value: count };
 
         case 'sum':
-          return { type: ValueType.number, value: sum };
+          return { type: 'number', value: sum };
 
         case 'average':
           if (count === 0) {
             return DivideByZeroError();
           }
-          return { type: ValueType.number, value: sum/count };
+          return { type: 'number', value: sum/count };
       }
 
 
@@ -440,7 +440,7 @@ export class Calculator extends Graph {
         }
 
         const value_parser_result = ValueParser.TryParse(criteria);
-        if (value_parser_result?.type === ValueType.string) {
+        if (value_parser_result?.type === 'string') {
           criteria = `"${value_parser_result.value}"`;
         }
         else {
@@ -690,7 +690,7 @@ export class Calculator extends Graph {
           // console.info({type, args, flat, values});
 
           return {
-            type: ValueType.number,
+            type: 'number',
             value,
           };
 
@@ -720,11 +720,11 @@ export class Calculator extends Graph {
             switch (type.toString().toLowerCase()) {
               case 'format':
                 return reference.value.format ? // || ReferenceError;
-                  { type: ValueType.string, value: reference.value.format } : ReferenceError();
+                  { type: 'string', value: reference.value.format } : ReferenceError();
               case 'row':
                 if (reference.value.address) {
                   return {
-                    type: ValueType.number,
+                    type: 'number',
                     value: reference.value.address.row + 1,
                   };
                 }
@@ -732,7 +732,7 @@ export class Calculator extends Graph {
               case 'col':
                 if (reference.value.address) {
                   return {
-                    type: ValueType.number,
+                    type: 'number',
                     value: reference.value.address.column + 1,
                   };
                 }
@@ -753,14 +753,14 @@ export class Calculator extends Graph {
                   }
 
                   return { 
-                    type: ValueType.string, 
+                    type: 'string', 
                     value: '[]' + sheet_name + reference.value.address.label.replace(/\$/g, ''), 
                   };
                 }
             }
           }
   
-          return { type: ValueType.error, value: NotImplError.error };
+          return { type: 'error', value: NotImplError.error };
   
         },
   
@@ -949,7 +949,7 @@ export class Calculator extends Graph {
           //  return ReferenceError;
           //}
 
-          if (reference.type === ValueType.array) {
+          if (reference.type === 'array') {
 
             // subset array. this is constructed, so we can take ownership
             // and modify it, although it would be safer to copy. also, what's
@@ -959,7 +959,7 @@ export class Calculator extends Graph {
             const end_column = typeof width === 'number' ? (columns + width) : undefined;
 
             const result: UnionValue = {
-              type: ValueType.array,
+              type: 'array',
               value: reference.value.slice(rows, end_row).map(row => row.slice(columns, end_column)),
             };
 
@@ -988,7 +988,7 @@ export class Calculator extends Graph {
             const current_vertex =
               this.GetVertex(this.expression_calculator.context.address, true) as SpreadsheetVertex;
             current_vertex.short_circuit = true;
-            return { type: ValueType.undefined, value: undefined };
+            return { type: 'undefined', value: undefined };
           }
 
           if (check_result.area) {
@@ -1015,7 +1015,7 @@ export class Calculator extends Graph {
             // return this.CalculateExpression(expression, undefined, true);
 
             // return expression;
-            return { type: ValueType.object, value: expression };
+            return { type: 'object', value: expression };
 
           }
 
@@ -1054,10 +1054,10 @@ export class Calculator extends Graph {
             const current_vertex =
               this.GetVertex(this.expression_calculator.context.address, true) as SpreadsheetVertex;
             current_vertex.short_circuit = true;
-            return { type: ValueType.undefined, value: undefined };
+            return { type: 'undefined', value: undefined };
           }
 
-          return { type: ValueType.object, value: parse_result.expression };
+          return { type: 'object', value: parse_result.expression };
 
         }).bind(this),
 
@@ -1089,12 +1089,12 @@ export class Calculator extends Graph {
           else {
 
             // I suppose you can match on a single value
-            if (range.type === ValueType.array) {
+            if (range.type === 'array') {
               if (range.value.length === 1) {
                 const arr = range.value[0];
                 for (let i = 0; i < arr.length; i++) {
                   if (value.type == arr[i].type && value.value === arr[i].value) {
-                    return {type: ValueType.number, value: i + 1};
+                    return {type: 'number', value: i + 1};
                   }
                 }
               }
@@ -1105,7 +1105,7 @@ export class Calculator extends Graph {
                     return NAError();
                   }
                   if (value.type == arr[0].type && value.value === arr[0].value) {
-                    return {type: ValueType.number, value: i + 1};
+                    return {type: 'number', value: i + 1};
                   }
                 }
               }
@@ -1114,7 +1114,7 @@ export class Calculator extends Graph {
             else {
               if (value.type === range.type && value.value === range.value) {
                 return {
-                  type: ValueType.number, value: 1,
+                  type: 'number', value: 1,
                 };
               }
               return NAError();
@@ -1161,7 +1161,7 @@ export class Calculator extends Graph {
           // NOTE: could be a single cell. in that case it won't be passed
           // as an array so we'll need a second branch (or convert it)
 
-          if (range.type === ValueType.array) {
+          if (range.type === 'array') {
 
             // FIXME: validate these are addresses (shouldn't be necessary
             // if we're marking the argument as metadata? what about literals?)
@@ -1171,7 +1171,7 @@ export class Calculator extends Graph {
 
             const first = range.value?.[0]?.[0];
 
-            if (first && first.type !== ValueType.object){
+            if (first && first.type !== 'object'){
 
               const columns = range.value.length;
               const rows = range.value[0].length;
@@ -1189,7 +1189,7 @@ export class Calculator extends Graph {
             arr = range.value as unknown as { value: {address: UnitAddress }}[][];
 
           }
-          else if (range.type === ValueType.object) {
+          else if (range.type === 'object') {
 
             const metadata = range.value as { type: string, address?: UnitAddress };
 
@@ -1226,7 +1226,7 @@ export class Calculator extends Graph {
             };
 
             return {
-              type: ValueType.object,
+              type: 'object',
               value: expression,  
             };
 
@@ -1244,7 +1244,7 @@ export class Calculator extends Graph {
             // this may come up in other places? not sure
 
             return {
-              type: ValueType.object,
+              type: 'object',
               value: { 
                 // @ts-ignore - the source _might_ not be a proper parser address type
                 type: 'address', 
@@ -1267,7 +1267,7 @@ export class Calculator extends Graph {
             };
 
             return {
-              type: ValueType.object,
+              type: 'object',
               value: expression,  
             };
 
@@ -1285,7 +1285,7 @@ export class Calculator extends Graph {
             };
 
             return {
-              type: ValueType.object,
+              type: 'object',
               value: expression,  
             };
 
@@ -1312,13 +1312,13 @@ export class Calculator extends Graph {
           if (!reference) {
             return ArgumentError();
           }
-          if (reference.type === ValueType.array) {
+          if (reference.type === 'array') {
             return {
-              type: ValueType.number,
+              type: 'number',
               value: reference.value[0].length,
             };
           }
-          return { type: ValueType.number, value: 1 };
+          return { type: 'number', value: 1 };
         },
       },
 
@@ -1336,13 +1336,13 @@ export class Calculator extends Graph {
           if (!reference) {
             return ArgumentError();
           }
-          if (reference.type === ValueType.array) {
+          if (reference.type === 'array') {
             return {
-              type: ValueType.number,
+              type: 'number',
               value: reference.value.length,
             };
           }
-          return { type: ValueType.number, value: 1 };
+          return { type: 'number', value: 1 };
         },
       },
 
@@ -1368,7 +1368,7 @@ export class Calculator extends Graph {
           if (sheet) {
             const cell = sheet.cells.GetCell(reference.value.address, false);
             return { 
-              type: ValueType.string, 
+              type: 'string', 
               value: cell?.value?.toString() || '',
             };
           }
@@ -1400,13 +1400,13 @@ export class Calculator extends Graph {
           if (addr && sheet) {
             const cell = sheet.cells.GetCell(addr, false);
             return { 
-              type: ValueType.boolean, 
-              value: cell?.type === ValueType.formula,
+              type: 'boolean', 
+              value: cell?.type === 'formula',
             };
           }
 
           return { 
-            type: ValueType.boolean, value: false,
+            type: 'boolean', value: false,
           };
 
         },
@@ -1504,7 +1504,7 @@ export class Calculator extends Graph {
     // we need to know when the spill is "cured", so we can repopulate
 
     for (const {cell, row, column} of cells.IterateRC(area, true)) {
-      if (counter++ && (cell.type !== ValueType.undefined || cell.area || cell.merge_area || cell.table)) {
+      if (counter++ && (cell.type !== 'undefined' || cell.area || cell.merge_area || cell.table)) {
         error = true; // spill error.
       }
       this.AddLeafVertexEdge({row, column, sheet_id: area.start.sheet_id}, vertex);
@@ -1668,9 +1668,9 @@ export class Calculator extends Graph {
         const v = result.value[column][row];
 
         switch (v.type) {
-          case ValueType.object:
-          case ValueType.array:
-          case ValueType.function:
+          case 'object':
+          case 'array':
+          case 'function':
             break;
           default:
             cell.SetCalculatedValue(v.value, v.type);
@@ -1717,7 +1717,7 @@ export class Calculator extends Graph {
       const columns = area.columns;
 
       // if (Array.isArray(value)) {
-      if (value.type === ValueType.array) {
+      if (value.type === 'array') {
 
         // value = Utilities.Transpose2(value);
         const values = Utilities.Transpose2((value as ArrayUnion).value);
@@ -1734,14 +1734,14 @@ export class Calculator extends Graph {
               // as undefined (should be error?)
 
               let indexed_value = values[row][column];
-              if (indexed_value.type === ValueType.array) {
+              if (indexed_value.type === 'array') {
                 indexed_value = indexed_value.value[0][0];
               }
 
               switch (indexed_value.type) {
-                case ValueType.array:
-                case ValueType.object:
-                case ValueType.function:
+                case 'array':
+                case 'object':
+                case 'function':
                   cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(undefined); // error?
                     break;
 
@@ -1752,7 +1752,7 @@ export class Calculator extends Graph {
               }
              
               /*
-              if (indexed_value.type !== ValueType.object) {
+              if (indexed_value.type !== 'object') {
                 cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(
                   indexed_value.value, indexed_value.type);
               }
@@ -1764,12 +1764,12 @@ export class Calculator extends Graph {
 
             }
             for (; column < columns; column++) {
-              cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(undefined, ValueType.undefined);
+              cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(undefined, 'undefined');
             }
           }
           else {
             for (let column = 0; column < columns; column++) {
-              cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(undefined, ValueType.undefined);
+              cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(undefined, 'undefined');
             }
           }
         }
@@ -1781,8 +1781,8 @@ export class Calculator extends Graph {
 
         let applied: UnionValue = { ...value };
         
-        if (applied.type === ValueType.object || applied.type === ValueType.function) {
-          applied = { type: ValueType.undefined, value: undefined };
+        if (applied.type === 'object' || applied.type === 'function') {
+          applied = { type: 'undefined', value: undefined };
         }
 
         for (let row = 0; row < rows; row++) {
@@ -2274,7 +2274,7 @@ export class Calculator extends Graph {
         return result;
       }
 
-      if (result.type === ValueType.array) {
+      if (result.type === 'array') {
         return result.value.map(row => row.map(value => value.value));
       }
       else {
@@ -3264,7 +3264,7 @@ export class Calculator extends Graph {
     }
 
     // formula?
-    if (cell.type === ValueType.formula) {
+    if (cell.type === 'formula') {
 
       this.ResetInbound(address, true); // NOTE: sets dirty AND creates vertex if it doesn't exist
       const parse_result = this.parser.Parse(cell.value as string);
@@ -3480,7 +3480,7 @@ export class Calculator extends Graph {
 
       this.ResetInbound(address, true, false); // NOTE: sets dirty
     }
-    else if (cell.type === ValueType.undefined) {
+    else if (cell.type === 'undefined') {
 
       // in the new framework, we get here on any cleared cell, but
       // the behavior is OK

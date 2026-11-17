@@ -42,7 +42,7 @@ import type { DataModel, ConditionalFormat, // MacroFunction, SerializedModel, S
 
 import type { Parser, UnitAddress} from 'treb-parser';
 import { type ExpressionUnit, IllegalSheetNameRegex, ParseCSV, DecimalMarkType } from 'treb-parser';
-import { Area, IsCellAddress, ValueType, DefaultTableSortOptions } from 'treb-base-types';
+import { Area, IsCellAddress, type ValueType, HasValueType, DefaultTableSortOptions } from 'treb-base-types';
 import type { ICellAddress, IArea, Cell, CellValue, CellStyle, Table, TableSortOptions, TableTheme, Complex, PatchOptions as PatchAreaOptions, Color } from 'treb-base-types';
 
 import { Sheet, type SerializeOptions, type Annotation } from 'treb-data-model';
@@ -1271,7 +1271,7 @@ export class GridBase {
         row, 
         number: 0,
         text: '',
-        type: ValueType.undefined,
+        type: 'undefined' as ValueType,
         data: [] as ClipboardCellData[],
       };
 
@@ -1283,20 +1283,20 @@ export class GridBase {
 
         if (column === command.column + command.table.area.start.column) {
 
-          const check_type = cd.calculated_type || cd.type;
-          if (check_type === ValueType.string) {
+          const check_type = HasValueType(cd.calculated_type) ? cd.calculated_type : cd.type;
+          if (check_type === 'string') {
             text_count++;
           }
-          else if (check_type === ValueType.number) {
+          else if (check_type === 'number') {
             number_count++;
           }
 
           // we can precalculate the type for sorting
 
-          const value = cd.calculated_type ? cd.calculated : cd.value;
+          const value = HasValueType(cd.calculated_type) ? cd.calculated : cd.value;
           row_data.text = value?.toString() || '';
           row_data.number = Number(value) || 0;
-          row_data.type = cd.calculated_type || cd.type;
+          row_data.type = HasValueType(cd.calculated_type) ? cd.calculated_type : cd.type;
 
         }
 
@@ -1334,10 +1334,10 @@ export class GridBase {
     switch (sort_type) {
       case 'numeric':
         ranked.sort((a, b) => {
-          if (a.type === ValueType.undefined) {
-            return ((b.type === ValueType.undefined) ? 0 : 1);
+          if (a.type === 'undefined') {
+            return ((b.type === 'undefined') ? 0 : 1);
           }
-          if (b.type === ValueType.undefined) {
+          if (b.type === 'undefined') {
             return -1;
           }
           return (a.number - b.number) * invert;
@@ -1347,10 +1347,10 @@ export class GridBase {
       case 'text':
       default:
         ranked.sort((a, b) => {
-          if (a.type === ValueType.undefined) {
-            return ((b.type === ValueType.undefined) ? 0 : 1);
+          if (a.type === 'undefined') {
+            return ((b.type === 'undefined') ? 0 : 1);
           }
-          if (b.type === ValueType.undefined) {
+          if (b.type === 'undefined') {
             return -1;
           }
 
@@ -1370,7 +1370,7 @@ export class GridBase {
 
       insert.column = command.table.area.start.column; // reset
       for (const cell of entry.data) {
-        if (cell.type === ValueType.formula) {
+        if (cell.type === 'formula') {
 
           let data = cell.data as string;
           const offsets = { columns: 0, rows: insert.row - entry.row };
@@ -1465,7 +1465,7 @@ export class GridBase {
       const header = sheet.CellData({row, column});
       let value = '';
 
-      if (header.type !== ValueType.string) {
+      if (header.type !== 'string') {
         
         if (typeof header.formatted !== 'undefined') {
           value = (header.formatted).toString();
@@ -1477,7 +1477,7 @@ export class GridBase {
           value = (header.value).toString();
         }
 
-        header.Set(value, ValueType.string);
+        header.Set(value, 'string');
 
       }
       else {
@@ -1504,7 +1504,7 @@ export class GridBase {
         }
       }
 
-      header.Set(proposed, ValueType.string);
+      header.Set(proposed, 'string');
       columns.push(proposed.toLowerCase());
 
     }

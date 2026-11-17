@@ -1,5 +1,4 @@
 import { Box, Errors, type UnionValue } from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 import type { FunctionMap } from 'treb-calculator';
 import { NAError, ValueError } from 'treb-calculator';
 
@@ -33,7 +32,7 @@ export default {
     ],
     fn: (value?: UnionValue): UnionValue => {
       if (!value) return Box(true);
-      return Box(value.type !== ValueType.string);
+      return Box(value.type !== 'string');
     },
   },
 
@@ -45,11 +44,11 @@ export default {
     fn: (value?: UnionValue): UnionValue => {
       if (!value) return Box(0);
       switch (value.type) {
-        case ValueType.number:
+        case 'number':
           return value;
-        case ValueType.boolean:
+        case 'boolean':
           return Box(value.value ? 1 : 0);
-        case ValueType.error:
+        case 'error':
           return value;
         default:
           return Box(0);
@@ -63,13 +62,13 @@ export default {
       { name: 'value', description: 'The value to test', boxed: true, allow_error: true },
     ],
     fn: (value?: UnionValue): UnionValue => {
-      if (!value || value.type === ValueType.undefined) return Box(1);
+      if (!value || value.type === 'undefined') return Box(1);
       switch (value.type) {
-        case ValueType.number: return Box(1);
-        case ValueType.string: return Box(2);
-        case ValueType.boolean: return Box(4);
-        case ValueType.error: return Box(16);
-        case ValueType.array: return Box(64);
+        case 'number': return Box(1);
+        case 'string': return Box(2);
+        case 'boolean': return Box(4);
+        case 'error': return Box(16);
+        case 'array': return Box(64);
         default: return Box(1);
       }
     },
@@ -81,7 +80,7 @@ export default {
       { name: 'error_val', description: 'The error value', boxed: true, allow_error: true },
     ],
     fn: (value?: UnionValue): UnionValue => {
-      if (!value || value.type !== ValueType.error) {
+      if (!value || value.type !== 'error') {
         return NAError();
       }
       switch (value.value) {

@@ -1,5 +1,4 @@
 import { Box, type UnionValue } from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 import type { FunctionMap } from 'treb-calculator';
 import { DivideByZeroError, ValueError } from 'treb-calculator';
 import { extractNumbers, extractNumbersA, mean, sampleVariance, populationVariance } from './stats-array-utils';
@@ -224,7 +223,7 @@ export default {
       const { modes } = ModeCounts(values);
       if (modes.length === 0) return ValueError();
       const col: UnionValue[] = modes.map(m => Box(m));
-      return { type: ValueType.array, value: [col] };
+      return { type: 'array', value: [col] };
     },
   },
 
@@ -256,7 +255,7 @@ export default {
       }
 
       const col: UnionValue[] = counts.map(c => Box(c));
-      return { type: ValueType.array, value: [col] };
+      return { type: 'array', value: [col] };
     },
   },
 } satisfies FunctionMap;

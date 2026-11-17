@@ -5,7 +5,7 @@ import { SpreadsheetVertex } from './spreadsheet_vertex';
 import { Color } from './vertex';
 
 import type { Cell, CellValue, ICellAddress, UnionValue } from 'treb-base-types';
-import { Box, ValueType } from 'treb-base-types';
+import { Box } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 // import { ErrorType } from '../function-error';
 
@@ -52,7 +52,7 @@ export class SegmentVertex extends SpreadsheetVertexBase {
   public address?: ICellAddress;
 
   //public result: UnionOrArray = UndefinedUnion();
-  public result: UnionValue = {type: ValueType.undefined};
+  public result: UnionValue = {type: 'undefined'};
 
   public expression: ExpressionUnit = { type: 'missing', id: -1 };
   public expression_error = false;
@@ -67,7 +67,7 @@ export class SegmentVertex extends SpreadsheetVertexBase {
     this.is_leaf = false;
     this.address = undefined;
     this.reference = undefined;
-    this.result = { type: ValueType.undefined };
+    this.result = { type: 'undefined' };
     this.expression = { type: 'missing', id: -1 };
     this.expression_error = false;
     this.short_circuit = false;
@@ -231,7 +231,7 @@ export class SegmentVertex extends SpreadsheetVertexBase {
 
         if (this.is_leaf && 
             this.reference && (
-            this.array_head || this.reference.type === ValueType.formula )) {
+            this.array_head || this.reference.type === 'formula' )) {
           this.reference.SetCalculationError(Errors.Loop);
         }
 
@@ -258,7 +258,7 @@ export class SegmentVertex extends SpreadsheetVertexBase {
 
     if (this.is_leaf && this.reference) {
 
-      if (this.reference.type === ValueType.formula) {
+      if (this.reference.type === 'formula') {
 
         this.short_circuit = false;
         const result = graph.CalculationCallback.call(graph, this);
@@ -283,11 +283,11 @@ export class SegmentVertex extends SpreadsheetVertexBase {
       if (this.array_head) {
         graph.SpreadCallback.call(graph, this, this.result);
       }
-      else if (this.reference.type === ValueType.formula) {
+      else if (this.reference.type === 'formula') {
 
         // adding check for spill, not withstanding the below
 
-        if (this.result.type === ValueType.array) {
+        if (this.result.type === 'array') {
 
           // note array of length 1 should not trigger spill behavior
           // (moved to callback method)
@@ -354,7 +354,7 @@ export class SegmentVertex extends SpreadsheetVertexBase {
           // function of our new polynomial methods, BUT, we should probably
           // handle it properly regardless.
 
-          // neven // const single = (this.result.type === ValueType.array) ? this.result.value[0][0] : this.result;
+          // neven // const single = (this.result.type === 'array') ? this.result.value[0][0] : this.result;
 
           // we are using object type in the returned value for sparklines...
           // so we can't drop it here. we could change rendering though. or

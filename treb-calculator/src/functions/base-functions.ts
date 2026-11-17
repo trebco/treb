@@ -27,7 +27,7 @@ import type { UnionValue,
          RenderFunctionResult, RenderFunctionOptions, Complex, CellValue, 
         // ICellAddress
         } from 'treb-base-types';
-import { Box, ValueType, GetValueType, ComplexOrReal, IsComplex, Area, Errors } from 'treb-base-types';
+import { Box, GetValueType, ComplexOrReal, IsComplex, Area, Errors } from 'treb-base-types';
 import { Sparkline } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
@@ -204,9 +204,9 @@ const NumberArgument = (argument?: UnionValue, default_value: number|false = fal
   }
 
   switch (argument.type) {
-    case ValueType.number:
+    case 'number':
       return argument.value;
-    case ValueType.undefined:
+    case 'undefined':
       return default_value;
   }
 
@@ -224,11 +224,11 @@ const TrigFunction = (real: (value: number) => number, complex: (value: Complex)
       { name: 'number', boxed: true, unroll: true },
     ],
     fn: (a: UnionValue) => {
-      if (a.type === ValueType.number) {
-        return { type: ValueType.number, value: real(a.value) };
+      if (a.type === 'number') {
+        return { type: 'number', value: real(a.value) };
       }
-      if (a.type === ValueType.complex) {
-        return { type: ValueType.complex, value: complex(a.value) }; 
+      if (a.type === 'complex') {
+        return { type: 'complex', value: complex(a.value) }; 
       }
       return ArgumentError();
     },
@@ -321,28 +321,28 @@ export const AltFunctionLibrary: FunctionMap = {
     ],
     fn: (ref: UnionValue): UnionValue => {
 
-      if (ref.type === ValueType.complex) {
+      if (ref.type === 'complex') {
         const value = ComplexPower(ref.value, {real: 0.5, imaginary: 0});
         return ComplexOrReal(value);
       }
-      else if (ref.type === ValueType.undefined || !ref.value) {
+      else if (ref.type === 'undefined' || !ref.value) {
         return {
-          type: ValueType.number, value: 0,
+          type: 'number', value: 0,
         }
       }
-      else if (ref.type === ValueType.number && ref.value < 0) {
+      else if (ref.type === 'number' && ref.value < 0) {
         const value = ComplexPower({real: ref.value, imaginary: 0}, {real: 0.5, imaginary: 0});
         return {
-          type: ValueType.complex,
+          type: 'complex',
           value,
         }
       }
-      else if (ref.type === ValueType.number) {
+      else if (ref.type === 'number') {
         const value = Math.sqrt(ref.value);
         if (isNaN(value)) {
           return ValueError();
         }
-        return { type: ValueType.number, value };
+        return { type: 'number', value };
       }
       else {
         /*
@@ -350,7 +350,7 @@ export const AltFunctionLibrary: FunctionMap = {
         if (isNaN(value)) {
           return ValueError();
         }
-        return { type: ValueType.number, value };
+        return { type: 'number', value };
         */
         return ValueError();
       }
@@ -375,13 +375,13 @@ export const AltFunctionLibrary: FunctionMap = {
       // so: if both arguments are real, and base is >= 0 we can use real math.
       // also if exponent is either 0 or >= 1 we can use real math.
 
-      if (base.type === ValueType.number && exponent.type === ValueType.number) {
+      if (base.type === 'number' && exponent.type === 'number') {
         if (base.value >= 0 || exponent.value === 0 || Math.abs(exponent.value) >= 1) {
           const value = Math.pow(base.value, exponent.value);
           if (isNaN(value)) {
             return ValueError();
           }
-          return { type: ValueType.number, value };
+          return { type: 'number', value };
         }
       }
       
@@ -407,22 +407,22 @@ export const BaseFunctionLibrary: FunctionMap = {
 
   // not sure why there are functions for booleans, but there are
   True: {
-    fn: () => ({ type: ValueType.boolean, value: true }),
+    fn: () => ({ type: 'boolean', value: true }),
   },
 
   False: {
-    fn: () => ({ type: ValueType.boolean, value: false }),
+    fn: () => ({ type: 'boolean', value: false }),
   },
 
   Int: {
     fn: (value: number) => {
-      return {type: ValueType.number, value: Math.floor(value) };
+      return {type: 'number', value: Math.floor(value) };
     },
   },
 
   Rand: {
     volatile: true,
-    fn: () => { return { type: ValueType.number, value: Math.random() }},
+    fn: () => { return { type: 'number', value: Math.random() }},
   },
 
   RandArray: {
@@ -444,7 +444,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           const row: UnionValue[] = [];
           for (let j = 0; j < rows; j++) {
             row.push({
-              type: ValueType.number,
+              type: 'number',
               value: Math.floor(Math.random() * range + min),
             });
           }
@@ -458,7 +458,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           const row: UnionValue[] = [];
           for (let j = 0; j < rows; j++) {
             row.push({
-              type: ValueType.number,
+              type: 'number',
               value: Math.random() * range + min,
             });
           }
@@ -467,7 +467,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       }
       
       return {
-        type: ValueType.array,
+        type: 'array',
         value,
       }
     },
@@ -482,7 +482,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         min = max;
         max = tmp;
       }
-      return { type: ValueType.number, value: Math.floor(Math.random() * (max + 1 - min) + min) }
+      return { type: 'number', value: Math.floor(Math.random() * (max + 1 - min) + min) }
     },
   },
 
@@ -502,15 +502,15 @@ export const BaseFunctionLibrary: FunctionMap = {
       for (const value of values) {
 
         switch (value.type) {
-          case ValueType.number: sum.real += value.value; break;
-          case ValueType.boolean: 
+          case 'number': sum.real += value.value; break;
+          case 'boolean': 
             // sum.real += (value.value ? 1 : 0); // ??
             break;
-          case ValueType.complex:
+          case 'complex':
             sum.real += value.value.real;
             sum.imaginary += value.value.imaginary;
             break;
-          case ValueType.error: return value;
+          case 'error': return value;
         }
       }
 
@@ -530,11 +530,11 @@ export const BaseFunctionLibrary: FunctionMap = {
       for (const value of values) {
 
         switch (value.type) {
-          case ValueType.number: sum.real += value.value * value.value; break;
-          case ValueType.boolean: 
+          case 'number': sum.real += value.value * value.value; break;
+          case 'boolean': 
             // sum.real += (value.value ? 1 : 0); // ??
             break;
-          case ValueType.complex:
+          case 'complex':
 
             {
               const squared = ComplexMath.Multiply(value.value, value.value);
@@ -548,7 +548,7 @@ export const BaseFunctionLibrary: FunctionMap = {
             }
 
             break;
-          case ValueType.error: return value;
+          case 'error': return value;
         }
       }
 
@@ -576,7 +576,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         return ArgumentError();
       }
       const date = edate_calc(start, months);
-      return { type: ValueType.number, value: UnlotusDate(date.getTime(), false) };
+      return { type: 'number', value: UnlotusDate(date.getTime(), false) };
     }
   },
 
@@ -637,7 +637,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       
 
       
-      return { type: ValueType.number, value: UnlotusDate(date.getTime(), false) };
+      return { type: 'number', value: UnlotusDate(date.getTime(), false) };
 
     }
   },
@@ -647,7 +647,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     description: 'Returns current date and time',
     volatile: true,
     fn: () => {
-      return { type: ValueType.number, value: UnlotusDate(new Date().getTime()) };
+      return { type: 'number', value: UnlotusDate(new Date().getTime()) };
     },
   },
 
@@ -663,7 +663,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       if (date === false) {
         return ArgumentError();
       }
-      return { type: ValueType.number, value: date };
+      return { type: 'number', value: date };
     },
   },
 
@@ -676,7 +676,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       if (date === false) {
         return ArgumentError();
       }
-      return { type: ValueType.number, value: date };
+      return { type: 'number', value: date };
     },
   },
 
@@ -686,7 +686,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     description: 'Returns the original value, or the alternate value if the original value contains an error',
     arguments: [{ name: 'original value', allow_error: true, boxed: true, unroll: true }, { name: 'alternate value' }],
     fn: (ref: UnionValue, value_if_error: unknown = 0): UnionValue => {
-      if (ref && ref.type === ValueType.error) {
+      if (ref && ref.type === 'error') {
         return { value: value_if_error, type: GetValueType(value_if_error) } as UnionValue;
       }
       return ref;
@@ -697,7 +697,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     description: 'Returns the original value, or the alternate value if the original value is #N/A!',
     arguments: [{ name: 'original value', allow_error: true, boxed: true, unroll: true }, { name: 'alternate value' }],
     fn: (ref: UnionValue, value_if_error: unknown = 0): UnionValue => {
-      if (ref && ref.type === ValueType.error && ref.value === Errors.NA) { // ref.value === 'NA') {
+      if (ref && ref.type === 'error' && ref.value === Errors.NA) { // ref.value === 'NA') {
         return { value: value_if_error, type: GetValueType(value_if_error) } as UnionValue;
       }
       return ref;
@@ -711,14 +711,14 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       const values = Utils.FlattenBoxed(args);
       for (const value of values) {
-        if (value.type === ValueType.error) {
+        if (value.type === 'error') {
           if (value.value === Errors.NA ) { 
-            return { type: ValueType.boolean, value: true };
+            return { type: 'boolean', value: true };
           }
         }
       }
 
-      return { type: ValueType.boolean, value: false };
+      return { type: 'boolean', value: false };
 
     },
   },
@@ -730,8 +730,8 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       const values = Utils.FlattenBoxed(args);
       for (const value of values) {
-        if (value.type === ValueType.error &&  value.value !== Errors.NA ) { 
-          return { type: ValueType.boolean, value: true };
+        if (value.type === 'error' &&  value.value !== Errors.NA ) { 
+          return { type: 'boolean', value: true };
         }
       }
 
@@ -739,17 +739,17 @@ export const BaseFunctionLibrary: FunctionMap = {
       if (Array.isArray(ref)) {
         const values = Utils.Flatten(ref) as UnionValue[];
         for (const value of values) {
-          if (value.type === ValueType.error) {
-            return { type: ValueType.boolean, value: true };
+          if (value.type === 'error') {
+            return { type: 'boolean', value: true };
           }
         }
       }
       else if (ref) {
-        return { type: ValueType.boolean, value: ref.type === ValueType.error };
+        return { type: 'boolean', value: ref.type === 'error' };
       }
       */
 
-      return { type: ValueType.boolean, value: false };
+      return { type: 'boolean', value: false };
 
     },
   },
@@ -761,8 +761,8 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       const values = Utils.FlattenBoxed(args);
       for (const value of values) {
-        if (value.type === ValueType.error) {
-          return { type: ValueType.boolean, value: true };
+        if (value.type === 'error') {
+          return { type: 'boolean', value: true };
         }
       }
 
@@ -770,17 +770,17 @@ export const BaseFunctionLibrary: FunctionMap = {
       if (Array.isArray(ref)) {
         const values = Utils.Flatten(ref) as UnionValue[];
         for (const value of values) {
-          if (value.type === ValueType.error) {
-            return { type: ValueType.boolean, value: true };
+          if (value.type === 'error') {
+            return { type: 'boolean', value: true };
           }
         }
       }
       else if (ref) {
-        return { type: ValueType.boolean, value: ref.type === ValueType.error };
+        return { type: 'boolean', value: ref.type === 'error' };
       }
       */
 
-      return { type: ValueType.boolean, value: false };
+      return { type: 'boolean', value: false };
 
     },
   },
@@ -810,16 +810,16 @@ export const BaseFunctionLibrary: FunctionMap = {
           switch (type.toString().toLowerCase()) {
             case 'format':
               return reference.value.format ? // || ReferenceError;
-                { type: ValueType.string, value: reference.value.format } : ReferenceError();
+                { type: 'string', value: reference.value.format } : ReferenceError();
             case 'address':
 
               // FIXME: this needs to return a fully-qualified address, we'll need access to the model
 
-              return { type: ValueType.string, value: '[]' + reference.value.address.label.replace(/\$/g, '') };
+              return { type: 'string', value: '[]' + reference.value.address.label.replace(/\$/g, '') };
           }
         }
 
-        return { type: ValueType.error, value: NotImplError.error };
+        return { type: 'error', value: NotImplError.error };
 
       },
 
@@ -925,17 +925,17 @@ export const BaseFunctionLibrary: FunctionMap = {
         if (arg) {
           switch (arg.type) {
 
-          case ValueType.undefined:
+          case 'undefined':
             value = false;
             break;
 
-          case ValueType.string:
-          case ValueType.boolean:
-          case ValueType.number:
+          case 'string':
+          case 'boolean':
+          case 'number':
             value = !!arg.value;
             break;
 
-          case ValueType.error:
+          case 'error':
             return arg;
 
           }
@@ -966,7 +966,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
 
         return {
-          type: ValueType.boolean,
+          type: 'boolean',
           value: (true_count % 2 === 1),
         }
       }
@@ -1028,24 +1028,24 @@ export const BaseFunctionLibrary: FunctionMap = {
        * @returns 
        */
       fn: (a: UnionValue, 
-           b: UnionValue = {type: ValueType.boolean, value: true}, 
-           c: UnionValue = {type: ValueType.boolean, value: false}): UnionValue => {
+           b: UnionValue = {type: 'boolean', value: true}, 
+           c: UnionValue = {type: 'boolean', value: false}): UnionValue => {
 
-        const b_array = b.type === ValueType.array;
-        const c_array = c.type === ValueType.array;
+        const b_array = b.type === 'array';
+        const c_array = c.type === 'array';
 
-        if (a.type === ValueType.array) {
+        if (a.type === 'array') {
           return {
-            type: ValueType.array,
+            type: 'array',
             value: a.value.map((row, x) => row.map((cell, y) => {
-              const value = (cell.type === ValueType.string) ?
+              const value = (cell.type === 'string') ?
                 (cell.value.toLowerCase() !== 'false' && cell.value.toLowerCase() !== 'f') : !!cell.value;
               return value ? (b_array ? b.value[x][y] : b) : (c_array ? c.value[x][y] : c);
             })) as UnionValue[][],
           };
         }
 
-        const value = a.type === ValueType.string ? //  UnionIs.String(a) ? 
+        const value = a.type === 'string' ? //  UnionIs.String(a) ? 
           (a.value.toLowerCase() !== 'false' && a.value.toLowerCase() !== 'f') : !!a.value;
 
         return value ? b : c;
@@ -1067,7 +1067,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           number--;
         }
         return {
-          type: ValueType.number,
+          type: 'number',
           value,
         }
       },
@@ -1087,7 +1087,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           number -= 2;
         }
         return {
-          type: ValueType.number,
+          type: 'number',
           value,
         }
       },
@@ -1108,7 +1108,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           return ValueError();
         }
 
-        if (base.type === ValueType.complex || exponent.type === ValueType.complex) {
+        if (base.type === 'complex' || exponent.type === 'complex') {
           return ComplexOrReal(ComplexPower(a, b));
         }
         else {
@@ -1116,7 +1116,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           if (isNaN(value)) {
             return ValueError();
           }
-          return { type: ValueType.number, value };
+          return { type: 'number', value };
           // return Box(Math.pow(base.value, exponent.value))
         }
 
@@ -1134,7 +1134,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         const sign = n < 0 ? -1 : 1;
 
         return {
-          type: ValueType.number,
+          type: 'number',
           value: Math.floor(Math.abs(n * scale)) / scale * sign,
         }
       }
@@ -1177,7 +1177,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         if (index <= numeric.length) {
           return {
-            type: ValueType.number,
+            type: 'number',
             value: numeric[index - 1],
           };
         }
@@ -1211,7 +1211,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         if (index <= numeric.length) {
           return {
-            type: ValueType.number,
+            type: 'number',
             value: numeric[index - 1],
           };
         }
@@ -1275,7 +1275,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           }
           
           return {
-            type: ValueType.array,
+            type: 'array',
             value: result,
           }
 
@@ -1295,7 +1295,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           }
           
           return {
-            type: ValueType.array,
+            type: 'array',
             value: result,
           }
 
@@ -1389,7 +1389,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           result.push(column);
         }
 
-        return { type: ValueType.array, value: result };
+        return { type: 'array', value: result };
 
 
       },
@@ -1449,7 +1449,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           result.push(column);
         }
 
-        return { type: ValueType.array, value: result };
+        return { type: 'array', value: result };
 
       },
     },
@@ -1459,9 +1459,9 @@ export const BaseFunctionLibrary: FunctionMap = {
       arguments: [{name: 'matrix', boxed: true}],
       fn: (mat: UnionValue): UnionValue => {
 
-        if (mat.type === ValueType.array) {
+        if (mat.type === 'array') {
           return {
-            type: ValueType.array,
+            type: 'array',
             value: Utils.Transpose2(mat.value),
           };
         }
@@ -1479,7 +1479,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     Max: {
       fn: (...args: number[]): UnionValue => {
         return { 
-          type: ValueType.number, 
+          type: 'number', 
           // value: Math.max.apply(0, Utils.FlattenCellValues(args).filter((x): x is number => typeof x === 'number')),
           value: Math.max.apply(0, Utils.FlattenNumbers(args)),
         };
@@ -1489,7 +1489,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     Min: {
       fn: (...args: number[]): UnionValue => {
         return { 
-          type: ValueType.number, 
+          type: 'number', 
           // value: Math.min.apply(0, Utils.FlattenCellValues(args).filter((x): x is number => typeof x === 'number')),
           value: Math.min.apply(0, Utils.FlattenNumbers(args)),
         };
@@ -1557,7 +1557,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           }, 1);
         }        
 
-        return { type: ValueType.number, value: sum };
+        return { type: 'number', value: sum };
 
       },
     },
@@ -1586,7 +1586,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
           // this is true regardless of match type... right?
           if (compare === value) {
-            return { type: ValueType.number, value: i + 1 };
+            return { type: 'number', value: i + 1 };
           }
  
           if ((typeof compare !== 'undefined' && typeof value !== 'undefined') && (
@@ -1597,7 +1597,7 @@ export const BaseFunctionLibrary: FunctionMap = {
               return NAError();
             }
 
-            return { type: ValueType.number, value: i }; // implicit -1
+            return { type: 'number', value: i }; // implicit -1
           }
 
         }
@@ -1617,33 +1617,33 @@ export const BaseFunctionLibrary: FunctionMap = {
               const col: UnionValue[] = [];
               for (let r = this.area.start.row; r <= this.area.end.row; r++) {
                 col.push({
-                  type: ValueType.number,
+                  type: 'number',
                   value: r + 1, 
                 });
               }
               value.push(col);
             }
             return {
-              type: ValueType.array, value,
+              type: 'array', value,
             }
           }
           else {
             return {
-              type: ValueType.number,
+              type: 'number',
               value: this ? this.address.row + 1 : -1,
             };
           }
         }
         
-        if (ref.type === ValueType.array) {
+        if (ref.type === 'array') {
           const arr = ref.value;
           const first = arr[0][0];
 
           if (UnionIsMetadata(first)) {
             return {
-              type: ValueType.array,
+              type: 'array',
               value: [arr[0].map((row, index) => ({
-                type: ValueType.number,
+                type: 'number',
                 value: index + first.value.address.row + 1
               }))],
             };
@@ -1652,7 +1652,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
         else if (UnionIsMetadata(ref)) {
           return {
-            type: ValueType.number, value: ref.value.address.row + 1,
+            type: 'number', value: ref.value.address.row + 1,
           }
         }
         return ArgumentError();
@@ -1672,33 +1672,33 @@ export const BaseFunctionLibrary: FunctionMap = {
               const col: UnionValue[] = [];
               for (let r = this.area.start.row; r <= this.area.end.row; r++) {
                 col.push({
-                  type: ValueType.number,
+                  type: 'number',
                   value: c + 1, 
                 });
               }
               value.push(col);
             }
             return {
-              type: ValueType.array, value,
+              type: 'array', value,
             }
           }
           else {
             return {
-              type: ValueType.number,
+              type: 'number',
               value: this ? this.address.column + 1 : -1,
             };
           }
         }
 
-        if (ref.type === ValueType.array) {
+        if (ref.type === 'array') {
           const arr = ref.value;
           const first = arr[0][0];
 
           if (UnionIsMetadata(first)) {
             return {
-              type: ValueType.array,
+              type: 'array',
               value: arr.map((row, index) => [{
-                type: ValueType.number,
+                type: 'number',
                 value: index + first.value.address.column + 1
               }]),
             };
@@ -1707,7 +1707,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
         else if (UnionIsMetadata(ref)) {
           return {
-            type: ValueType.number, value: ref.value.address.column + 1,
+            type: 'number', value: ref.value.address.column + 1,
           }
         }
         return ArgumentError();
@@ -1734,7 +1734,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         if (UnionIsMetadata(value)) {
           return {
-            type: ValueType.object,
+            type: 'object',
             value: value.value.address,
           }
         }
@@ -1742,7 +1742,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         // check if array is metadata. if it's a literal array
         // we just want to return it.
 
-        if (value.type === ValueType.array) {
+        if (value.type === 'array') {
           const arr = value.value;
           const rows = arr.length;
           const cols = arr[0].length;
@@ -1752,7 +1752,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           if (rows === 1 && cols === 1) {
             if (UnionIsMetadata(first)) {
               return {
-                type: ValueType.object,
+                type: 'object',
                 value: first.value.address,
               };
             }
@@ -1760,7 +1760,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           else {
             if (UnionIsMetadata(first) && UnionIsMetadata(last)) {
               return {
-                type: ValueType.object,
+                type: 'object',
                 value: {
                   type: 'range',
                   position: 0, id: 0, label: '',
@@ -1826,7 +1826,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         let rng: Area|undefined;
         let return_from_array = false;
 
-        if (return_array.type === ValueType.array) {
+        if (return_array.type === 'array') {
 
           // console.info({return_array});
 
@@ -1906,7 +1906,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
           // FIXME: we could almost certainly merge these two paths
 
-          if (return_from_array && return_array.type === ValueType.array) {
+          if (return_from_array && return_array.type === 'array') {
 
             // instead of a range, we're returning values from a static array
 
@@ -1942,7 +1942,7 @@ export const BaseFunctionLibrary: FunctionMap = {
             }
 
             return {
-              type: ValueType.array,
+              type: 'array',
               value: result,
             };
             
@@ -2022,13 +2022,13 @@ export const BaseFunctionLibrary: FunctionMap = {
             // console.info({expr});
 
             return {
-              type: ValueType.object,
+              type: 'object',
               value: expr,
             }
             
           }
 
-          return { type: ValueType.undefined };
+          return { type: 'undefined' };
 
         };
       
@@ -2118,7 +2118,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         // FIXME: if we're expecting to return an array maybe we should
         // pack it up as an array? if it's not already an array? (...)
 
-        return (not_found && not_found.type !== ValueType.undefined) ? not_found : NAError();
+        return (not_found && not_found.type !== 'undefined') ? not_found : NAError();
 
       },
     },
@@ -2182,7 +2182,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         const ReturnIndex = (index: number): UnionValue => {
           return {
-            type: ValueType.number,
+            type: 'number',
             value: index + 1,
           };
         };
@@ -2306,10 +2306,10 @@ export const BaseFunctionLibrary: FunctionMap = {
         args = Utils.FlattenBoxed(args);
 
         for (const arg of args as UnionValue[]) {
-          if (arg.type === ValueType.complex) {
+          if (arg.type === 'complex') {
             product = ComplexMultply(product, arg.value);
           }
-          else if (arg.type === ValueType.number) {
+          else if (arg.type === 'number') {
             product.real *= arg.value;
             product.imaginary *= arg.value;
           }
@@ -2318,7 +2318,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         return ComplexOrReal(product);
 
         /*
-        return { type: ValueType.number, value: Utils.Flatten(args).reduce((a: number, b: any) => {
+        return { type: 'number', value: Utils.Flatten(args).reduce((a: number, b: any) => {
           if (typeof b === 'undefined') return a;
           return a * Number(b);
         }, 1) };
@@ -2338,7 +2338,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       /** default is base 10; allow specific base */
       fn: (a: number, base = 10): UnionValue => {
-        return { type: ValueType.number, value: Math.log(a) / Math.log(base) };
+        return { type: 'number', value: Math.log(a) / Math.log(base) };
       },
     },
 
@@ -2348,7 +2348,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         unroll: true,
       }], 
       fn: (a: number): UnionValue => {
-        return { type: ValueType.number, value: Math.log(a) / Math.log(10) };
+        return { type: 'number', value: Math.log(a) / Math.log(10) };
       },
     },
 
@@ -2358,7 +2358,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         unroll: true,
       }], 
       fn: (a: number): UnionValue => {
-        return { type: ValueType.number, value: Math.log(a) };
+        return { type: 'number', value: Math.log(a) };
       },
     },
 
@@ -2388,7 +2388,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
 
         return { 
-          type: ValueType.number, 
+          type: 'number', 
           value,
         };
       },
@@ -2418,7 +2418,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
 
         return { 
-          type: ValueType.number, 
+          type: 'number', 
           value,
         };
       },
@@ -2435,7 +2435,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       fn: (a: number, significance = 1) => {
         return { 
-          type: ValueType.number, 
+          type: 'number', 
           value: Math.floor(a / significance) * significance,
         };
       },
@@ -2452,7 +2452,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       fn: (a: number, significance = 1) => {
         return { 
-          type: ValueType.number, 
+          type: 'number', 
           value: Math.ceil(a / significance) * significance,
         };
       },
@@ -2465,7 +2465,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         const factor = Math.pow(10, digits);
         return { 
-          type: ValueType.number, 
+          type: 'number', 
           value: Math.sign(n) * Math.round(Math.abs(n) * factor + Number.EPSILON) / factor,
         };
       },
@@ -2478,7 +2478,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         const m = Math.pow(10, digits);
         const positive = a >= 0;
         return { 
-          type: ValueType.number, 
+          type: 'number', 
           value: positive ? Math.floor(m * a) / m : Math.ceil(m * a) / m,
         };
       },
@@ -2491,7 +2491,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         const m = Math.pow(10, digits);
         const positive = a >= 0;
         return { 
-          type: ValueType.number, 
+          type: 'number', 
           value: positive ? Math.ceil(m * a) / m : Math.floor(m * a) / m,
         };
       },
@@ -2539,7 +2539,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
         */
 
-        if (a.type === ValueType.array) {
+        if (a.type === 'array') {
           if (a.value.length === 1) {
             a.value[0].reverse();
           }
@@ -2550,7 +2550,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
 
         return { 
-          type: ValueType.string, 
+          type: 'string', 
           value: (a.value??'').toString().split('').reverse().join(''),
         };
       },
@@ -2565,16 +2565,16 @@ export const BaseFunctionLibrary: FunctionMap = {
       ],
       fn: (x: UnionValue) => {
         
-        if (x.type === ValueType.complex) {
+        if (x.type === 'complex') {
           const value = ComplexExp(x.value);
           return ComplexOrReal(value);
         }
 
-        if (x.type !== ValueType.number) {
+        if (x.type !== 'number') {
           return ValueError();
         }
 
-        return { type: ValueType.number, value: Math.exp(x.value) };
+        return { type: 'number', value: Math.exp(x.value) };
       },
     },
 
@@ -2587,18 +2587,18 @@ export const BaseFunctionLibrary: FunctionMap = {
         { boxed: true, unroll: true },
       ],
       fn: (a: UnionValue) => {
-        if (a.type === ValueType.complex) {
+        if (a.type === 'complex') {
           return { 
-            type: ValueType.number, 
+            type: 'number', 
             value: Math.sqrt(a.value.real * a.value.real + a.value.imaginary * a.value.imaginary), 
           };
         }
 
-        if (a.type !== ValueType.number) {
+        if (a.type !== 'number') {
           return ValueError();
         }
 
-        return { type: ValueType.number, value: Math.abs(a.value || 0) };
+        return { type: 'number', value: Math.abs(a.value || 0) };
       },
     },
 
@@ -2610,13 +2610,13 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: (value: number, significant_digits = 2): UnionValue => {
         significant_digits = significant_digits || 2;
         if (value === 0) {
-          return { type: ValueType.number, value };
+          return { type: 'number', value };
         }
         const negative = value < 0 ? -1 : 1;
         value *= negative;
         const x = Math.pow(10, Math.floor(Math.log10(value)) + 1 - significant_digits);
         return {
-          type: ValueType.number,
+          type: 'number',
           value: Math.round(value / x) * x * negative
         };
       },
@@ -2634,27 +2634,27 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         // UPDATE: now optional, see AltFunctionLibrary
 
-        if (ref.type === ValueType.complex) {
+        if (ref.type === 'complex') {
           const value = ComplexPower(ref.value, {real: 0.5, imaginary: 0});
           return ComplexOrReal(value);
         }
-        else if (ref.type === ValueType.undefined || !ref.value) {
+        else if (ref.type === 'undefined' || !ref.value) {
           return {
-            type: ValueType.number, value: 0,
+            type: 'number', value: 0,
           }
         }
         /*
-        else if (ref.type === ValueType.number && ref.value < 0) {
+        else if (ref.type === 'number' && ref.value < 0) {
           const value = ComplexPower({real: ref.value, imaginary: 0}, {real: 0.5, imaginary: 0});
           return {
-            type: ValueType.complex,
+            type: 'complex',
             value,
           }
         }
         */
-        else if (ref.type === ValueType.number) {
+        else if (ref.type === 'number') {
           return { 
-            type: ValueType.number, value: Math.sqrt(ref.value),
+            type: 'number', value: Math.sqrt(ref.value),
           };
         }
 
@@ -2666,7 +2666,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           if (isNaN(value)) {
             return ValueError();
           }
-          return { type: ValueType.number, value };
+          return { type: 'number', value };
         }
         */
       },
@@ -2676,14 +2676,14 @@ export const BaseFunctionLibrary: FunctionMap = {
     HexToDec: {
       arguments: [{ description: 'hexadecimal string', unroll: true }],
       fn: (hex: string): UnionValue => {
-        return { type: ValueType.number, value: parseInt(hex, 16) };
+        return { type: 'number', value: parseInt(hex, 16) };
       },
     },
 
     DecToHex: {
       arguments: [{ description: 'number', unroll: true }],
       fn: (num: number): UnionValue => {
-        return { type: ValueType.string, value: num.toString(16) };
+        return { type: 'string', value: num.toString(16) };
       },
     },
     */
@@ -2695,7 +2695,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       click: ClickCheckbox,
       render: RenderCheckbox,
       fn: (checked: boolean): UnionValue => {
-        return { value: !!checked, type: ValueType.boolean, }
+        return { value: !!checked, type: 'boolean', }
       },
     },
 
@@ -2709,7 +2709,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         return { handled: true }; // painted
       },
       fn: (...args: unknown[]): UnionValue => {
-        return { type: ValueType.object, value: args, key: 'sparkline-data', source: 'sparkline.column' };
+        return { type: 'object', value: args, key: 'sparkline-data', source: 'sparkline.column' };
       },
     },
 
@@ -2724,7 +2724,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         return { handled: true }; // painted
       },
       fn: (...args: unknown[]): UnionValue => {
-        return { type: ValueType.object, value: args, key: 'sparkline-data', source: 'sparkline.line' };
+        return { type: 'object', value: args, key: 'sparkline-data', source: 'sparkline.line' };
       },
     },
 
@@ -2735,7 +2735,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       visibility: 'internal',
       fn: (area: UnionValue): UnionValue => {
 
-        if (area.type === ValueType.array) {
+        if (area.type === 'array') {
 
           // const cols = area.value.length;
           // const rows = area.value[0]?.length;
@@ -2748,12 +2748,12 @@ export const BaseFunctionLibrary: FunctionMap = {
               return '';
             }
             else switch (cell.type) {
-            case ValueType.string:
-            case ValueType.number:
-            case ValueType.boolean:
+            case 'string':
+            case 'number':
+            case 'boolean':
               return cell.value;
 
-            case ValueType.undefined:
+            case 'undefined':
               return '';
 
             default:
@@ -2784,7 +2784,7 @@ export const BaseFunctionLibrary: FunctionMap = {
             for (const cell of column) {
               const value = Normalize(cell);
               column_result.push({
-                type: ValueType.boolean,
+                type: 'boolean',
                 value: !duplicates.has(value),
               });
             }
@@ -2792,7 +2792,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           }
 
           return {
-            type: ValueType.array,
+            type: 'array',
             value: result,
           };
 
@@ -2801,7 +2801,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         // if it's not an array, by definition it's unique
 
         return {
-          type: ValueType.boolean,
+          type: 'boolean',
           value: true,
         }
 
@@ -2817,8 +2817,8 @@ export const BaseFunctionLibrary: FunctionMap = {
       visibility: 'internal',
       fn: (target: UnionValue, min = 0, max = 1) => {
         return {
-          type: ValueType.boolean,
-          value: (target.type === ValueType.number) && (target.value >= min && target.value <= max),
+          type: 'boolean',
+          value: (target.type === 'number') && (target.value >= min && target.value <= max),
         };
       }
     },
@@ -2846,10 +2846,10 @@ export const BaseFunctionLibrary: FunctionMap = {
         let max = 0;
 
         for (const ref of tmp as UnionValue[]) {
-          if (ref.type === ValueType.error) {
+          if (ref.type === 'error') {
             return ref;
           }
-          if (ref.type === ValueType.number) {
+          if (ref.type === 'number') {
             if (count === 0 && !parameters) { // leave 0 min, max for data bars
               min = ref.value;
               max = ref.value;
@@ -2881,7 +2881,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         let rows = 1;
         let columns = 1;
 
-        if (area.type === ValueType.array) {
+        if (area.type === 'array') {
 
           rows = area.value.length;
           columns = area.value[0]?.length || 0;
@@ -2892,7 +2892,7 @@ export const BaseFunctionLibrary: FunctionMap = {
             const row: UnionValue[] = [];
             for (let c = 0; c < columns; c++) {
               const src = area.value[r][c];
-              if (src.type === ValueType.number) {
+              if (src.type === 'number') {
                 let calc = 0;
 
                 // special case: max === min. this can be used to do binary 
@@ -2916,24 +2916,24 @@ export const BaseFunctionLibrary: FunctionMap = {
                 }
 
                 if (parameters) {
-                  row.push({ type: ValueType.array, value: [[
-                    { type: ValueType.number, value: calc },
-                    { type: ValueType.number, value: (0 - min) / range }, // zero
+                  row.push({ type: 'array', value: [[
+                    { type: 'number', value: calc },
+                    { type: 'number', value: (0 - min) / range }, // zero
                   ]]});
                 }
                 else {
-                  row.push({ type: ValueType.number, value: calc });
+                  row.push({ type: 'number', value: calc });
                 }
               }
               else {
-                row.push({ type: ValueType.undefined });
+                row.push({ type: 'undefined' });
               }
 
             }
             result.push(row);
           }
   
-          return { type: ValueType.array, value: result };
+          return { type: 'array', value: result };
   
 
         }
@@ -2959,7 +2959,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         let rows = 0;
 
         for (const arg of args) {
-          if (arg.type === ValueType.array) {
+          if (arg.type === 'array') {
             columns = Math.max(columns, arg.value.length);
             rows += arg.value[0].length;
           }
@@ -2977,7 +2977,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           /*
           const column: UnionValue[] = [];
           for (let j = 0; j < rows; j++) {
-            column.push({ type: ValueType.undefined });
+            column.push({ type: 'undefined' });
           }
           data[i] = column;
           */
@@ -2986,7 +2986,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         let row = 0;
         for (const arg of args) {
-          if (arg.type === ValueType.array) {
+          if (arg.type === 'array') {
             for (let i = 0; i < arg.value.length; i++) {
               for (let j = 0; j < arg.value[0].length; j++) {
                 data[i][row + j] = arg.value[i][j];
@@ -3010,7 +3010,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
 
         return {
-          type: ValueType.array, 
+          type: 'array', 
           value: data,
         };
 
@@ -3032,7 +3032,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         let rows = 0;
 
         for (const arg of args) {
-          if (arg.type === ValueType.array) {
+          if (arg.type === 'array') {
             columns += arg.value.length;
             rows = Math.max(rows, arg.value[0].length);
           }
@@ -3050,7 +3050,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         let column = 0;
         for (const arg of args) {
-          if (arg.type === ValueType.array) {
+          if (arg.type === 'array') {
             for (let i = 0; i < arg.value.length; i++) {
               for (let j = 0; j < arg.value[i].length; j++) {
                 data[column + i][j] = arg.value[i][j];
@@ -3073,7 +3073,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
 
         return {
-          type: ValueType.array, 
+          type: 'array', 
           value: data,
         };
       },
@@ -3086,19 +3086,19 @@ export const BaseFunctionLibrary: FunctionMap = {
       ],
       fn: (x: UnionValue, y: UnionValue) => {
 
-        if (y.type === ValueType.number && x.type === ValueType.number) {
-          return { type: ValueType.number, value: Math.atan2(y.value, x.value) };
+        if (y.type === 'number' && x.type === 'number') {
+          return { type: 'number', value: Math.atan2(y.value, x.value) };
         }
 
-        if (y.type === ValueType.number) {
-          y = { type: ValueType.complex, value: { real: y.value, imaginary: 0 }};
+        if (y.type === 'number') {
+          y = { type: 'complex', value: { real: y.value, imaginary: 0 }};
         }
 
-        if (x.type === ValueType.number) {
-          x = { type: ValueType.complex, value: { real: x.value, imaginary: 0 }};
+        if (x.type === 'number') {
+          x = { type: 'complex', value: { real: x.value, imaginary: 0 }};
         }
 
-        if (y.type === ValueType.complex && x.type === ValueType.complex) {
+        if (y.type === 'complex' && x.type === 'complex') {
           
           const value = ComplexMath.ATan2(y.value, x.value);
 
@@ -3110,7 +3110,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           }
 
           return {
-            type: ValueType.complex, value,
+            type: 'complex', value,
           }
         }
         
@@ -3132,11 +3132,11 @@ export const BaseFunctionLibrary: FunctionMap = {
     ATan: TrigFunction(Math.atan, ComplexMath.ATan),
 
     // removed. use EXP(1)
-    // E: { fn: () => { return { type: ValueType.number, value: Math.E } } },
+    // E: { fn: () => { return { type: 'number', value: Math.E } } },
 
-    PI: { fn: () => { return { type: ValueType.number, value: Math.PI } } },
-    SQRT2: { fn: () => { return { type: ValueType.number, value: Math.SQRT2 } } },
-    SQRT1_2: { fn: () => { return { type: ValueType.number, value: Math.SQRT1_2 } } },
+    PI: { fn: () => { return { type: 'number', value: Math.PI } } },
+    SQRT2: { fn: () => { return { type: 'number', value: Math.SQRT2 } } },
+    SQRT1_2: { fn: () => { return { type: 'number', value: Math.SQRT1_2 } } },
 
     Sequence: {
       arguments:[
@@ -3160,12 +3160,12 @@ export const BaseFunctionLibrary: FunctionMap = {
         for (let c = 0; c < cx; c++) {
           const col: UnionValue[] = [];
           for (let r = 0; r < rx; r++) {
-            col.push({ type: ValueType.number, value: start_ + r * step_ * cx + c * step_ });
+            col.push({ type: 'number', value: start_ + r * step_ * cx + c * step_ });
           }
           value.push(col);
         }
 
-        return { type: ValueType.array, value };
+        return { type: 'array', value };
 
       },
 
@@ -3237,7 +3237,7 @@ for (const name of Object.getOwnPropertyNames(Math)) {
     // console.info("MATH CONSTANT", name);
     BaseFunctionLibrary[name] = {
       fn: () => { 
-        return { type: ValueType.number, value }
+        return { type: 'number', value }
       },
       category: ['Math Functions'],
     };

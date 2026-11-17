@@ -19,7 +19,7 @@
  * 
  */
 
-import { type UnionValue, ValueType, type ArrayUnion, IsComplex, type CellValue } from 'treb-base-types';
+import { type UnionValue, type ArrayUnion, IsComplex, type CellValue } from 'treb-base-types';
 import { IsArrayUnion, IsMetadata, IsSeries, LegendStyle } from './chart-types';
 import type { SubSeries, SeriesType, BarData, ChartDataBaseType, ChartData, ScatterData2, DonutSlice, BubbleChartData, BoxPlotData } from './chart-types';
 import { NumberFormatCache } from 'treb-format';
@@ -110,7 +110,7 @@ export const ReadSeries = (data: ReferenceSeries['value']): SeriesType => {
 
     if (IsMetadata(source)) {
       source = {
-        type: ValueType.array,
+        type: 'array',
         value: [[source]],
       };
     }
@@ -127,7 +127,7 @@ export const ReadSeries = (data: ReferenceSeries['value']): SeriesType => {
             return item.value.value;
           }
         }
-        else if (item.type === ValueType.number) {
+        else if (item.type === 'number') {
           return item.value;
         }
         return undefined;
@@ -304,7 +304,7 @@ export const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValu
 
   const list: SeriesType[] = [];
 
-  if (raw_data.type === ValueType.object) {
+  if (raw_data.type === 'object') {
     if (raw_data.key === 'group') {
       if (Array.isArray(raw_data.value)) {
         for (const [series_index, entry] of raw_data.value.entries()) {
@@ -316,7 +316,7 @@ export const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValu
               }
               list.push(series);
             }
-            else if (entry.type === ValueType.array) {
+            else if (entry.type === 'array') {
               list.push(ArrayToSeries(entry));
             }
           }
@@ -328,7 +328,7 @@ export const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValu
       list.push(series);
     }
   }
-  else if (raw_data.type === ValueType.array) {
+  else if (raw_data.type === 'array') {
     list.push(ArrayToSeries(raw_data));
   }
 
@@ -342,7 +342,7 @@ export const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValu
 
   // if we have a default, use that (and range it)
 
-  if (default_x?.type === ValueType.array) {
+  if (default_x?.type === 'array') {
 
     const values = Util.Flatten<UnionValue>(default_x.value);
 
@@ -353,7 +353,7 @@ export const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValu
     }
 
     const data = values.map(x => {
-      if (x.type === ValueType.number) { return x.value; }
+      if (x.type === 'number') { return x.value; }
       if (IsMetadata(x) && typeof x.value.value === 'number') {
         return x.value.value;
       }
@@ -859,7 +859,7 @@ export const CreateBubbleChart = (args: UnionValue[]): ChartData => {
   /*
   const [x, y, z] = [0,1,2].map(index => {
     const arg = args[index];
-    if (arg.type === ValueType.array) {
+    if (arg.type === 'array') {
       return ArrayToSeries(arg).y;
     }
     return undefined;
@@ -1041,7 +1041,7 @@ export const CreateColumnChart = (
 
   if (labels) {
 
-    const values = labels.type === ValueType.array ? Util.Flatten<UnionValue>(labels.value) : Util.Flatten<UnionValue>(labels);
+    const values = labels.type === 'array' ? Util.Flatten<UnionValue>(labels.value) : Util.Flatten<UnionValue>(labels);
 
     category_labels = values.map((cell) => {
 
@@ -1209,7 +1209,7 @@ export const CreateDonut = (args: [UnionValue?, UnionValue?, string?, string?, s
 
   const [_a, _c, title, _options, _slice_title] = args;
 
-  const raw_data = args[0]?.type === ValueType.array ? args[0].value : args[0];
+  const raw_data = args[0]?.type === 'array' ? args[0].value : args[0];
 
   const flat = raw_data ? Util.Flatten<UnionValue>(raw_data) : [];
 
@@ -1229,7 +1229,7 @@ export const CreateDonut = (args: [UnionValue?, UnionValue?, string?, string?, s
   // if labels are strings, just pass them in. if they're numbers then
   // use the format (we're collecting metadata for this field now)
 
-  const raw_labels = args[1]?.type === ValueType.array ? args[1].value : args[1];
+  const raw_labels = args[1]?.type === 'array' ? args[1].value : args[1];
 
   const labels = Util.Flatten<UnionValue>(raw_labels||[]).map(label => {
     if (IsMetadata(label)) {

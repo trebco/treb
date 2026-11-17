@@ -38,7 +38,7 @@ import type { SerializedModel, SerializedSheet } from 'treb-data-model';
 
 import type { IArea, ICellAddress, CellStyle,
          AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle, Color } from 'treb-base-types';
-import { Area, Cells, ValueType, Style, IsHTMLColor, IsThemeColor, ThemeColorIndex } from 'treb-base-types';
+import { Area, Cells, HasValueType, Style, IsHTMLColor, IsThemeColor, ThemeColorIndex } from 'treb-base-types';
 
 // import * as xmlparser from 'fast-xml-parser';
 import type { XmlBuilderOptions} from 'fast-xml-parser';
@@ -1371,7 +1371,7 @@ export class Exporter {
                   const header = cells.data[r][c + i];
                   let value = '';
 
-                  if (header.type !== ValueType.string) {
+                  if (header.type !== 'string') {
                     if (typeof header.calculated !== 'undefined') {
                       value = (header.calculated).toString();
                     }
@@ -1379,7 +1379,7 @@ export class Exporter {
                       value = (header.value).toString();
                     }
 
-                    header.type = ValueType.string;
+                    header.type = 'string';
                     header.value = value;
 
                   }
@@ -1420,8 +1420,8 @@ export class Exporter {
 
                   for (let i = 0; i < area.columns; i++) {
                     const footer = cells.data[area.end.row][area.start.column + i];
-                    if (footer.type) {
-                      if (footer.type === ValueType.formula) {
+                    if (HasValueType(footer.type)) {
+                      if (footer.type === 'formula') {
                         footers[i] = {
                           type: 'formula',
                           value: (footer.value || '').toString().substring(1),
@@ -1429,8 +1429,8 @@ export class Exporter {
                       }
                       else {
 
-                        if (footer.type !== ValueType.string) {
-                          footer.type = ValueType.string;
+                        if (footer.type !== 'string') {
+                          footer.type = 'string';
                           footer.value = footer.value?.toString() || '';
                         }
 
@@ -1499,7 +1499,7 @@ export class Exporter {
               }
 
               // short-circuit here
-              if (cell.type === ValueType.formula && /^=?sparkline\./i.test(cell.value as string)) {
+              if (cell.type === 'formula' && /^=?sparkline\./i.test(cell.value as string)) {
                 sparklines.push({
                   address: {row: r, column: c},
                   formula: cell.value as string,
@@ -1525,7 +1525,7 @@ export class Exporter {
               // s is style, index into the style table 
               const s: number|undefined = this.StyleFromCell(sheet, style_cache, r, c, cell.style);
 
-              if (cell.type === ValueType.undefined) {
+              if (cell.type === 'undefined') {
 
                 // you can skip if (1) there's a row style, and style === row style;
                 // (2) there's a column style, no row style, and style === column style
@@ -1543,35 +1543,35 @@ export class Exporter {
               let f: DOMContent|string|undefined; // string|undefined;
 
               switch (cell.type) {
-                case ValueType.formula:
+                case 'formula':
                   f = this.FormulaText(cell.value as string, cell);
                   switch (cell.calculated_type) {
-                    case ValueType.string:
+                    case 'string':
                       v = cell.calculated as string;
                       t = 'str';
                       break;
 
-                    case ValueType.number:
+                    case 'number':
                       v = cell.calculated as number;
                       break;
 
-                    case ValueType.boolean:
+                    case 'boolean':
                       v = (cell.calculated ? 1 : 0);
                       t = 'b';
                       break;
                   }
                   break;
 
-                case ValueType.string:
+                case 'string':
                   v = shared_strings.Ensure(cell.value as string);
                   t = 's'; // shared string
                   break;
 
-                case ValueType.number:
+                case 'number':
                   v = cell.value as number;
                   break;
 
-                case ValueType.boolean:
+                case 'boolean':
                   v = (cell.value ? 1 : 0);
                   t = 'b';
                   break;

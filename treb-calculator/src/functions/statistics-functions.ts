@@ -22,7 +22,7 @@
 import type { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ValueError, ArgumentError, NAError } from '../function-error';
-import { type Complex, type UnionValue, ValueType, type CellValue, ComplexOrReal } from 'treb-base-types';
+import { type Complex, type UnionValue, type CellValue, ComplexOrReal } from 'treb-base-types';
 import * as ComplexMath from '../complex-math';
 
 import { BetaCDF, BetaPDF, InverseBeta, LnGamma } from './beta';
@@ -269,7 +269,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
          ((flat_x.length * sum_squared_x) - (sum_x * sum_x));
 
       return {
-        type: ValueType.number,
+        type: 'number',
         value,
       }
 
@@ -313,7 +313,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       m /= ((N * sum_squared_x) - (sum_x * sum_x));
 
       return {
-        type: ValueType.number, value: (sum_y - (m * sum_x)) / N,
+        type: 'number', value: (sum_y - (m * sum_x)) / N,
       };
 
     },
@@ -325,9 +325,9 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     ],
     fn: (x: UnionValue) => {
 
-      if (x.type === ValueType.number) {
+      if (x.type === 'number') {
         return {
-          type: ValueType.number,
+          type: 'number',
           value: (1 / Math.sqrt(Math.PI * 2)) * Math.exp(-x.value * x.value / 2),
         };
       }
@@ -359,13 +359,13 @@ export const StatisticsFunctionLibrary: FunctionMap = {
 
       if (cumulative) {
         return {
-          type: ValueType.number,
+          type: 'number',
           value: BetaCDF(x, a, b),
         };
       }
       else {
         return {
-          type: ValueType.number,
+          type: 'number',
           value: BetaPDF(x, a, b),
         };
       }
@@ -397,7 +397,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       }
 
       return {
-        type: ValueType.number,
+        type: 'number',
         value,
       };
 
@@ -408,11 +408,11 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     fn: (a: number, upper_bound?: number): UnionValue => {
       if (typeof upper_bound === 'number') {
         return { 
-          type: ValueType.number, 
+          type: 'number', 
           value: erf(upper_bound) - erf(a),
         };
       }
-      return { type: ValueType.number, value: erf(a) };
+      return { type: 'number', value: erf(a) };
     },
   },
 
@@ -426,7 +426,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
 
     fn: (q: number): UnionValue => {
       return {
-        type: ValueType.number,
+        type: 'number',
         value: inverse_normal(q),
       }
     }
@@ -443,7 +443,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     xlfn: true,
     fn: (q: number, mean = 0, stdev = 1): UnionValue => {
       return {
-        type: ValueType.number,
+        type: 'number',
         value: InverseNormal(q) * stdev + mean,
       }
     }
@@ -457,7 +457,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     xlfn: true,
     fn: (q: number): UnionValue => {
       return {
-        type: ValueType.number,
+        type: 'number',
         value: InverseNormal(q),
       }
     }
@@ -479,7 +479,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     xlfn: true,
 
     fn: (x: number, mean = 0, stdev = 1, cumulative = true): UnionValue => {
-      return { type: ValueType.number, value: norm_dist(x, mean, stdev, cumulative) };
+      return { type: 'number', value: norm_dist(x, mean, stdev, cumulative) };
     },
   },
 
@@ -494,7 +494,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     xlfn: true,
 
     fn: (x: number, cumulative = true): UnionValue => {
-      return { type: ValueType.number, value: norm_dist(x, 0, 1, cumulative) };
+      return { type: 'number', value: norm_dist(x, 0, 1, cumulative) };
     },
   },
 
@@ -502,7 +502,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the standard deviation of a set of values, corresponding to a population',
     arguments: [{ name: 'data', }],
     fn: (...args: CellValue[]): UnionValue => {
-      return { type: ValueType.number, value: Math.sqrt(Variance(Utils.FlattenNumbers(args), false)) };
+      return { type: 'number', value: Math.sqrt(Variance(Utils.FlattenNumbers(args), false)) };
     },
   },
 
@@ -510,7 +510,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the standard deviation of a set of values, corresponding to a sample of a population',
     arguments: [{ name: 'data', }],
     fn: (...args: CellValue[]): UnionValue => {
-      return { type: ValueType.number, value: Math.sqrt(Variance(Utils.FlattenNumbers(args), true)) };
+      return { type: 'number', value: Math.sqrt(Variance(Utils.FlattenNumbers(args), true)) };
     },
   },
 
@@ -518,7 +518,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the variance of a set of values, corresponding to a population',
     arguments: [{ name: 'data', }],
     fn: (...args: CellValue[]): UnionValue => {
-      return { type: ValueType.number, value: Variance(Utils.FlattenNumbers(args), false) };
+      return { type: 'number', value: Variance(Utils.FlattenNumbers(args), false) };
     },
   },
 
@@ -526,7 +526,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the variance of a set of values, corresponding to a sample of a population',
     arguments: [{ name: 'data', }],
     fn: (...args: CellValue[]): UnionValue => {
-      return { type: ValueType.number, value: Variance(Utils.FlattenNumbers(args), true) };
+      return { type: 'number', value: Variance(Utils.FlattenNumbers(args), true) };
     },
   },
 
@@ -584,7 +584,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
         sum += (data.x[i] - mean.x) * (data.y[i] - mean.y);
       }
 
-      return { type: ValueType.number, value: sum / length, };
+      return { type: 'number', value: sum / length, };
 
     },
   },
@@ -634,7 +634,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
         rslt /= Math.sqrt(((count * sumSquaredX) - (sumX * sumX)) * ((count * sumSquaredY) - (sumY * sumY)));
       }
   
-      return { type: ValueType.number, value: rslt };
+      return { type: 'number', value: rslt };
 
     },
   },
@@ -655,12 +655,12 @@ export const StatisticsFunctionLibrary: FunctionMap = {
 
       for (const arg of args) {
         
-        if (arg.type === ValueType.complex) {
+        if (arg.type === 'complex') {
           complex = true;
           product = ComplexMath.Multiply(product, arg.value);
           count++;
         }
-        else if (arg.type === ValueType.number) {
+        else if (arg.type === 'number') {
           if (arg.value < 0) {
             negative = true;
           }
@@ -676,15 +676,15 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       if (complex) {
         const value = ComplexMath.Power(product, {real: 1/count, imaginary: 0});
         if (value.imaginary) {
-          return { type: ValueType.complex, value };
+          return { type: 'complex', value };
         }
-        return { type: ValueType.number, value: value.real };
+        return { type: 'number', value: value.real };
       }
       else {
         if (negative) {
           return ValueError();
         }
-        return { type: ValueType.number, value: Math.pow(product.real, 1 / count) };
+        return { type: 'number', value: Math.pow(product.real, 1 / count) };
       }
 
       /*
@@ -695,7 +695,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
         count++;
         product *= value;
       }
-      return { type: ValueType.number, value: Math.pow(product, 1 / count) };
+      return { type: 'number', value: Math.pow(product, 1 / count) };
       */
 
 
@@ -711,13 +711,13 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       const list: number[] = [];
 
       for (const ref of args as UnionValue[]) {
-        if (ref.type === ValueType.error) {
+        if (ref.type === 'error') {
           return ref;
         }
-        if (ref.type === ValueType.number) {
+        if (ref.type === 'number') {
           list.push(ref.value);
         }
-        else if (ref.type !== ValueType.undefined ) {
+        else if (ref.type !== 'undefined' ) {
           console.info("RT", ref.type);
           return ArgumentError();
         }
@@ -733,7 +733,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       };
 
       if (list.length === 0) {
-        return { type: ValueType.number, value: 0 };
+        return { type: 'number', value: 0 };
       }
 
       let lcm = list[0];
@@ -743,7 +743,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       }
 
       return {
-        type: ValueType.number,
+        type: 'number',
         value: lcm,
       }
 
@@ -770,7 +770,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       }
 
       return {
-        type: ValueType.number,
+        type: 'number',
         value,
       }
     },
@@ -790,7 +790,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       }
 
       return {
-        type: ValueType.number,
+        type: 'number',
         value,
       };
 
@@ -808,12 +808,12 @@ export const StatisticsFunctionLibrary: FunctionMap = {
 
       const cum = cumulative ? !!cumulative.value : false;
 
-      if (df.type !== ValueType.number || x.type !== ValueType.number || df.value < 1) {
+      if (df.type !== 'number' || x.type !== 'number' || df.value < 1) {
         return ArgumentError();
       }
       
       return {
-        type: ValueType.number,
+        type: 'number',
         value: cum ? tCDF(x.value, df.value) : tPDF(x.value, df.value),
       }
 
@@ -831,11 +831,11 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       },
     ],
     fn: (p: UnionValue, df: UnionValue) => {
-      if (df.type !== ValueType.number || df.value < 1 || p.type !== ValueType.number || p.value <= 0 || p.value >= 1) {
+      if (df.type !== 'number' || df.value < 1 || p.type !== 'number' || p.value <= 0 || p.value >= 1) {
         return ArgumentError();
       }
       return {
-        type: ValueType.number,
+        type: 'number',
         value: tInverse(p.value, df.value),
       };
     },
@@ -852,11 +852,11 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       },
     ],
     fn: (p: UnionValue, df: UnionValue) => {
-      if (df.type !== ValueType.number || df.value < 1 ||p.type !== ValueType.number || p.value <= 0 || p.value >= 1) {
+      if (df.type !== 'number' || df.value < 1 ||p.type !== 'number' || p.value <= 0 || p.value >= 1) {
         return ArgumentError();
       }
       return {
-        type: ValueType.number,
+        type: 'number',
         value: Math.abs(tInverse(1 - p.value/2, df.value)),
       };
     },
@@ -866,9 +866,9 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the natural log of the gamma function',
     arguments: [{ name: 'value', boxed: true, unroll: true }],
     fn: (value: UnionValue) => {
-      if (value.type === ValueType.number) {
+      if (value.type === 'number') {
         return {
-          type: ValueType.number,
+          type: 'number',
           value: LnGamma(value.value),
         };
       }
@@ -883,10 +883,10 @@ export const StatisticsFunctionLibrary: FunctionMap = {
 
       let cpx: Complex|undefined;
 
-      if (value.type === ValueType.number) {
+      if (value.type === 'number') {
         cpx = { real: value.value, imaginary: 0 };
       } 
-      else if (value.type === ValueType.complex) {
+      else if (value.type === 'complex') {
         cpx = value.value;
       }
 
@@ -906,10 +906,10 @@ export const StatisticsFunctionLibrary: FunctionMap = {
 
       let complex: Complex = { real: 0, imaginary: 0 };
 
-      if (value.type === ValueType.complex) {
+      if (value.type === 'complex') {
         complex = {...value.value};
       }
-      else if (value.type === ValueType.number) {
+      else if (value.type === 'number') {
         complex.real = value.value;
       }
       else {
@@ -923,10 +923,10 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       const gamma = Gamma(complex);
 
       if (Math.abs(gamma.imaginary) <= 1e-7) {
-        return { type: ValueType.number, value: gamma.real };
+        return { type: 'number', value: gamma.real };
       }
 
-      return {type: ValueType.complex, value: gamma};
+      return {type: 'complex', value: gamma};
       
     },
   },
@@ -937,7 +937,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       if (typeof a !== 'number' || typeof b !== 'number') {
         return ValueError();
       }
-      return { type: ValueType.number, value: (a === b) ? 1 : 0 };
+      return { type: 'number', value: (a === b) ? 1 : 0 };
     },
   },
 
@@ -949,13 +949,13 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       const list: number[] = [];
 
       for (const ref of args as UnionValue[]) {
-        if (ref.type === ValueType.error) {
+        if (ref.type === 'error') {
           return ref;
         }
-        if (ref.type === ValueType.number) {
+        if (ref.type === 'number') {
           list.push(ref.value);
         }
-        else if (ref.type !== ValueType.undefined ) {
+        else if (ref.type !== 'undefined' ) {
           console.info("RT", ref.type);
           return ArgumentError();
         }
@@ -981,7 +981,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
 
       if (list.length === 1) {
         return {
-          type: ValueType.number, 
+          type: 'number', 
           value: list[0],
         };
       }
@@ -992,7 +992,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       }
       
       return {
-        type: ValueType.number,
+        type: 'number',
         value,
       };
 
@@ -1009,14 +1009,14 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       let count = 0;
 
       for (const ref of args as UnionValue[]) {
-        if (ref.type === ValueType.error) {
+        if (ref.type === 'error') {
           return ref;
         }
-        if (ref.type === ValueType.number) {
+        if (ref.type === 'number') {
           result.real += (1/ref.value);
           count++;
         }
-        if (ref.type === ValueType.complex) {
+        if (ref.type === 'complex') {
           const reciprocal = ComplexMath.Divide({real: 1, imaginary: 0}, ref.value);
           result.real += reciprocal.real;
           result.imaginary += reciprocal.imaginary;
@@ -1025,10 +1025,10 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       }
 
       if (result.imaginary) {
-        return { type: ValueType.complex, value: ComplexMath.Divide({real: count, imaginary: 0}, result), };
+        return { type: 'complex', value: ComplexMath.Divide({real: count, imaginary: 0}, result), };
       }
 
-      return { type: ValueType.number, value: count/result.real };
+      return { type: 'number', value: count/result.real };
 
     },
   },
@@ -1045,14 +1045,14 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       let count = 0;
 
       for (const ref of args as UnionValue[]) {
-        if (ref.type === ValueType.error) {
+        if (ref.type === 'error') {
           return ref;
         }
-        if (ref.type === ValueType.number) {
+        if (ref.type === 'number') {
           result.real += ref.value;
           count++;
         }
-        if (ref.type === ValueType.complex) {
+        if (ref.type === 'complex') {
           result.real += ref.value.real;
           result.imaginary += ref.value.imaginary;
           count++;
@@ -1063,9 +1063,9 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       result.imaginary /= count;
       
       if (result.imaginary) {
-        return { type: ValueType.complex, value: result, };
+        return { type: 'complex', value: result, };
       }
-      return { type: ValueType.number, value: result.real };
+      return { type: 'number', value: result.real };
 
     },
   },
@@ -1091,7 +1091,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       const lo = Math.floor(x);
       const hi = Math.ceil(x);
 
-      return { type: ValueType.number, value: (flat[lo-1] + flat[hi-1]) / 2 };
+      return { type: 'number', value: (flat[lo-1] + flat[hi-1]) / 2 };
 
     },
   },
@@ -1112,7 +1112,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       const flat = Utils.FlattenNumbers(data);
       const quartiles = InterpolatedQuartiles(flat, true);
      
-      return { type: ValueType.number, value: quartiles[quartile] };
+      return { type: 'number', value: quartiles[quartile] };
     }
   },
 
@@ -1132,7 +1132,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       const flat = Utils.FlattenNumbers(data);
       const quartiles = InterpolatedQuartiles(flat, false);
      
-      return { type: ValueType.number, value: quartiles[quartile] };
+      return { type: 'number', value: quartiles[quartile] };
     }
   },
 
@@ -1153,7 +1153,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       const lo = Math.floor(x);
       const hi = Math.ceil(x);
 
-      return { type: ValueType.number, value: (flat[lo-1] + flat[hi-1]) / 2 };
+      return { type: 'number', value: (flat[lo-1] + flat[hi-1]) / 2 };
 
     },
   },
@@ -1176,7 +1176,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       for (let i = 0; i < numbers.length; i++) {
         if (numbers[i] === value) {
           return {
-            type: ValueType.number,
+            type: 'number',
             value: i + 1,
           };
         }

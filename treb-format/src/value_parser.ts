@@ -20,7 +20,7 @@
  */
 
 import type { Complex } from 'treb-base-types';
-import { ValueType, Localization } from 'treb-base-types';
+import { type ValueType, Localization } from 'treb-base-types';
 import { UnlotusDate } from './format';
 
 /**
@@ -225,17 +225,17 @@ class ValueParserType {
     let hints: Hints = {}; // Hints.None;
 
     // starts with SINGLE quote mark. express string.
-    if (text[0] === '\'') return { value: text, type: ValueType.string };
+    if (text[0] === '\'') return { value: text, type: 'string' };
 
     // empty string, treat as string (should be === 0 though?)
-    if (text === '') return { value: text, type: ValueType.string };
+    if (text === '') return { value: text, type: 'string' };
 
     // we test if the conversion returns NaN, which usually means
     // it's not a number -- unless the string is actually NaN, which
     // is something we want to preserve.
     if ( text === 'NaN' ) return { 
       value: NaN, 
-      type: ValueType.number, 
+      type: 'number', 
       hints: { Nan: true },
     };
 
@@ -287,8 +287,8 @@ class ValueParserType {
 
       // check boolean
       const lc = text.toLowerCase();
-      if (lc === 'false') return { value: false, type: ValueType.boolean };
-      if (lc === 'true' ) return { value: true, type: ValueType.boolean };
+      if (lc === 'false') return { value: false, type: 'boolean' };
+      if (lc === 'true' ) return { value: true, type: 'boolean' };
 
       // check date, but bound on reasonable years...
       // also maybe parameterize, make this optional
@@ -316,14 +316,14 @@ class ValueParserType {
 
           return {
             value: UnlotusDate(date, true),
-            type: ValueType.number,
+            type: 'number',
             hints,
           };
         }
 
       }
 
-      return { value: text, type: ValueType.string };
+      return { value: text, type: 'string' };
     }
 
     if (parens) { num = -num; }
@@ -342,7 +342,7 @@ class ValueParserType {
     }
 
     if (/e/.test(text)) hints.Exponential = true;
-    return { value: num, type: ValueType.number, hints };
+    return { value: num, type: 'number', hints };
 
   }
 

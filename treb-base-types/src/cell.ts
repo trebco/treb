@@ -25,7 +25,7 @@ import type { Area } from './area';
 import type { CellStyle } from './style';
 import type { TextPart } from './text_part';
 import type { Complex } from './value-type';
-import { ValueType, GetValueType } from './value-type';
+import { type ValueType, GetValueType, HasValueType } from './value-type';
 import type { CellValue, UnionValue } from './union';
 import type { PreparedText } from './render_text';
 import type { Table } from './table';
@@ -168,25 +168,25 @@ export class Cell {
         return ValueType.undefined;
 
       case 'number':
-        return ValueType.number;
+        return 'number';
 
       case 'boolean':
-        return ValueType.boolean;
+        return 'boolean';
 
       case 'object':
         if (value === null) {
           return ValueType.undefined;
         }
-        return ValueType.object;
+        return 'object';
 
       case 'string':
         if (value[0] === '=') {
-          return ValueType.formula;
+          return 'formula';
         }
-        return ValueType.string;
+        return 'string';
 
       default: // function or symbol
-        return ValueType.error;
+        return 'error';
 
     }
   }
@@ -198,7 +198,7 @@ export class Cell {
   public value?: CellValue; // any;
 
   // the value type, js intrinics plus a special type for formula
-  public type: ValueType = ValueType.undefined;
+  public type: ValueType = 'undefined';
 
   // the calculated value, returned from calculation service
   public calculated?: CellValue; // |FunctionError; // any;
@@ -312,22 +312,22 @@ export class Cell {
 
   /** type guard */
   public ValueIsNumber() : this is { value: number } {
-    return this.type === ValueType.number;
+    return this.type === 'number';
   }
 
   /** type guard */
   public ValueIsFormula() : this is { value: string } {
-    return this.type === ValueType.formula;
+    return this.type === 'formula';
   }
 
   /** type guard */
   public ValueIsBoolean() : this is { value: boolean } {
-    return this.type === ValueType.boolean;
+    return this.type === 'boolean';
   }
 
   /** type guard */
   public ValueIsComplex() : this is { value: Complex } {
-    return this.type === ValueType.complex;
+    return this.type === 'complex';
   }
 
   ///
@@ -356,7 +356,7 @@ export class Cell {
   }
 
   public Reset(): void{
-    this.type = ValueType.undefined;
+    this.type = 'undefined';
     this.value
       = this.spill
       = this.note
@@ -400,7 +400,7 @@ export class Cell {
 
     if (value === undefined) {
       value = 0;
-      type = ValueType.number;
+      type = 'number';
     }
 
     if (this.calculated === value) {
@@ -423,7 +423,7 @@ export class Cell {
 
     if (typeof type === 'undefined') {
       if (typeof value === 'object' && value.error) {
-        type = ValueType.error;
+        type = 'error';
         value = value.error;
       }
       else {
@@ -444,8 +444,8 @@ export class Cell {
    * prevent parsing of literal strings that look like other things).
    */
   public GetValue(): CellValue {
-    if (this.calculated_type) return this.calculated;
-    // if (this.type === ValueType.string &&
+    if (HasValueType(this.calculated_type)) return this.calculated;
+    // if (this.type === 'string' &&
     //    this.value && this.value[0] === '\'') return this.value.slice(1);
 
     // we maintain a type, but typescript won't associate the two so
@@ -463,10 +463,10 @@ export class Cell {
    * /
   public GetValue2(): CellValue | {error: CellValue} {
     if (this.calculated_type) {
-      return (this.calculated_type === ValueType.error) ?
+      return (this.calculated_type === 'error') ?
         { error: this.calculated } : this.calculated;
     }
-    // if (this.type === ValueType.string &&
+    // if (this.type === 'string' &&
     //    this.value && this.value[0] === '\'') return this.value.slice(1);
     if (typeof this.value === 'string' && this.value[0] === '\'') { return this.value.slice(1); } // @see GetValue
 
@@ -491,15 +491,15 @@ export class Cell {
     // so... what is this? shouldn't this be an object? (...)
    
     if (this.calculated_type) {
-      return (this.calculated_type === ValueType.error) ?
+      return (this.calculated_type === 'error') ?
         { error: this.calculated as string } : this.calculated;
     }
 
-    if (this.type === ValueType.formula) {
+    if (this.type === 'formula') {
       // formula, but no calc type... undefined or zero? (...)
       return 0; // undefined;
     }
-    // if (this.type === ValueType.string &&
+    // if (this.type === 'string' &&
     //    this.value && this.value[0] === '\'') return this.value.slice(1);
     if (typeof this.value === 'string' && this.value[0] === '\'') { return this.value.slice(1); } // @see GetValue
 
@@ -513,16 +513,16 @@ export class Cell {
    */
   public GetValue4(): UnionValue {
 
-    if (this.calculated_type) {
+    if (HasValueType(this.calculated_type)) {
       return {
         type: this.calculated_type,
         value: this.calculated,
       } as UnionValue;
     }
 
-    if (this.type === ValueType.formula) {
+    if (this.type === 'formula') {
       return {
-        type: ValueType.number,
+        type: 'number',
         value: 0,
       }
     }
@@ -544,11 +544,11 @@ export class Cell {
 
   /** sets error (FIXME: error type) */
   public SetCalculationError(err: ErrorValue): void {
-    this.SetCalculatedValue(err, ValueType.error);
+    this.SetCalculatedValue(err, 'error');
   }
 
   public SetArray(area: Area): void {
-    this.type = ValueType.undefined;
+    this.type = 'undefined';
     this.value =
       this.formatted =
       this.rendered_type =

@@ -20,7 +20,7 @@
  */
 
 import type { ArrayUnion, CellValue, UnionValue} from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
+import { type ValueType } from 'treb-base-types';
 
 export const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -127,7 +127,7 @@ export const FlattenBoxed = (args: UnionValue[]): UnionValue[] => {
 
   let result: UnionValue[] = [];
   for (const arg of args) {
-    if (arg?.type === ValueType.array) {
+    if (arg?.type === 'array') {
 
       // possibly recursive
       for (const row of arg.value) {
@@ -239,7 +239,7 @@ export const UndefinedToEmptyString = (args: any[]): any[] => {
 
 /** type guard. FIXME: move */
 const IsArrayUnion = (value: unknown): value is ArrayUnion => {
-  return (!!value && typeof value === 'object' && (value as { type: ValueType, value?: Array<unknown> }).type === ValueType.array);
+  return (!!value && typeof value === 'object' && (value as { type: ValueType, value?: Array<unknown> }).type === 'array');
 };
 
 /**
@@ -298,7 +298,7 @@ export const ApplyArrayX = <TFunc extends (...args: any[]) => UnionValue>(map: b
       // this is pretty, but 3 functional loops? ouch
 
       return {
-        type: ValueType.array,
+        type: 'array',
         value: shape.map((_, i) => _.map((_, j) => {
 
           // this was breaking on boolean false, because 
@@ -314,7 +314,7 @@ export const ApplyArrayX = <TFunc extends (...args: any[]) => UnionValue>(map: b
           // if it were incorrectly returning undefined. the issue is we were
           // returning a boxed undefined, which evaluates to true.
 
-          const apply = args.map((arg, index) => arrays[index] ? (arrays[index][i][j] ?? { type: ValueType.undefined }) : arg);
+          const apply = args.map((arg, index) => arrays[index] ? (arrays[index][i][j] ?? { type: 'undefined' }) : arg);
 
           return base(...apply as Parameters<TFunc>);
 
@@ -386,6 +386,6 @@ export const ParseWildcards = (text: string): string => {
 
 };
 
-export const StringUnion = (value: string): UnionValue => ({ type: ValueType.string, value });
-export const NumberUnion = (value: number): UnionValue => ({ type: ValueType.number, value });
+export const StringUnion = (value: string): UnionValue => ({ type: 'string', value });
+export const NumberUnion = (value: number): UnionValue => ({ type: 'number', value });
 

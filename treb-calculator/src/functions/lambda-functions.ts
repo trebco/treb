@@ -21,7 +21,6 @@
 
 import type { FunctionMap } from '../descriptors';
 import type { UnionValue} from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 
 export const LambdaFunctionLibrary: FunctionMap = {
@@ -42,7 +41,7 @@ export const LambdaFunctionLibrary: FunctionMap = {
 
     fn: (...args: ExpressionUnit[]) => {
       return {
-        type: ValueType.function, 
+        type: 'function', 
 
         // FIXME: lock down this type
 
@@ -107,7 +106,7 @@ export const LambdaFunctionLibrary: FunctionMap = {
     },
 
     fn: (arg?: UnionValue) => {
-      return arg ? arg : { type: ValueType.undefined };
+      return arg ? arg : { type: 'undefined' };
     },
 
   },

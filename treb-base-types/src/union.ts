@@ -21,7 +21,7 @@
 
 import type { Complex, DimensionedQuantity } from './value-type';
 import type { ErrorValue } from './error-value';
-import { ValueType, GetValueType } from './value-type';
+import { type ValueType, GetValueType } from './value-type';
 
 export type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
 
@@ -34,48 +34,52 @@ export const Is2DArray = <T>(obj: undefined|T|T[]|T[][]): obj is T[][] => {
   return !!obj && Array.isArray(obj) && Array.isArray(obj[0]);
 }
 
-export interface NumberUnion {
-  type: ValueType.number;
-  value: number;
+export interface TypedUnion {
+  type: ValueType;
 }
 
-export interface StringUnion {
-  type: ValueType.string;
+export interface NumberUnion extends TypedUnion {
+  type: 'number';
+  value: number;
+} 
+
+export interface StringUnion extends TypedUnion  {
+  type: 'string';
   value: string;
 }
 
-export interface ErrorUnion {
-  type: ValueType.error;
+export interface ErrorUnion extends TypedUnion  {
+  type: 'error';
   value: ErrorValue;
 }
 
-export interface FormulaUnion {
-  type: ValueType.formula;
+export interface FormulaUnion extends TypedUnion  {
+  type: 'formula';
   value: string;
 }
 
-export interface BooleanUnion {
-  type: ValueType.boolean;
+export interface BooleanUnion extends TypedUnion  {
+  type: 'boolean';
   value: boolean;
 }
 
-export interface ComplexUnion {
-  type: ValueType.complex;
+export interface ComplexUnion extends TypedUnion  {
+  type: 'complex';
   value: Complex;
 }
 
-export interface DimensionedQuantityUnion {
-  type: ValueType.dimensioned_quantity;
+export interface DimensionedQuantityUnion extends TypedUnion  {
+  type: 'dimensioned_quantity';
   value: DimensionedQuantity;
 }
 
-export interface UndefinedUnion {
-  type: ValueType.undefined;
+export interface UndefinedUnion extends TypedUnion  {
+  type: 'undefined';
   value?: undefined;
 }
 
-export interface ExtendedUnion {
-  type: ValueType.object;
+export interface ExtendedUnion extends TypedUnion  {
+  type: 'object';
 
   // this needs to come out but it's costly; we apparently relied
   // pretty heavily on this any leaking in and allowing lots of 
@@ -88,13 +92,13 @@ export interface ExtendedUnion {
   source?: string; 
 }
 
-export interface FunctionUnion {
-  type: ValueType.function,
+export interface FunctionUnion extends TypedUnion  {
+  type: 'function',
   value: unknown;
 }
 
-export interface ArrayUnion {
-  type: ValueType.array;
+export interface ArrayUnion extends TypedUnion  {
+  type: 'array';
   value: UnionValue[][]; // 2d
 }
 
@@ -144,11 +148,11 @@ export const Box = (value: unknown, type?: ValueType): UnionValue => {
 export const ComplexOrReal = (value: Complex): ComplexUnion|NumberUnion => {
   if (value.imaginary) {
     return {
-      type: ValueType.complex,
+      type: 'complex',
       value,
     };
   }
-  return { type: ValueType.number, value: value.real };
+  return { type: 'number', value: value.real };
 }
 
 

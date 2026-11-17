@@ -22,7 +22,7 @@
 import type { FunctionMap, IntrinsicValue } from '../descriptors';
 import { NumberFormatCache, ValueParser } from 'treb-format';
 import type { CellValue, UnionValue} from 'treb-base-types';
-import { Localization, ValueType } from 'treb-base-types';
+import { Localization } from 'treb-base-types';
 import * as Utils from '../utilities';
 import { ArgumentError, ValueError } from '../function-error';
 
@@ -34,7 +34,7 @@ export const TextFunctionLibrary: FunctionMap = {
       name: 'number',
     }],
     fn: (num: number): UnionValue => {
-      return { type: ValueType.string, value: String.fromCodePoint(num||32) };
+      return { type: 'string', value: String.fromCodePoint(num||32) };
     },
     category: ['text'],
   },
@@ -44,7 +44,7 @@ export const TextFunctionLibrary: FunctionMap = {
       name: 'string',
     }],
     fn: (str: string): UnionValue => {
-      return { type: ValueType.number, value: str.codePointAt(0) || 0 }; // FIXME: default?
+      return { type: 'number', value: str.codePointAt(0) || 0 }; // FIXME: default?
     },
     category: ['text'],
   },
@@ -55,8 +55,8 @@ export const TextFunctionLibrary: FunctionMap = {
     ],
     fn: (text: string): UnionValue => {
       const value = ValueParser.TryParse(text);
-      if (value.type === ValueType.number) {
-        return { type: ValueType.number, value: value.value as number };
+      if (value.type === 'number') {
+        return { type: 'number', value: value.value as number };
       }
       return ArgumentError();
 
@@ -70,7 +70,7 @@ export const TextFunctionLibrary: FunctionMap = {
       { name: 'number format' },
     ],
     fn: (value: number, format = '0.00####'): UnionValue => {
-      return { type: ValueType.string, value: NumberFormatCache.Get(format).Format(value || 0) };
+      return { type: 'string', value: NumberFormatCache.Get(format).Format(value || 0) };
     },
     category: ['text'],
   },
@@ -93,13 +93,13 @@ export const TextFunctionLibrary: FunctionMap = {
         const match = new RegExp('^' + pattern + '$', 'i').exec(a);
 
         return {
-          type: ValueType.boolean,
+          type: 'boolean',
           value: invert ? !match : !!match,
         };
       }
 
       return {
-        type: ValueType.boolean,
+        type: 'boolean',
         value: (a === b || a?.toString() === b?.toString()),
       }
     },
@@ -114,7 +114,7 @@ export const TextFunctionLibrary: FunctionMap = {
     category: ['text'],
     fn: (a: UnionValue, b: UnionValue): UnionValue => {
       return {
-        type: ValueType.boolean,
+        type: 'boolean',
         value: (a?.value?.toString()) === (b?.value?.toString()),
       };
     },
@@ -126,7 +126,7 @@ export const TextFunctionLibrary: FunctionMap = {
     ],
     fn: (str: string): UnionValue => {
       return {
-        type: ValueType.number,
+        type: 'number',
         value: str.toString().length,
       }
     },
@@ -147,7 +147,7 @@ export const TextFunctionLibrary: FunctionMap = {
       
         let counter = 1;
         return {
-          type: ValueType.string,
+          type: 'string',
           value: text.replaceAll(search, (...args) => {
             // console.info(args);
             return (counter++) === index ? replacement : search;
@@ -157,7 +157,7 @@ export const TextFunctionLibrary: FunctionMap = {
       }
       else {
         return {
-          type: ValueType.string,
+          type: 'string',
           value: text.replaceAll(search, replacement),
         };
       }
@@ -171,7 +171,7 @@ export const TextFunctionLibrary: FunctionMap = {
       { name: 'count' },
     ],
     fn: (str: string, count = 1): UnionValue => {
-      return { type: ValueType.string, value: str.substr(0, count) };
+      return { type: 'string', value: str.substr(0, count) };
     },
     category: ['text'],
   },
@@ -182,7 +182,7 @@ export const TextFunctionLibrary: FunctionMap = {
       { name: 'count' },
     ],
     fn: (str: string, count = 1): UnionValue => {
-      return { type: ValueType.string, value: str.slice(-count) };
+      return { type: 'string', value: str.slice(-count) };
     },
     category: ['text'],
   },
@@ -194,7 +194,7 @@ export const TextFunctionLibrary: FunctionMap = {
       { name: 'count' },
     ],
     fn: (str: string, left = 0, count = 1): UnionValue => {
-      return { type: ValueType.string, value: str.substr(Math.max(0, left - 1), count) };
+      return { type: 'string', value: str.substr(Math.max(0, left - 1), count) };
     },
     category: ['text'],
   },
@@ -253,7 +253,7 @@ export const TextFunctionLibrary: FunctionMap = {
       if (start >= 1) {
         if (!needle) {
           return {
-            type: ValueType.number, value: start,
+            type: 'number', value: start,
           }
         }
 
@@ -267,7 +267,7 @@ export const TextFunctionLibrary: FunctionMap = {
 
         if (match) {
           return {
-            type: ValueType.number, value: match.index + start,
+            type: 'number', value: match.index + start,
           }
         }
 
@@ -288,7 +288,7 @@ export const TextFunctionLibrary: FunctionMap = {
       if (start >= 1) {
         if (!needle) {
           return {
-            type: ValueType.number, value: start,
+            type: 'number', value: start,
           }
         }
 
@@ -297,7 +297,7 @@ export const TextFunctionLibrary: FunctionMap = {
         const match = new RegExp(needle).exec(haystack.substr(start - 1));
         if (match) {
           return {
-            type: ValueType.number, value: match.index + start,
+            type: 'number', value: match.index + start,
           }
         }
       }
@@ -310,10 +310,10 @@ export const TextFunctionLibrary: FunctionMap = {
     arguments: [{ name: 'text', unroll: true }],
     fn: (text?: string) => {
       if (text === null || text === undefined) {
-        return { type: ValueType.undefined };
+        return { type: 'undefined' };
       }
       return {
-        type: ValueType.string, value: text.toString().toUpperCase(),
+        type: 'string', value: text.toString().toUpperCase(),
       };
     },
   },
@@ -322,10 +322,10 @@ export const TextFunctionLibrary: FunctionMap = {
     arguments: [{ name: 'text', unroll: true }],
     fn: (text?: string) => {
       if (text === null || text === undefined) {
-        return { type: ValueType.undefined };
+        return { type: 'undefined' };
       }
       return {
-        type: ValueType.string, value: text.toString().toLowerCase(),
+        type: 'string', value: text.toString().toLowerCase(),
       };
     },
   },
@@ -355,7 +355,7 @@ export const TextFunctionLibrary: FunctionMap = {
 
     }).join('');
 
-    return { type: ValueType.string, value };
+    return { type: 'string', value };
 
   },
 },

@@ -1,5 +1,4 @@
 import { Box, type UnionValue } from 'treb-base-types';
-import { ValueType } from 'treb-base-types';
 import type { FunctionMap } from 'treb-calculator';
 import { ValueError } from 'treb-calculator';
 
@@ -85,15 +84,15 @@ export default {
       }
 
       const values: number[] = [];
-      if (coefficients.type === ValueType.array) {
+      if (coefficients.type === 'array') {
         for (const row of coefficients.value) {
           for (const cell of row) {
-            if (cell.type === ValueType.number) {
+            if (cell.type === 'number') {
               values.push(cell.value);
             }
           }
         }
-      } else if (coefficients.type === ValueType.number) {
+      } else if (coefficients.type === 'number') {
         values.push(coefficients.value);
       }
 

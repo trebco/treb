@@ -19,7 +19,7 @@
  * 
  */
 
-import { Area, ValueType, type IArea } from 'treb-base-types';
+import { Area, type IArea } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { type ConstantStep, DetectConstantStep } from './timeline';
 
@@ -164,14 +164,14 @@ export function HasHeaders(area: Area, sheet: Sheet) {
 
     for (let column = area.start.column; column <= area.end.column; column++) {
       let cell = sheet.CellData({row: area.start.row, column});
-      let header_found = (cell.calculated && cell.calculated_type === ValueType.string) || cell.type === ValueType.string;
-      let blank_found = !header_found && !cell.calculated && cell.type === ValueType.undefined;
+      let header_found = (cell.calculated && cell.calculated_type === 'string') || cell.type === 'string';
+      let blank_found = !header_found && !cell.calculated && cell.type === 'undefined';
 
       if (header_found || blank_found) {
         let table = 0;
         for (let row = area.start.row + 1; row <= area.end.row; row++) {
           cell = sheet.CellData({row, column});
-          if (cell.calculated_type !== ValueType.string && cell.type !== ValueType.string){ 
+          if (cell.calculated_type !== 'string' && cell.type !== 'string'){ 
             table++;
           }
         }
@@ -189,11 +189,11 @@ export function HasHeaders(area: Area, sheet: Sheet) {
     let headers_found = 0;
     for (let row = area.start.row; row <= area.end.row; row++) {
       let cell = sheet.CellData({row, column: area.start.column});
-      if ((cell.calculated && cell.calculated_type === ValueType.string) || cell.type === ValueType.string) {
+      if ((cell.calculated && cell.calculated_type === 'string') || cell.type === 'string') {
         let table = 0;
         for (let column = area.start.column + 1; column <= area.end.column; column++) {
           cell = sheet.CellData({row, column});
-          if (cell.calculated_type !== ValueType.string && cell.type !== ValueType.string){ 
+          if (cell.calculated_type !== 'string' && cell.type !== 'string'){ 
             table++;
           }
         }
@@ -218,7 +218,7 @@ export function HasHeaders(area: Area, sheet: Sheet) {
       implied_headers = true;
       for (let row = area.start.row + 1; row <= area.end.row; row++) {
         cell = sheet.CellData({column: area.start.column, row});
-        if (cell.calculated_type === ValueType.number || (cell.calculated === undefined && cell.type === ValueType.number)) {
+        if (cell.calculated_type === 'number' || (cell.calculated === undefined && cell.type === 'number')) {
 
         }
         else {
@@ -264,10 +264,10 @@ export function AllNumeric(area: Area, sheet: Sheet): number[]|undefined {
 
   for (const cell of area) {
     const data = sheet.CellData(cell);
-    if (data.calculated_type === ValueType.number) {
+    if (data.calculated_type === 'number') {
       numbers.push(data.calculated as number);
     }
-    else if (data.type === ValueType.number) {
+    else if (data.type === 'number') {
       numbers.push(data.value as number);
     }
     else {
