@@ -141,14 +141,9 @@ interface UndoEntry {
   selection?: string;
 }
 
-enum CalculationOptions {
-  automatic,
-  manual,
-}
+type CalculationOptions = 'automatic'|'manual';
 
-enum FileChooserOperation {
-  None, LoadFile, InsertImage, 
-}
+type FileChooserOperation = 'none'|'load-file'|'insert-image';
 
 /**
  * @internal
@@ -157,9 +152,7 @@ export interface ToolbarCtl {
   Show: (show: boolean) => void;
 }
 
-enum SemanticVersionElement {
-  major, minor, patch,
-}
+type SemanticVersionElement = 'major'|'minor'|'patch';
 
 interface SemanticVersionComparison {
   match: number;
@@ -379,7 +372,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * automatic/manual 
    * why is this protected? is there some reason we don't want people to use it?
    */
-  protected calculation = CalculationOptions.automatic;
+  protected calculation: CalculationOptions = 'automatic';
 
   /**
    * this might be something that should travel with the document,
@@ -459,7 +452,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   protected file_chooser?: HTMLInputElement;
 
   /** file chooser operation */
-  protected file_chooser_operation = FileChooserOperation.None;
+  protected file_chooser_operation: FileChooserOperation = 'none';
 
   // protected toolbar?: Toolbar;
 
@@ -869,7 +862,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           case 'composite':
             {
               const cached_selection = this.last_selection;
-              if (this.calculation === CalculationOptions.automatic) {
+              if (this.calculation === 'automatic') {
                 this.Recalculate(event);
               }
               this.DocumentChange(cached_selection);
@@ -888,7 +881,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
               // recalc is no longer async
 
-              if (this.calculation === CalculationOptions.automatic) {
+              if (this.calculation === 'automatic') {
                 this.Recalculate(event);
               }
 
@@ -975,7 +968,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
                 // recalculate is no longer async
 
-                if (this.calculation === CalculationOptions.automatic) {
+                if (this.calculation === 'automatic') {
                   this.Recalculate(event);
                 }
                 this.DocumentChange(cached_selection);
@@ -1063,7 +1056,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             case 'composite':
               {
                 const cached_selection = this.last_selection;
-                if (this.calculation === CalculationOptions.automatic) {
+                if (this.calculation === 'automatic') {
                   this.Recalculate(event);
                 }
                 this.DocumentChange(cached_selection);
@@ -1082,7 +1075,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
                 // recalc is no longer async
 
-                if (this.calculation === CalculationOptions.automatic) {
+                if (this.calculation === 'automatic') {
                   this.Recalculate(event);
                 }
 
@@ -1115,7 +1108,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
                   // recalculate is no longer async
 
-                  if (this.calculation === CalculationOptions.automatic) {
+                  if (this.calculation === 'automatic') {
                     this.Recalculate(event);
                   }
                   this.DocumentChange(cached_selection);
@@ -3279,7 +3272,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * is selected) insert the image into the document.
    */
   public InsertImage(): void {
-    this.SelectFile2('.png, .jpg, .jpeg, .gif, .svg, .webp', FileChooserOperation.InsertImage);
+    this.SelectFile2('.png, .jpg, .jpeg, .gif, .svg, .webp', 'insert-image');
   }
 
   /** 
@@ -3982,7 +3975,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   public async LoadLocalFile() {
     this.SelectFile2(
       '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/json',
-      FileChooserOperation.LoadFile);
+      'load-file');
   }
 
   /**
@@ -5950,10 +5943,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
               const file = file_chooser.files[0];
               file_chooser.value = '';
               switch (this.file_chooser_operation) {
-                case FileChooserOperation.InsertImage:
+                case 'insert-image':
                   this.InsertImageInternal(file);
                   break;
-                case FileChooserOperation.LoadFile:
+                case 'load-file':
                   this.LoadFileInternal(file, 'local-file', true);
                   break;
                 default:
@@ -6984,9 +6977,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     const bv = b.split('.').map(value => Number(value) || 0).concat([0, 0, 0]);
 
     const levels: SemanticVersionElement[] = [
-      SemanticVersionElement.major, 
-      SemanticVersionElement.minor, 
-      SemanticVersionElement.patch
+      'major', 
+      'minor', 
+      'patch'
     ];
 
     const result: SemanticVersionComparison = { match: 0 };
@@ -7027,7 +7020,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     const compare = this.CompareVersions(data.version, process.env.BUILD_VERSION);
     if (compare.match > 0) {
-      if (compare.level === SemanticVersionElement.major || compare.level === SemanticVersionElement.minor) {
+      if (compare.level === 'major' || compare.level === 'minor') {
         console.warn(`The file you are opening was created with a newer version of TREB (${data.version} vs ${process.env.BUILD_VERSION}).\nYou may encounter compatibility errors.`);
       }
     }

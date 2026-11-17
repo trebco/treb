@@ -129,11 +129,7 @@ interface DoubleClickData {
   address?: ICellAddress;
 }
 
-enum EditingState {
-  NotEditing = 0,
-  CellEditor = 1,
-  FormulaBar = 2,
-}
+type EditingState = 'not-editing'|'cell-editor'|'formula-bar';
 
 
 export class Grid extends GridBase {
@@ -214,7 +210,7 @@ export class Grid extends GridBase {
   } = {};
 
   /** are we editing? */
-  private editing_state: EditingState = EditingState.NotEditing;
+  private editing_state: EditingState = 'not-editing';
 
   /** if we are editing, what is the cell? */
   private editing_cell: ICellAddress = { row: -1, column: -1, sheet_id: 0 };
@@ -3155,7 +3151,7 @@ export class Grid extends GridBase {
             this.ShowGridSelection();
           }
           this.pending_reset_selection = false;
-          this.editing_state = EditingState.NotEditing;
+          this.editing_state = 'not-editing';
           break;
 
         case 'start-editing':
@@ -3172,7 +3168,7 @@ export class Grid extends GridBase {
           // flag? that's sort of what that was originally created for,
           // although it predates multi-sheet. TODO
 
-          this.editing_state = EditingState.FormulaBar;
+          this.editing_state = 'formula-bar';
           this.editing_cell = { ...this.primary_selection.target };
           this.editing_selection = { ...this.primary_selection };
           break;
@@ -3184,7 +3180,7 @@ export class Grid extends GridBase {
           // for external clients, specifically for an "insert function"
           // dialog.
 
-          this.editing_state = EditingState.NotEditing;
+          this.editing_state = 'not-editing';
           this.ClearAdditionalSelections();
           this.ClearSelection(this.active_selection);
           this.DelayedRender();
@@ -3192,7 +3188,7 @@ export class Grid extends GridBase {
 
         case 'discard':
 
-          this.editing_state = EditingState.NotEditing;
+          this.editing_state = 'not-editing';
 
           if (this.editing_annotation) {
             this.ClearAdditionalSelections();
@@ -3231,7 +3227,7 @@ export class Grid extends GridBase {
             }
           }
 
-          this.editing_state = EditingState.NotEditing;
+          this.editing_state = 'not-editing';
 
           // we added annotations to the formula bar, so there's some
           // logic here that's not in the ICE commit handler
@@ -3336,11 +3332,11 @@ export class Grid extends GridBase {
         // handler, since the nodes are unified
 
         case 'stop-editing':
-          this.editing_state = EditingState.NotEditing;
+          this.editing_state = 'not-editing';
           break;
 
         case 'start-editing':
-          this.editing_state = EditingState.CellEditor;
+          this.editing_state = 'cell-editor';
           this.editing_cell = { ...this.primary_selection.target };
           break;
 
@@ -5101,7 +5097,7 @@ export class Grid extends GridBase {
    *  - release editor (this function)
    */
   public ReleaseOverlayEditor() {
-    this.editing_state = EditingState.NotEditing;
+    this.editing_state = 'not-editing';
     this.DismissEditor();
     this.DelayedRender();
   }
@@ -5146,7 +5142,7 @@ export class Grid extends GridBase {
           return;
 
         case 'discard':
-          this.editing_state = EditingState.NotEditing;
+          this.editing_state = 'not-editing';
           this.DismissEditor();
           this.DelayedRender();
           return;
@@ -5160,7 +5156,7 @@ export class Grid extends GridBase {
               this.ActivateSheetID(this.editing_cell.sheet_id);
             }
           }
-          this.editing_state = EditingState.NotEditing;
+          this.editing_state = 'not-editing';
 
           if (this.overlay_editor?.selection) {
             const value = this.overlay_editor?.edit_node.textContent || undefined;
@@ -5512,7 +5508,7 @@ export class Grid extends GridBase {
   protected RenderSelections(rerender = true) {
 
     const show_primary_selection = this.hide_selection ? false :
-      (!this.editing_state) || (this.editing_cell.sheet_id === this.active_sheet.id);
+      (this.editing_state === 'not-editing') || (this.editing_cell.sheet_id === this.active_sheet.id);
 
     const data = this.primary_selection.empty ? undefined :
       this.active_sheet.CellData(this.primary_selection.target);
@@ -6171,7 +6167,7 @@ export class Grid extends GridBase {
       this.DelayedRender(undefined, this.overlay_editor.selection.area);
     }
 
-    this.editing_state = EditingState.NotEditing;
+    this.editing_state = 'not-editing';
 
     this.Focus(); // not necessary [NECESSARY FOR MOBILE]
 
