@@ -33,7 +33,7 @@ import type { TwoCellAnchor, CellAnchor } from './drawing/drawing';
 import { SharedStrings } from './shared-strings';
 import { StyleCache } from './workbook-style';
 import { Theme } from './workbook-theme';
-import { Sheet, VisibleState } from './workbook-sheet';
+import { Sheet } from './workbook-sheet';
 import type { RelationshipMap } from './relationship';
 import { ZipWrapper } from './zip-wrapper';
 import type { CellStyle, ThemeColor } from 'treb-base-types';
@@ -61,22 +61,7 @@ export const ConditionalFormatOperators: Record<string, string> = {
   notEqual: '<>',
 };
 
-//
-// enums? really? in 2025? FIXME
-//
-export enum ChartType {
-  Null = 0, 
-  Column, 
-  Bar, 
-  Line, 
-  Scatter, 
-  Donut, 
-  Pie, 
-  Bubble, 
-  Box, 
-  Histogram, 
-  Unknown
-}
+export type ChartType = 'null'|'column'|'bar'|'line'|'scatter'|'donut'|'pie'|'bubble'|'box'|'histogram'|'unknown';
 
 export interface ChartSeries {
   values?: string;
@@ -301,11 +286,11 @@ export class Workbook {
 
             switch (state) {
               case 'hidden': 
-                worksheet.visible_state = VisibleState.hidden;
+                worksheet.visible_state = 'hidden';
                 break;
 
               case 'veryHidden':
-                worksheet.visible_state = VisibleState.hidden;
+                worksheet.visible_state = 'hidden';
                 break;
             }
             
@@ -572,7 +557,7 @@ export class Workbook {
     const xml = xmlparser2.parse(data);
 
     const result: ChartDescription = {
-      type: ChartType.Null
+      type: 'null'
     };
 
     // console.info("RC", xml);
@@ -655,7 +640,7 @@ export class Workbook {
           }
         }
 
-        if (type === ChartType.Scatter || type === ChartType.Bubble) {
+        if (type === 'scatter' || type === 'bubble') {
           const x = XMLUtils.FindChild(series_node, 'c:xVal/c:numRef/c:f');
           if (x) {
             series_data.categories = x; // .text?.toString();
@@ -665,7 +650,7 @@ export class Workbook {
             series_data.values = y; // .text?.toString();
           }
 
-          if (type === ChartType.Bubble) {
+          if (type === 'bubble') {
             const z = XMLUtils.FindChild(series_node, 'c:bubbleSize/c:numRef/c:f');
             if (z) {
               series_data.bubble_size = z; // .text?.toString();
@@ -699,11 +684,11 @@ export class Workbook {
     let node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:barChart');
     if (node) {
 
-      result.type = ChartType.Bar;
+      result.type = 'bar';
       // console.info("BD", node);
       if (node['c:barDir']) {
         if (node['c:barDir'].a$?.val === 'col') {
-          result.type = ChartType.Column;
+          result.type = 'column';
 
           if (node['c:grouping']?.a$?.val === 'stacked') {
             if (!result.flags) {
@@ -721,7 +706,7 @@ export class Workbook {
     if (!node) {
       node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:lineChart');
       if (node) {
-        result.type = ChartType.Line;
+        result.type = 'line';
         result.series = ParseSeries(node);
       }
     }
@@ -729,7 +714,7 @@ export class Workbook {
     if (!node) {
       node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:doughnutChart');
       if (node) {
-        result.type = ChartType.Donut;
+        result.type = 'donut';
         result.series = ParseSeries(node);
       }
     }
@@ -737,7 +722,7 @@ export class Workbook {
     if (!node) {
       node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:pieChart');
       if (node) {
-        result.type = ChartType.Pie;
+        result.type = 'pie';
         result.series = ParseSeries(node);
       }
     }
@@ -745,16 +730,16 @@ export class Workbook {
     if (!node) {
       node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:scatterChart');
       if (node) {
-        result.type = ChartType.Scatter;
-        result.series = ParseSeries(node, ChartType.Scatter);
+        result.type = 'scatter';
+        result.series = ParseSeries(node, 'scatter');
       }
     }
 
     if (!node) {
       node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:bubbleChart');
       if (node) {
-        result.type = ChartType.Bubble;
-        result.series = ParseSeries(node, ChartType.Bubble);
+        result.type = 'bubble';
+        result.series = ParseSeries(node, 'bubble');
         // console.info("Bubble series?", result.series);
       }
     }
@@ -798,7 +783,7 @@ export class Workbook {
         // ok that's what we know so far...
 
         if (histogram) {
-          result.type = ChartType.Histogram;
+          result.type = 'histogram';
           result.series = [];
 
           for (const series_entry of ex_series) {
@@ -850,7 +835,7 @@ export class Workbook {
 
         if (box_whisker) {
 
-          result.type = ChartType.Box;
+          result.type = 'box';
           result.series = [];
           const data = XMLUtils.FindAll(xml, 'cx:chartSpace/cx:chartData/cx:data'); // /cx:data/cx:numDim/cx:f');
 
@@ -901,7 +886,7 @@ export class Workbook {
 
     if (!node) {
       console.info("Chart type not handled", {xml});
-      result.type = ChartType.Unknown;
+      result.type = 'unknown';
     }
 
     // console.info("RX?", result);

@@ -22,27 +22,27 @@
 import type { Annotation, GridSelection, Sheet } from 'treb-data-model';
 import type { Area } from 'treb-base-types';
 
-export enum ErrorCode {
+export type ErrorCode =
 
-  /** no error: zero so it's falsy */
-  none = 0,
+  /** no error */
+  'none' |
 
   /** placeholder for new errors */
-  unknown,
+  'unknown' |
 
   /** you can't change part of an array */
-  array,
+  'array' |
 
   /** invalid value (data validation) */
-  data_validation,
+  'data-validation' |
 
   /** invalid area for insert table: there's a merge, array or existing table within the range */
-  invalid_area_for_table,
+  'invalid-area-for-table' |
 
   /** invalid area for paste, same as invalid area for table */
-  invalid_area_for_paste,
+  'invalid-area-for-paste'
 
-}
+  ;
 
 export interface SheetChangeEvent {
   type: 'sheet-change';

@@ -64,11 +64,7 @@ export interface RangeOptions {
   array?: string;
 }
 
-export enum VisibleState {
-  visible,
-  hidden,
-  very_hidden,
-}
+export type VisibleState = 'visible'|'hidden'|'very-hidden';
 
 export class Sheet {
 

@@ -24,7 +24,7 @@ import { Rectangle } from 'treb-base-types';
 import type { BaseLayout } from '../layout/base_layout';
 import type { SelectionOffset } from './svg_selection_block';
 import { SVGSelectionBlock } from './svg_selection_block';
-import { HeaderOverlay, Orientation } from './svg_header_overlay';
+import { HeaderOverlay } from './svg_header_overlay';
 import type { GridSelection, DataModel, ViewModel } from 'treb-data-model';
 
 // const SVGNS = 'http://www.w3.org/2000/svg';
@@ -62,13 +62,13 @@ export class SelectionRenderer {
     // create header overlays
 
     this.row_overlay =
-      new HeaderOverlay(this.theme, this.layout.row_header_selection, Orientation.Horizontal);
+      new HeaderOverlay(this.theme, this.layout.row_header_selection, 'horizontal');
     this.column_overlay =
-      new HeaderOverlay(this.theme, this.layout.column_header_selection, Orientation.Vertical);
+      new HeaderOverlay(this.theme, this.layout.column_header_selection, 'vertical');
     this.corner_row_overlay =
-      new HeaderOverlay(this.theme, this.layout.corner_selection, Orientation.Horizontal);
+      new HeaderOverlay(this.theme, this.layout.corner_selection, 'horizontal');
     this.corner_column_overlay =
-      new HeaderOverlay(this.theme, this.layout.corner_selection, Orientation.Vertical);
+      new HeaderOverlay(this.theme, this.layout.corner_selection, 'vertical');
   }
 
   /**

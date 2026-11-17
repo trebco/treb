@@ -63,7 +63,7 @@ import type {
 
 
 import {
-  Grid, type BorderConstants, ErrorCode, UA,
+  Grid, type BorderConstants, type ErrorCode, UA,
 } from 'treb-grid';
 
 import { 
@@ -1586,30 +1586,30 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     };
 
     switch (code) {
-      case ErrorCode.none:
+      case 'none':
         return {
           message: `No error`, // why?
         }
 
-      case ErrorCode.array:
+      case 'array':
         return {
           // message: `You can't change part of an array`,
           message: messages.array,
         }
 
-      case ErrorCode.invalid_area_for_paste:
+      case 'invalid-area-for-paste':
         return {
           // message: 'Invalid area for paste',
           message: messages.invalid_area_for_paste,
         }
 
-      case ErrorCode.invalid_area_for_table:
+      case 'invalid-area-for-table':
         return {
           // message: `Invalid area for table`,
           message: messages.invalid_area_for_table,
         }
 
-      case ErrorCode.data_validation:
+      case 'data-validation':
         return {
           // message: `Invalid value (data validation)`,
           message: messages.data_validation,

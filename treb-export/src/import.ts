@@ -25,7 +25,7 @@
 import Base64JS from 'base64-js';
 
 import type { AnchoredChartDescription, AnchoredImageDescription, AnchoredTextBoxDescription} from './workbook';
-import { ChartType, ConditionalFormatOperators, Workbook } from './workbook';
+import { ConditionalFormatOperators, Workbook } from './workbook';
 import type { ExpressionUnit, ParseResult, UnitCall } from 'treb-parser';
 import { DecimalMarkType, Parser } from 'treb-parser';
 import type { RangeType, AddressType, HyperlinkType } from './address-type';
@@ -33,7 +33,6 @@ import { is_range, ShiftRange, InRange, is_address } from './address-type';
 import { type ImportedSheetData, type AnchoredAnnotation, type CellParseResult, type AnnotationLayout, type Corner as LayoutCorner, type IArea, type GradientStop, type Color, type HTMLColor, type ThemeColor, Area } from 'treb-base-types';
 import type { SerializedValueType } from 'treb-base-types';
 import type { Sheet} from './workbook-sheet';
-import { VisibleState } from './workbook-sheet';
 import type { CellAnchor } from './drawing/drawing';
 // import { type GenericDOMElement, XMLUtils } from './xml-utils';
 
@@ -1391,7 +1390,7 @@ export class Importer {
 
         switch(descriptor.chart.type) {
 
-          case ChartType.Bubble:
+          case 'bubble':
             type = 'treb-chart';
             func = 'Bubble.Chart';
 
@@ -1411,7 +1410,7 @@ export class Importer {
 
             break;
 
-          case ChartType.Histogram:
+          case 'histogram':
             type = 'treb-chart';
             func = 'Histogram.Plot';
             if (series?.length) {
@@ -1420,7 +1419,7 @@ export class Importer {
             args[1] = descriptor.chart.title;
             break;
 
-          case ChartType.Box:
+          case 'box':
             type = 'treb-chart';
             func = 'Box.Plot';
             if (series?.length) {
@@ -1430,7 +1429,7 @@ export class Importer {
             args[1] = descriptor.chart.title;
             break;
 
-          case ChartType.Scatter:
+          case 'scatter':
             type = 'treb-chart';
             func = 'Scatter.Line';
             if (series && series.length) {
@@ -1439,10 +1438,10 @@ export class Importer {
             args[1] = descriptor.chart.title;
             break;
 
-          case ChartType.Donut:
-          case ChartType.Pie:
+          case 'donut':
+          case 'pie':
 
-            func = descriptor.chart.type === ChartType.Donut ? 'Donut.Chart' : 'Pie.Chart';
+            func = descriptor.chart.type === 'donut' ? 'Donut.Chart' : 'Pie.Chart';
             type = 'treb-chart';
             if (series && series[0]) {
               args[0] = series[0].values;
@@ -1451,17 +1450,17 @@ export class Importer {
             args[2] = descriptor.chart.title;
             break;
 
-          case ChartType.Bar:
-          case ChartType.Column:
-          case ChartType.Line:
+          case 'bar':
+          case 'column':
+          case 'line':
 
             args[2] = descriptor.chart.title;
             type = 'treb-chart';
             switch (descriptor.chart.type) {
-              case ChartType.Bar:
+              case 'bar':
                 func = 'Bar.Chart';
                 break;
-              case ChartType.Column:
+              case 'column':
                 func = 'Column.Chart';
                 break;
               default:
@@ -1483,7 +1482,7 @@ export class Importer {
               args[1] = series[0]?.categories || '';
             }
 
-            if (descriptor.chart.type === ChartType.Column && descriptor.chart.flags?.includes('stacked')) {
+            if (descriptor.chart.type === 'column' && descriptor.chart.flags?.includes('stacked')) {
               args[3] = '"stacked"';
             }
 
@@ -1605,7 +1604,7 @@ export class Importer {
       result.outline = outline;
     }
 
-    if (sheet.visible_state === VisibleState.hidden || sheet.visible_state === VisibleState.very_hidden) {
+    if (sheet.visible_state === 'hidden' || sheet.visible_state === 'very-hidden') {
       result.hidden = true;
     }
 

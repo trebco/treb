@@ -82,7 +82,6 @@ import { OverlayEditor } from '../editors/overlay_editor';
 
 import { TileRenderer } from '../render/tile_renderer';
 import type { GridEvent, GridSelectionEvent } from './grid_events';
-import { ErrorCode } from './grid_events';
 
 import type { 
   SerializedNamed,
@@ -5706,7 +5705,7 @@ export class Grid extends GridBase {
 
     if (cell.area) {
       if ((!array && cell.area.count > 1) || !selection.area || !selection.area.Equals(cell.area)) {
-        this.Error(ErrorCode.array);
+        this.Error('array');
         return;
       }
     }
@@ -5714,7 +5713,7 @@ export class Grid extends GridBase {
 
       for (const cell of this.active_sheet.cells.Iterate(selection.area, false)) {
         if (cell?.area) {
-          this.Error(ErrorCode.array);
+          this.Error('array');
           return;
         }
       }
@@ -5727,7 +5726,7 @@ export class Grid extends GridBase {
         }
       }, false);
       if (existing_array) {
-        this.Error(ErrorCode.array);
+        this.Error('array');
         return;
       }
       */
@@ -5764,7 +5763,7 @@ export class Grid extends GridBase {
         if (!match) {
           // removed in favor of error //this.layout.HighlightError(selection.target);
           // this.Error(`Invalid value (data validation)`);
-          this.Error(ErrorCode.data_validation);
+          this.Error('data-validation');
           return; 
         }
       }
@@ -7709,7 +7708,7 @@ export class Grid extends GridBase {
         }
 
         if (!this.ValidatePasteAreas(paste_areas)) {
-          this.Error(ErrorCode.invalid_area_for_paste);
+          this.Error('invalid-area-for-paste');
           return;
         }
 
@@ -7863,7 +7862,7 @@ export class Grid extends GridBase {
       }
 
       if (!this.ValidatePasteAreas(paste_areas)) {
-        this.Error(ErrorCode.invalid_area_for_paste);
+        this.Error('invalid-area-for-paste');
         return;
       }
       

@@ -21,10 +21,7 @@
 
 import { DOMContext, type Theme } from 'treb-base-types';
 
-export enum Orientation {
-  Horizontal,
-  Vertical,
-}
+export type Orientation = 'horizontal'|'vertical';
 
 export class HeaderOverlay {
 
@@ -69,7 +66,7 @@ export class HeaderOverlay {
     this.overlay.setAttribute('width', width.toString());
     this.overlay.setAttribute('height', height.toString());
 
-    if (this.orientation === Orientation.Horizontal) {
+    if (this.orientation === 'horizontal') {
       this.highlight.setAttribute('x', x.toString());
       this.highlight.setAttribute('y', (y + height - 2).toString());
       this.highlight.setAttribute('width', width.toString());

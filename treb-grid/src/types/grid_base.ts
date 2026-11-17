@@ -52,7 +52,7 @@ import { AutocompleteMatcher } from '../editors/autocomplete_matcher';
 import { NumberFormat, ValueParser } from 'treb-format';
 
 import type { DataEvent, GridEvent, StyleEvent } from './grid_events';
-import { ErrorCode } from './grid_events';
+import type { ErrorCode } from './grid_events';
 import type { CommandRecord, CreateAnnotationCommand, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, RemoveAnnotationCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowGridLinesCommand, ShowSheetCommand, SortTableCommand } from './grid_command';
 import { DefaultGridOptions, type GridOptions } from './grid_options';
 
@@ -233,7 +233,7 @@ export class GridBase {
         const cell = sheet.cells.GetCell({row, column}, false);
         if (cell && (cell.area || cell.merge_area || cell.table)) {
           // throw new Error('invalid area for table');
-          this.Error(ErrorCode.invalid_area_for_table);
+          this.Error('invalid-area-for-table');
           return;
         }
       }
@@ -1700,7 +1700,7 @@ export class GridBase {
 
       const cell = sheet.CellData(command.area);
       if (cell.area && (cell.area.rows > 1 || cell.area.columns > 1)) {
-        this.Error(ErrorCode.array);
+        this.Error('array');
         return;
       }
 
@@ -2674,7 +2674,7 @@ export class GridBase {
 
     for (const cell of sheet.cells.Iterate(area)) {
       if (cell.area && !area.ContainsArea(cell.area)) {
-        this.Error(ErrorCode.array);
+        this.Error('array');
         return;
       }
     }
@@ -2710,7 +2710,7 @@ export class GridBase {
     
     /*
     if (error) {
-      this.Error(ErrorCode.array); // `You can't change part of an array.`
+      this.Error('array'); // `You can't change part of an array.`
     }
     else {
       sheet.ClearArea(area);
@@ -3036,7 +3036,7 @@ export class GridBase {
     
     if (!target_sheet.InsertRows(command.before_row, command.count)){
       // this.Error(`You can't change part of an array.`);
-      this.Error(ErrorCode.array);
+      this.Error('array');
       return { error: true };
     }
 
@@ -3384,7 +3384,7 @@ export class GridBase {
 
     if (!target_sheet.InsertColumns(command.before_column, command.count)) {
       // this.Error(`You can't change part of an array.`);
-      this.Error(ErrorCode.array);
+      this.Error('array');
       return { error: true };
     }
     
