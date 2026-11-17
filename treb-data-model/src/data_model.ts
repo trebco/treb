@@ -22,7 +22,7 @@
 import { Sheet } from './sheet';
 import { SheetCollection } from './sheet_collection';
 import { type UnitAddress, type UnitStructuredReference, type UnitRange, Parser, QuotedSheetNameRegex, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
-import type { IArea, ICellAddress, Table, CellStyle, CellValue } from 'treb-base-types';
+import type { IArea, ICellAddress, Table, CellStyle, CellValue, ValueType } from 'treb-base-types';
 import { Errors, Is2DArray, Localization } from 'treb-base-types';
 import { Area, IsCellAddress, Style } from 'treb-base-types';
 import type { SerializedNamed } from './named';
@@ -82,6 +82,11 @@ export class DataModel {
   public constructor() {
     this.UpdateErrorLabels();
   }
+
+  /**
+   * support for a "render error" function
+   */
+  protected error_map: Record<number, string> = {};
 
   /** 
    * we're wrapping up the get name method so we can check for a sheet
@@ -812,7 +817,11 @@ export class DataModel {
       error_map[Errors[key as keyof typeof Errors]] = value;
     }
     Sheet.error_labels = error_map;
+    this.error_map = error_map;
+  }
 
+  public RenderError(value: number) {
+    return this.error_map[value] || '';
   }
 
   /** 
