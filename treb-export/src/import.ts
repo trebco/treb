@@ -21,7 +21,6 @@
 
 // import JSZip from 'jszip';
 
-// import UZip from 'uzip';
 import { BytesToBase64 } from './base64';
 
 import type { AnchoredChartDescription, AnchoredImageDescription, AnchoredTextBoxDescription} from './workbook';

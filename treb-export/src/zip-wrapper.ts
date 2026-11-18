@@ -20,16 +20,16 @@
  */
 
 
-import UZip from 'uzip';
+import { unzipSync, zipSync, type Unzipped } from 'fflate';
 import { Base64ToBytes } from './base64';
 
 export class ZipWrapper {
 
-  public records: UZip.UZIPFiles;
+  public records: Unzipped;
   public text: Map<string, string> = new Map();
 
   public constructor(buffer: ArrayBuffer) {
-    this.records = UZip.parse(buffer);
+    this.records = unzipSync(new Uint8Array(buffer));
   }
 
   /**
@@ -44,19 +44,17 @@ export class ZipWrapper {
    */
   public ArrayBuffer() {
     
-    const records: Record<string, Uint8Array> = {};
-    if (this.records) {
-      for (const [key, value] of Object.entries(this.records)) {
-        records[key] = new Uint8Array(value);
-      }
-    }
+    // zipSync doesn't modify its input, so we can share the binary records
+    const records: Unzipped = { ...this.records };
 
     const encoder = new TextEncoder();
     for (const [key, value] of this.text.entries()) {
       records[key] = encoder.encode(value);
     }
 
-    return UZip.encode(records);
+    // fflate allocates the output with new Uint8Array(size), so this is
+    // a plain ArrayBuffer of exactly the right length
+    return zipSync(records).buffer as ArrayBuffer;
 
   }
 
