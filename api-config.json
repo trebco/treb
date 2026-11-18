@@ -9,7 +9,6 @@
   "index": "treb-embed/src/index.d.ts",
 
   "include": [
-    "treb-embed/src/custom-element/global.d.ts"
   ],
 
   "drop_types": [
@@ -22,6 +21,10 @@
   "exclude_tags": [
     "internal"
   ],
+
+  "remap": {
+    "#": ""
+  },
 
   "flatten_enums": true
 
