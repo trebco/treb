@@ -102,7 +102,6 @@ const build_options = {
     // RewriteIgnoredImports(),
     NotifyPlugin(),
     HTMLPlugin(options),
-    // SassPlugin(options),
     CSSTextPlugin(options),
     CopyFilesPlugin({
       outdir: options.outdir,

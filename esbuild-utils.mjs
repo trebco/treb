@@ -7,8 +7,6 @@ import * as esbuild from 'esbuild';
 import { promises as fs } from 'fs';
 import { minify } from 'html-minifier-terser';
 import path from 'path';
-import cssnano from 'cssnano';
-import postcss, { Result } from 'postcss';
 
 /** @type {import('html-minifier').Options} */
 const html_minifier_options = {
@@ -317,63 +315,6 @@ export const CSSTextPlugin = (options) => ({
 
   },
 });
-
-/** 
- * @function
- * @param {{verbose?: boolean, minify?: boolean, renderedCss?: boolean}} [options]
- * @returns {esbuild.Plugin}
- * 
- * plugin compiles sass and returns generated css as string, optionally minified 
- * /
-export const SassPlugin = (options) => ({
-  name: 'sass',
-  setup(build) {
-    build.onLoad({ filter: /\.scss$/ }, async (args) => {
-
-      if (options?.verbose) {
-        console.info('sass:', args.path);
-      }
-
-      try {
-
-        const result = await sass.compile(args.path, {
-          loadPaths: ['.'],
-          // charset: false,
-          // style: 'compressed',
-        });
-        const files = (result.loadedUrls || []).map(url => url.pathname);
-        
-        let contents = result.css;
-        if (options?.minify) {
-          const minified = await postcss([cssnano]).process(result.css, { from: undefined });
-          contents = minified.css;
-        }
-
-        return {
-          contents,
-          loader: options?.renderedCss ? 'css' : 'text',
-          watchFiles: files,
-        };
-
-      }
-      catch (err) {
-        const watchFiles = [];
-        if (err.span?.file?.url?.path) {
-          watchFiles.push(path.resolve(err.span.file.url.path));
-        }
-        return {
-          errors: [{ 
-            text: err.message,
-            // ...location...
-          }],
-          watchFiles,
-        }
-      }
-
-    });
-  },
-});
-*/
 
 /**
  * @returns {esbuild.Plugin}
