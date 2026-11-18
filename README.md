@@ -45,7 +45,7 @@ The TREB icon (a leaf) is a trademark of trebco, llc. Other icons are property
 of their respective owners. 
 
 [1]: https://docs.treb.app
-[2]: treb-embed/style/treb-icons.scss
+[2]: treb-embed/style/treb-icons.css
 [3]: LICENSE.txt
 [4]: mailto:info@treb.app
 [5]: https://treb.app/download

@@ -31,11 +31,6 @@
 /* FIXME: switch to new charts lib */
 @import url('../../treb-charts/style/charts.css');
 
-/* FIXME: do something else */
-/*
-@use './font-stacks.scss';
-*/
-
 /*
  * switching to a double-selector to increase specificity. the particular
  * issue we were running into was some general :where ... :is selectors that 

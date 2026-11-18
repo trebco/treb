@@ -23,7 +23,6 @@
 import { EmbeddedSpreadsheet } from '../embedded-spreadsheet';
 import type { EmbeddedSpreadsheetOptions } from '../options';
 
-// import css from 'treb-embed/style/treb-spreadsheet-element.scss';
 import css from 'treb-embed/style/treb.css';
 
 import html from 'treb-embed/markup/layout.html';

@@ -27,12 +27,6 @@ declare module '*.html' {
 }
 
 /** imported css as text */
-declare module '*.scss' {
-  const text: string;
-  export default text;
-}
-
-/** imported css as text */
 declare module '*.css' {
   const text: string;
   export default text;
