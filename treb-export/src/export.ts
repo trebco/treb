@@ -27,7 +27,7 @@
 
 // import JSZip from 'jszip';
 
-import * as Base64JS from 'base64-js';
+import { Base64ToBytes } from './base64';
 
 import { PixelsToColumnWidth } from './column-width';
 
@@ -178,8 +178,8 @@ export class Exporter {
       this.decorated_functions[key.toLowerCase()] = decorated_functions[key]; // normalized
     }
 
-    const parsed = Base64JS.toByteArray(template);
-    this.zip = new ZipWrapper(parsed.buffer as ArrayBuffer);
+    const parsed = Base64ToBytes(template);
+    this.zip = new ZipWrapper(parsed.buffer);
 
   }
 

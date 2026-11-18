@@ -22,7 +22,7 @@
 // import JSZip from 'jszip';
 
 // import UZip from 'uzip';
-import Base64JS from 'base64-js';
+import { BytesToBase64 } from './base64';
 
 import type { AnchoredChartDescription, AnchoredImageDescription, AnchoredTextBoxDescription} from './workbook';
 import { ConditionalFormatOperators, Workbook } from './workbook';
@@ -1348,7 +1348,7 @@ export class Importer {
         };
         
         const type: AnnotationType = 'image';
-        const data = Base64JS.fromByteArray(descriptor.image);
+        const data = BytesToBase64(descriptor.image);
         let imagetype: string = '';
 
         if (descriptor.filename) {

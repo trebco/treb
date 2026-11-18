@@ -21,7 +21,7 @@
 
 
 import UZip from 'uzip';
-import Base64JS from 'base64-js';
+import { Base64ToBytes } from './base64';
 
 export class ZipWrapper {
 
@@ -67,7 +67,7 @@ export class ZipWrapper {
   public SetBinary(path: string, data: string, encoding?: 'base64'|'binary') {
 
     if (encoding === 'base64') {
-      const bytes = Base64JS.toByteArray(data);
+      const bytes = Base64ToBytes(data);
       this.records[path] = bytes;
     }
     else {
