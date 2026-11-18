@@ -55,7 +55,6 @@ import type {
     SerializedNamed,
     ConditionalFormatDataBarOptions,
     ConditionalFormatDataBar,
-    ConditionalFormatList,
     ConditionalFormatType,
     AnnotationData,
 
@@ -80,8 +79,6 @@ import type {
   IArea, CellValue, Point,
   Complex, ExtendedUnion, IRectangle,
   AddressReference, RangeReference, TableSortOptions, Table, TableTheme,
-  Theme,
-  AnnotationLayout,
 } from 'treb-base-types';
 
 import {
@@ -1959,7 +1956,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       }
     }
 
-    let active_sheet = typeof initial_area.start.sheet_id === 'number' ?
+    const active_sheet = typeof initial_area.start.sheet_id === 'number' ?
       this.model.sheets.Find(initial_area.start.sheet_id) : this.grid.active_sheet;
 
     if (!active_sheet) {
@@ -1974,7 +1971,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       // otherwise it's probably user intent to use the selected
       // data.
 
-      let area = (initial_area.rows > 1 || initial_area.columns > 1) ?
+      const area = (initial_area.rows > 1 || initial_area.columns > 1) ?
         initial_area.Clone() :
         Heuristics.ExpandRegion(initial_area, active_sheet);
 
@@ -1999,14 +1996,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         // if there are more than one, set series titles
 
         if (area.columns === 1) {
-          let column = area.Clone().RemoveHeaderRow();
-          let title = area.Clone().Resize(1, 1);
+          const column = area.Clone().RemoveHeaderRow();
+          const title = area.Clone().Resize(1, 1);
           this.InsertAnnotation(`=${func}(${column.spreadsheet_label},${row_headers?.spreadsheet_label || ''},${title.spreadsheet_label})`, undefined, target_range, ',');
         }
         else {
           const series: string[] = [];
           for (let column = area.start.column, index = 1; column <= area.end.column; column++, index++) {
-            let column_area = area.GetColumn(column);
+            const column_area = area.GetColumn(column);
             const title = column_area.Clone().Resize(1,1);
             column_area.RemoveHeaderRow();
             const cell = active_sheet.CellData(title.start);
@@ -2026,8 +2023,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         else {
           const series: string[] = [];
           for (let column = area.start.column, index = 1; column <= area.end.column; column++, index++) {
-            let column_area = area.GetColumn(column);
-            let column_label = ''; // "Series ${index}"
+            const column_area = area.GetColumn(column);
+            const column_label = ''; // "Series ${index}"
             series.push(`Series(${column_label},,${column_area.spreadsheet_label})`);
           }
           this.InsertAnnotation(`=${func}(Group(${series.join(', ')}),${row_headers?.spreadsheet_label || ''},"${chart_title}")`, undefined, target_range, ',');
@@ -2168,8 +2165,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       }
     };
 
-    if (/^border-/.test(event.command)) {
-
+    if (event.command.startsWith('border-')) {
       if (event.command === 'border-color') {
 
         try {
@@ -2591,7 +2587,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   public AnnotationZOrder(id: string|number, operation: number|'top'|'bottom', sheet?: number|string) {
     const result = this.FindAnnotation(id, sheet);
     if (result) {
-      const { annotation, target } = result;
+      const { annotation } = result;
 
       // FIXME: needs to run through command queue
 
@@ -2614,7 +2610,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   public MoveAnnotation(id: string|number, layout: RangeReference, sheet?: number|string) {
     const result = this.FindAnnotation(id, sheet);
     if (result) {
-      const { annotation, target } = result;
+      const { annotation } = result;
       if (typeof layout === 'string') {
         const resolved = this.Resolve(layout);
         if (resolved) {
@@ -5905,7 +5901,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       event.preventDefault();
       const file = event.dataTransfer.files[0];
 
-      if (/^image/.test(file.type)) {
+      if (file.type.startsWith('image')) {
         this.InsertImageInternal(file);
       }
       else {
@@ -7038,7 +7034,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       const shared = data.shared_resources;
 
       const Unshare = (resource: string) => {
-        if (/^resource:/.test(resource)) {
+
+        if (resource.startsWith('resource:')) {
           return shared[resource.substring(9)] || '';
         }
         return resource;

@@ -87,19 +87,17 @@
     "./package.json": "./package.json"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@types/html-minifier": "^4.0.6",
     "@types/node": "^25.5.0",
     "@types/uzip": "^0.20201231.2",
     "base64-js": "^1.5.1",
     "cssnano": "^7.1.4",
     "esbuild": "^0.28.0",
-    "eslint": "^10.1.0",
-    "eslint-plugin-sonarjs": "^4.2.2",
     "extended-function-lib": "file:extended-function-lib",
     "fast-xml-parser": "^5.3.2",
     "html-minifier-terser": "^7.2.0",
     "ooxml-types": "file:ooxml-types",
+    "oxlint": "^1.94.0",
     "postcss": "^8.5.8",
     "treb-base-types": "file:treb-base-types",
     "treb-calculator": "file:treb-calculator",
@@ -112,8 +110,7 @@
     "treb-utils": "file:treb-utils",
     "tslib": "^2.8.1",
     "tsx": "^4.20.6",
-    "typescript": "^6.0.2",
-    "typescript-eslint": "^8.58.0",
+    "typescript": "^7.0.2",
     "uzip": "^0.20201231.0"
   },
   "scripts": {
