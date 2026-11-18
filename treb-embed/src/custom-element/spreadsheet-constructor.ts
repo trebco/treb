@@ -37,8 +37,6 @@ import type { ToolbarMessage } from '../toolbar-message';
 import { DOMContext } from 'treb-base-types';
 import { font_stack_labels, type FontStackType } from 'treb-base-types/src/font-stack';
 
-console.info({css}); // temp
-
 /** @internal */
 export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
 
