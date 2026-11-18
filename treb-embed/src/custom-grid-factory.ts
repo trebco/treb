@@ -19,10 +19,10 @@
  * 
  */
 
-import type { GridOptions } from 'treb-grid';
-import type { DataModel } from 'treb-data-model';
-import type { DOMContext, Theme } from 'treb-base-types';
-import type { Grid } from 'treb-grid';
+import type { GridOptions } from '#treb-grid';
+import type { DataModel } from '#treb-data-model';
+import type { DOMContext, Theme } from '#treb-base-types';
+import type { Grid } from '#treb-grid';
 
 /** new, intended for tui support but keeping it as generic as possible */
 export type CustomGridFactory = (

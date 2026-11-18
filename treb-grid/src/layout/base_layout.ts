@@ -19,12 +19,12 @@
  * 
  */
 
-import { DOMContext } from 'treb-base-types';
-import type { DataModel, ViewModel, Annotation, GridSelection } from 'treb-data-model';
+import { DOMContext } from '#treb-base-types';
+import type { DataModel, ViewModel, Annotation, GridSelection } from '#treb-data-model';
 
 import type { Tile } from '../types/tile';
-import type { Theme, Point, Extent, Size, Position, ICellAddress, Table, IArea } from 'treb-base-types';
-import { Style, Area, Rectangle, ResolveThemeColor } from 'treb-base-types';
+import type { Theme, Point, Extent, Size, Position, ICellAddress, Table, IArea } from '#treb-base-types';
+import { Style, Area, Rectangle, ResolveThemeColor } from '#treb-base-types';
 
 import { MouseDrag } from '../types/drag_mask';
 import type { GridEvent } from '../types/grid_events';
@@ -40,11 +40,11 @@ import type { GridEvent } from '../types/grid_events';
 // define area as a generic, then define it on some arbitrary value. that would
 // force separation of all the functions between the two types (I think)
 
-import type { CellValue, AnnotationLayout, Corner } from 'treb-base-types';
-import { Area as TileRange } from 'treb-base-types';
-import { SerializeHTML } from 'treb-utils';
+import type { CellValue, AnnotationLayout, Corner } from '#treb-base-types';
+import { Area as TileRange } from '#treb-base-types';
+import { SerializeHTML } from '#treb-utils';
 
-export { Area as TileRange } from 'treb-base-types';
+export { Area as TileRange } from '#treb-base-types';
 
 export interface TooltipOptions {
   up?: true;

@@ -27,17 +27,17 @@ import { type ValueType, HasValueType, Cells, Style,
   type Color,
   Area, IsFlatDataArray, 
   IsNestedRowArray, IsCellAddress, DOMContext, IsHTMLColor, IsThemeColor
-} from 'treb-base-types';
-import { NumberFormatCache } from 'treb-format';
-import { Measurement, ValidateURI } from 'treb-utils';
+} from '#treb-base-types';
+import { NumberFormatCache } from '#treb-format';
+import { Measurement, ValidateURI } from '#treb-utils';
 
 import type { TextPart ,
   Cell, ICellAddress, CellSerializationOptions, CellValue, ImportedSheetData, Complex, 
   DimensionedQuantity, IArea, Table, TableTheme, HorizontalAlign, VerticalAlign,
   Theme,
-  ExtendedCelLStyle} from 'treb-base-types';
+  ExtendedCelLStyle} from '#treb-base-types';
 
-import { Get as GetFonrMetrics } from 'treb-grid/src/util/fontmetrics';
+import { Get as GetFonrMetrics } from '#treb-grid/src/util/fontmetrics';
 
 // --- local imports ----------------------------------------------------------
 

@@ -2,7 +2,7 @@
 
 
 import { XMLParser } from 'fast-xml-parser';
-import * as OOXML from 'ooxml-types';
+import * as OOXML from '#ooxml-types';
 
 export const ooxml_parser = new XMLParser({
   attributesGroupName: '$attributes',

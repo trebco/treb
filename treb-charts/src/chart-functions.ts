@@ -19,8 +19,8 @@
  * 
  */
 
-import { type UnionValue } from 'treb-base-types';
-import type { CompositeFunctionDescriptor } from 'treb-calculator/src/descriptors';
+import { type UnionValue } from '#treb-base-types';
+import type { CompositeFunctionDescriptor } from '#treb-calculator/src/descriptors';
 
 /** 
  * function returns its arguments 

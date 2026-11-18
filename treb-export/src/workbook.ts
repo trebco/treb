@@ -36,13 +36,13 @@ import { Theme } from './workbook-theme';
 import { Sheet } from './workbook-sheet';
 import type { RelationshipMap } from './relationship';
 import { ZipWrapper } from './zip-wrapper';
-import type { CellStyle, ThemeColor } from 'treb-base-types';
-import type { SerializedNamed } from 'treb-data-model';
+import type { CellStyle, ThemeColor } from '#treb-base-types';
+import type { SerializedNamed } from '#treb-data-model';
 import { type Metadata, ParseMetadataXML } from './metadata';
 
 ///////////////
 
-import * as OOXML from 'ooxml-types';
+import * as OOXML from '#ooxml-types';
 import { ooxml_parser, IterateTags, MapTags, FirstTag } from './ooxml';
 
 ///////////////

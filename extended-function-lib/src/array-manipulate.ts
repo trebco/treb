@@ -1,7 +1,7 @@
 
-import { Box, type UnionValue } from 'treb-base-types';
-import { ValueError } from 'treb-calculator';
-import type { FunctionMap } from 'treb-calculator';
+import { Box, type UnionValue } from '#treb-base-types';
+import { ValueError } from '#treb-calculator';
+import type { FunctionMap } from '#treb-calculator';
 
 function FlattenArray(data: UnionValue[][]): UnionValue[] {
   const col_count = data.length;

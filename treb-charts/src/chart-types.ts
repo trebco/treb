@@ -19,10 +19,10 @@
  * 
  */
 
-import type { RangeScale } from 'treb-utils';
+import type { RangeScale } from '#treb-utils';
 import type { Area } from './rectangle';
-import type { UnitAddress } from 'treb-parser';
-import type { ArrayUnion, CellValue, ExtendedUnion, UnionValue } from 'treb-base-types';
+import type { UnitAddress } from '#treb-parser';
+import type { ArrayUnion, CellValue, ExtendedUnion, UnionValue } from '#treb-base-types';
 
 export interface ReferenceMetadata {
   type: 'metadata';

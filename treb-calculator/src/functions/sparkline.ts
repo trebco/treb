@@ -30,7 +30,7 @@
  */
 
 
-import { IsHTMLColor, type Cell, type CellStyle } from 'treb-base-types';
+import { IsHTMLColor, type Cell, type CellStyle } from '#treb-base-types';
 
 export interface SparklineRenderOptions {
   context: CanvasRenderingContext2D;

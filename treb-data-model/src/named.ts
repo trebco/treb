@@ -19,9 +19,9 @@
  * 
  */
 
-import { Area } from 'treb-base-types';
-import type { IArea } from 'treb-base-types';
-import type { ExpressionUnit, Parser } from 'treb-parser';
+import { Area } from '#treb-base-types';
+import type { IArea } from '#treb-base-types';
+import type { ExpressionUnit, Parser } from '#treb-parser';
 
 interface NamedExpression {
   type: 'expression';

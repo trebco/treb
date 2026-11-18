@@ -19,7 +19,7 @@
  * 
  */
 
-import type { CellValue } from 'treb-base-types';
+import type { CellValue } from '#treb-base-types';
 import type { StatsEntry } from './tab_bar';
 
 /**

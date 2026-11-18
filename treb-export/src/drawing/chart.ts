@@ -19,7 +19,7 @@
  * 
  */
 
-import type { UnitAddress, UnitRange, UnitLiteral, ExpressionUnit } from 'treb-parser';
+import type { UnitAddress, UnitRange, UnitLiteral, ExpressionUnit } from '#treb-parser';
 
 import { static_title, ref_title, chart_template } from './chart-template-components2';
 import { column_json, column_series } from './column-chart-template2';
@@ -27,7 +27,7 @@ import { donut_json } from './donut-chart-template2';
 import { scatter_json, scatter_series } from './scatter-chart-template2';
 import { bubble_json, bubble_series } from './bubble-chart-template';
 
-import { Localization } from 'treb-base-types';
+import { Localization } from '#treb-base-types';
 import type { RelationshipMap } from '../relationship';
 
 export interface ChartOptions {

@@ -20,7 +20,7 @@
  */
 
 import { Vertex } from './vertex';
-import type { UnionValue } from 'treb-base-types';
+import type { UnionValue } from '#treb-base-types';
 
 export interface CalculationResult {
   // value: any;

@@ -19,7 +19,7 @@
  * 
  */
 
-import { DOMContext } from 'treb-base-types';
+import { DOMContext } from '#treb-base-types';
 
 export class Spinner {
 

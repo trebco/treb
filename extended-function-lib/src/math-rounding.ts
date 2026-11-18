@@ -1,6 +1,6 @@
-import { Box, type UnionValue } from 'treb-base-types';
-import type { FunctionMap } from 'treb-calculator';
-import { DivideByZeroError, ValueError } from 'treb-calculator';
+import { Box, type UnionValue } from '#treb-base-types';
+import type { FunctionMap } from '#treb-calculator';
+import { DivideByZeroError, ValueError } from '#treb-calculator';
 
 const ceilingPrecise = (n?: number, significance?: number): UnionValue => {
   if (n === undefined) return ValueError();

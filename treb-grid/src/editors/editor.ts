@@ -40,12 +40,12 @@
  * 
  */
 
-import { Area, type ICellAddress, IsCellAddress, Localization, Rectangle, type Cell, DOMContext } from 'treb-base-types';
-import type { ExpressionUnit, ParseResult, UnitAddress, UnitRange } from 'treb-parser';
-import { Parser } from 'treb-parser';
-import type { DataModel, ViewModel } from 'treb-data-model';
+import { Area, type ICellAddress, IsCellAddress, Localization, Rectangle, type Cell, DOMContext } from '#treb-base-types';
+import type { ExpressionUnit, ParseResult, UnitAddress, UnitRange } from '#treb-parser';
+import { Parser } from '#treb-parser';
+import type { DataModel, ViewModel } from '#treb-data-model';
 import type { Autocomplete, AutocompleteResult } from './autocomplete';
-import { EventSource } from 'treb-utils';
+import { EventSource } from '#treb-utils';
 import { type AutocompleteExecResult, AutocompleteMatcher, type FunctionDescriptor } from './autocomplete_matcher';
 
 export interface UpdateTextOptions {

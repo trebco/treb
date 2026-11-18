@@ -20,7 +20,7 @@
  */
 
 
-import type { ExpressionUnit } from 'treb-parser';
+import type { ExpressionUnit } from '#treb-parser';
 import type { ICellAddress } from './area';
 
 /**

@@ -19,7 +19,7 @@
  * 
  */
 
-import { UnlotusDate } from 'treb-format';
+import { UnlotusDate } from '#treb-format';
 
 export const DaysInYear = (year: number) => {
   return (year % 4 === 0 && (year % 100 !== 0 || year === 1900)) ? 366 : 365;

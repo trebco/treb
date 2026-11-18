@@ -19,8 +19,8 @@
  * 
  */
 
-import type { ImportedSheetData } from 'treb-base-types';
-import type { SerializedModel, SerializedNamed } from 'treb-data-model';
+import type { ImportedSheetData } from '#treb-base-types';
+import type { SerializedModel, SerializedNamed } from '#treb-data-model';
 
 export type ExportMessage = {
   type: 'export';

@@ -23,12 +23,12 @@ import type { Vertex} from './vertex';
 import { SpreadsheetVertex  } from './spreadsheet_vertex';
 import type { SpreadsheetVertexBase, CalculationResult, GraphCallbacks } from './spreadsheet_vertex_base';
 import type { StateLeafVertex } from './state_leaf_vertex';
-import type { ICellAddress, ICellAddress2, IArea, UnionValue } from 'treb-base-types';
-import { Area } from 'treb-base-types';
-import type { DataModel } from 'treb-data-model';
+import type { ICellAddress, ICellAddress2, IArea, UnionValue } from '#treb-base-types';
+import { Area } from '#treb-base-types';
+import type { DataModel } from '#treb-data-model';
 import { CalculationLeafVertex } from './calculation_leaf_vertex';
 
-import { AreaUtils } from 'treb-base-types';
+import { AreaUtils } from '#treb-base-types';
 import { SegmentVertex } from './segment-vertex';
 
 export type LeafVertex = StateLeafVertex|CalculationLeafVertex;

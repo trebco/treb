@@ -21,9 +21,9 @@
 
 import type { GraphCallbacks } from './spreadsheet_vertex_base';
 import { SpreadsheetVertexBase } from './spreadsheet_vertex_base';
-import type { Cell, CellValue, ICellAddress, UnionValue } from 'treb-base-types';
-import { Area, Box, Errors } from 'treb-base-types';
-import type { ExpressionUnit } from 'treb-parser';
+import type { Cell, CellValue, ICellAddress, UnionValue } from '#treb-base-types';
+import { Area, Box, Errors } from '#treb-base-types';
+import type { ExpressionUnit } from '#treb-parser';
 import { Color } from './vertex';
 // import { ErrorType } from '../function-error';
 

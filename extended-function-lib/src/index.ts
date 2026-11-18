@@ -10,7 +10,7 @@
 // side-effect), e.g. by iterating the map and calling the calculator's
 // registration method, and applying the aliases afterwards.
 
-import type { FunctionMap } from 'treb-calculator';
+import type { FunctionMap } from '#treb-calculator';
 
 // import './template'; // example only, not included in the library
 

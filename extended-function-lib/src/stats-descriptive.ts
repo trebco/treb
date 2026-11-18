@@ -1,6 +1,6 @@
-import { Box, type UnionValue } from 'treb-base-types';
-import type { FunctionMap } from 'treb-calculator';
-import { DivideByZeroError, ValueError } from 'treb-calculator';
+import { Box, type UnionValue } from '#treb-base-types';
+import type { FunctionMap } from '#treb-calculator';
+import { DivideByZeroError, ValueError } from '#treb-calculator';
 import { extractNumbers, extractNumbersA, mean, sampleVariance, populationVariance } from './stats-array-utils';
 
 function ModeCounts(values: number[]): { modes: number[]; max_count: number } {

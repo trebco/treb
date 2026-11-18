@@ -20,8 +20,8 @@
  */
 
 
-import type { GridSelection } from 'treb-data-model';
-import type { CellStyle } from 'treb-base-types';
+import type { GridSelection } from '#treb-data-model';
+import type { CellStyle } from '#treb-base-types';
 
 /**
  * state that should be reflected in toolbar buttons/selections

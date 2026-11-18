@@ -20,8 +20,8 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import type { UnionValue} from 'treb-base-types';
-import type { ExpressionUnit } from 'treb-parser';
+import type { UnionValue} from '#treb-base-types';
+import type { ExpressionUnit } from '#treb-parser';
 
 export const LambdaFunctionLibrary: FunctionMap = {
 

@@ -1,5 +1,5 @@
 
-import type { Errors } from 'treb-base-types';
+import type { Errors } from '#treb-base-types';
 
 /**
  * default UI strings, in english. language files can override using 

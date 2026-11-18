@@ -1,7 +1,7 @@
 
-import { Box, type UnionValue } from 'treb-base-types';
-import type { FunctionMap } from 'treb-calculator';
-import { ArgumentError } from 'treb-calculator';
+import { Box, type UnionValue } from '#treb-base-types';
+import type { FunctionMap } from '#treb-calculator';
+import { ArgumentError } from '#treb-calculator';
 
 export default {
   'TEST1': {

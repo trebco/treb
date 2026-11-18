@@ -19,7 +19,7 @@
  * 
  */
 
-import type { CellStyle, EvaluateOptions, IArea, Color, Gradient, GradientStop, UnionValue } from 'treb-base-types';
+import type { CellStyle, EvaluateOptions, IArea, Color, Gradient, GradientStop, UnionValue } from '#treb-base-types';
 
 interface VertexPlaceholder {
   result: UnionValue;

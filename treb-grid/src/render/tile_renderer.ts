@@ -25,14 +25,14 @@ import type { ICellAddress,
          CellStyle,
          Theme,
          HorizontalAlign,
-         ExtendedCelLStyle} from 'treb-base-types';
-import { TextPartFlag, Style, HasValueType, Area, Rectangle, ResolveThemeColor, IsDefinedColor } from 'treb-base-types';
+         ExtendedCelLStyle} from '#treb-base-types';
+import { TextPartFlag, Style, HasValueType, Area, Rectangle, ResolveThemeColor, IsDefinedColor } from '#treb-base-types';
 
 import type { Tile } from '../types/tile';
-import type { FormattedString} from 'treb-parser';
-import { MDParser } from 'treb-parser';
+import type { FormattedString} from '#treb-parser';
+import { MDParser } from '#treb-parser';
 import { BaseLayout, TileRange } from '../layout/base_layout';
-import type { DataModel, ViewModel } from 'treb-data-model';
+import type { DataModel, ViewModel } from '#treb-data-model';
 import type { GridOptions } from '../types/grid_options';
 import { Get as GetFontMetrics } from '../util/fontmetrics';
 

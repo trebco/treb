@@ -19,7 +19,7 @@
  * 
  */
 
-// import { Parser } from 'treb-parser';
+// import { Parser } from '#treb-parser';
 
 import type { Area } from './area';
 import type { CellStyle } from './style';

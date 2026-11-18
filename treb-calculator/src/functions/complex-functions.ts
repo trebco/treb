@@ -20,8 +20,8 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import type { CellValue, NumberUnion, UnionValue} from 'treb-base-types';
-import { IsComplex } from 'treb-base-types';
+import type { CellValue, NumberUnion, UnionValue} from '#treb-base-types';
+import { IsComplex } from '#treb-base-types';
 // import * as Utils from '../utilities';
 import { ValueError } from '../function-error';
 import { RectangularToPolar } from '../complex-math';

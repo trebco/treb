@@ -21,8 +21,8 @@
 
 import { BaseLayout } from './base_layout';
 import type { Tile } from '../types/tile';
-import { DOMContext } from 'treb-base-types';
-import type { DataModel, ViewModel } from 'treb-data-model';
+import { DOMContext } from '#treb-base-types';
+import type { DataModel, ViewModel } from '#treb-data-model';
 
 
 /**

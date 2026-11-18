@@ -20,7 +20,7 @@
  */
 
 
-import type { ICellAddress, CellValue, ValueType, CellStyle } from 'treb-base-types';
+import type { ICellAddress, CellValue, ValueType, CellStyle } from '#treb-base-types';
 
 export interface ClipboardCellData {
   address: ICellAddress;

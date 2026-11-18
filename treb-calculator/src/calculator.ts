@@ -21,11 +21,11 @@
 
 import type { Cell, ICellAddress, ICellAddress2, UnionValue, EvaluateOptions,
          ArrayUnion, IArea, CellDataWithAddress, CellValue,
-         Cells} from 'treb-base-types';
-import { Localization, Area, IsCellAddress, Errors} from 'treb-base-types';
+         Cells} from '#treb-base-types';
+import { Localization, Area, IsCellAddress, Errors} from '#treb-base-types';
          
-import type { ExpressionUnit, DependencyList, UnitRange, UnitAddress, UnitIdentifier, ParseResult } from 'treb-parser';
-import { Parser, DecimalMarkType, QuotedSheetNameRegex } from 'treb-parser';
+import type { ExpressionUnit, DependencyList, UnitRange, UnitAddress, UnitIdentifier, ParseResult } from '#treb-parser';
+import { Parser, DecimalMarkType, QuotedSheetNameRegex } from '#treb-parser';
 
 import { Graph } from './dag/graph';
 import type { SpreadsheetVertex } from './dag/spreadsheet_vertex';
@@ -54,19 +54,19 @@ import { Variance } from './functions/statistics-functions';
 
 import * as Primitives from './primitives';
 
-import type { FunctionDescriptor } from 'treb-grid';
+import type { FunctionDescriptor } from '#treb-grid';
 import type { LeafVertex } from './dag/graph';
 
 import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError, DivideByZeroError, NotImplError } from './function-error';
 import { StateLeafVertex } from './dag/state_leaf_vertex';
 import { CalculationLeafVertex } from './dag/calculation_leaf_vertex';
 
-import { Sheet } from 'treb-data-model';
-import type { Annotation, DataModel, ConnectedElementType, ConditionalFormat } from 'treb-data-model';
+import { Sheet } from '#treb-data-model';
+import type { Annotation, DataModel, ConnectedElementType, ConditionalFormat } from '#treb-data-model';
 
-import { ValueParser } from 'treb-format';
+import { ValueParser } from '#treb-format';
 
-import { ExtendedFunctions, ExtendedFunctionAliases } from 'extended-function-lib';
+import { ExtendedFunctions, ExtendedFunctionAliases } from '#extended-function-lib';
 
 /**
  * breaking this out so we can use it for export (TODO)

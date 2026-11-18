@@ -23,7 +23,7 @@ import type { Size, Point } from './rectangle';
 import { Area } from './rectangle';
 import type { BoxPlotData, DonutSlice, LegendOptions, SeriesType} from './chart-types';
 import { LegendLayout, LegendPosition, LegendStyle } from './chart-types';
-import type { RangeScale } from 'treb-utils';
+import type { RangeScale } from '#treb-utils';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 

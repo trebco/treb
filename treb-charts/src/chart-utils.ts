@@ -19,13 +19,13 @@
  * 
  */
 
-import { type UnionValue, type ArrayUnion, IsComplex, type CellValue } from 'treb-base-types';
+import { type UnionValue, type ArrayUnion, IsComplex, type CellValue } from '#treb-base-types';
 import { IsArrayUnion, IsMetadata, IsSeries, LegendStyle } from './chart-types';
 import type { SubSeries, SeriesType, BarData, ChartDataBaseType, ChartData, ScatterData2, DonutSlice, BubbleChartData, BoxPlotData } from './chart-types';
-import { NumberFormatCache } from 'treb-format';
+import { NumberFormatCache } from '#treb-format';
 import { Util } from './util';
 import type { ReferenceSeries } from './chart-types';
-import type { RangeScale } from 'treb-utils';
+import type { RangeScale } from '#treb-utils';
 
 import { QuickSort } from './quicksort';
 

@@ -19,7 +19,7 @@
  * 
  */
 
-import * as OOXML from 'ooxml-types';
+import * as OOXML from '#ooxml-types';
 import { IterateTags } from './ooxml';
 
 // import { XMLUtils } from './xml-utils';

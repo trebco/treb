@@ -28,13 +28,13 @@ import type { Cell, ICellAddress,
          ComplexUnion, 
          DimensionedQuantityUnion,
          IArea,
-         FunctionUnion} from 'treb-base-types';
-import { GetValueType, HasValueType, Area } from 'treb-base-types';
+         FunctionUnion} from '#treb-base-types';
+import { GetValueType, HasValueType, Area } from '#treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference, 
          UnitImplicitCall,
-         UnitArray} from 'treb-parser';
-import type { DataModel, MacroFunction, Sheet } from 'treb-data-model';
+         UnitArray} from '#treb-parser';
+import type { DataModel, MacroFunction, Sheet } from '#treb-data-model';
 import { NameError, ReferenceError, ExpressionError, UnknownError, SpillError, ValueError, ArgumentError } from './function-error';
 
 import * as Primitives from './primitives';

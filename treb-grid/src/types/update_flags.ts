@@ -19,7 +19,7 @@
  * 
  */
 
-import type { Area } from 'treb-base-types';
+import type { Area } from '#treb-base-types';
 
 /**
  * trying to split data management from the grid, we are updating the

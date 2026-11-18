@@ -27,9 +27,9 @@ import type {
   CellEvent, FunctionDescriptor, 
   ExternalEditorConfig,
   GridSelectionEvent,
-} from 'treb-grid';
+} from '#treb-grid';
 
-import { DataModel, Sheet, StandardGradientsList } from 'treb-data-model';
+import { DataModel, Sheet, StandardGradientsList } from '#treb-data-model';
 import type { 
     SerializeOptions, 
     Annotation,
@@ -58,20 +58,20 @@ import type {
     ConditionalFormatType,
     AnnotationData,
 
-   } from 'treb-data-model';
+   } from '#treb-data-model';
 
 
 import {
   Grid, type BorderConstants, type ErrorCode, UA,
-} from 'treb-grid';
+} from '#treb-grid';
 
 import { 
   Parser, DecimalMarkType, 
   ArgumentSeparatorType, QuotedSheetNameRegex, 
-  type RenderOptions} from 'treb-parser';
+  type RenderOptions} from '#treb-parser';
 
-import 'extended-function-lib';
-import { Calculator } from 'treb-calculator';
+import '#extended-function-lib';
+import { Calculator } from '#treb-calculator';
 
 import type {
   ICellAddress, 
@@ -79,17 +79,17 @@ import type {
   IArea, CellValue, Point,
   Complex, ExtendedUnion, IRectangle,
   AddressReference, RangeReference, TableSortOptions, Table, TableTheme,
-} from 'treb-base-types';
+} from '#treb-base-types';
 
 import {
   IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
   Localization, Style, type Color, ResolveThemeColor, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext,
-} from 'treb-base-types';
+} from '#treb-base-types';
 
-import { EventSource, ValidateURI } from 'treb-utils';
-import { NumberFormatCache, ValueParser, NumberFormat, LotusDate, UnlotusDate } from 'treb-format';
+import { EventSource, ValidateURI } from '#treb-utils';
+import { NumberFormatCache, ValueParser, NumberFormat, LotusDate, UnlotusDate } from '#treb-format';
 
-import { Heuristics } from 'treb-data-model';
+import { Heuristics } from '#treb-data-model';
 
 
 // --- local -------------------------------------------------------------------
@@ -102,12 +102,12 @@ import { type TREBDocument, SaveFileType, type LoadSource, type EmbeddedSheetEve
 import type { SelectionState } from './selection-state';
 import type { BorderToolbarMessage, ToolbarMessage } from './toolbar-message';
 
-import { Chart, ChartFunctions, type ChartFunction } from 'treb-charts';
-import type { SetRangeOptions, ClipboardData, PasteOptions } from 'treb-grid';
+import { Chart, ChartFunctions, type ChartFunction } from '#treb-charts';
+import type { SetRangeOptions, ClipboardData, PasteOptions } from '#treb-grid';
 
-import type { StateLeafVertex } from 'treb-calculator';
+import type { StateLeafVertex } from '#treb-calculator';
 
-import * as ImportExportMessages from 'treb-export/src/import-export-messages';
+import * as ImportExportMessages from '#treb-export/src/import-export-messages';
 
 // --- worker ------------------------------------------------------------------
 
@@ -115,12 +115,12 @@ import * as ImportExportMessages from 'treb-export/src/import-export-messages';
  * import type for our worker, plus markup files
  */
 // import './content-types.d.ts';
-import { CreateWorker, type WorkerProxy } from 'treb-base-types';
+import { CreateWorker, type WorkerProxy } from '#treb-base-types';
 
 // --- types -------------------------------------------------------------------
 
 import type { CustomGridFactory } from './custom-grid-factory';
-import { default_error_messages, default_ui_strings } from 'treb-base-types';
+import { default_error_messages, default_ui_strings } from '#treb-base-types';
 
 /**
  * options for saving files. we add the option for JSON formatting.

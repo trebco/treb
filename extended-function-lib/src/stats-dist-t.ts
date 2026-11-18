@@ -1,7 +1,7 @@
 
-import { Box, type UnionValue } from 'treb-base-types';
-import type { FunctionMap } from 'treb-calculator';
-import { ValueError } from 'treb-calculator';
+import { Box, type UnionValue } from '#treb-base-types';
+import type { FunctionMap } from '#treb-calculator';
+import { ValueError } from '#treb-calculator';
 import { RegularizedBetaI } from './stats-special-functions';
 import { extractNumbers, mean } from './stats-array-utils';
 

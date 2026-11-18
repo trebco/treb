@@ -19,8 +19,8 @@
  * 
  */
 
-import { UA } from 'treb-grid';
-import { Measurement } from 'treb-utils';
+import { UA } from '#treb-grid';
+import { Measurement } from '#treb-utils';
 import { Style, type FontSize } from './style';
 
 /**

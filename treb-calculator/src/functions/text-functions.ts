@@ -20,9 +20,9 @@
  */
 
 import type { FunctionMap, IntrinsicValue } from '../descriptors';
-import { NumberFormatCache, ValueParser } from 'treb-format';
-import type { CellValue, UnionValue} from 'treb-base-types';
-import { Localization } from 'treb-base-types';
+import { NumberFormatCache, ValueParser } from '#treb-format';
+import type { CellValue, UnionValue} from '#treb-base-types';
+import { Localization } from '#treb-base-types';
 import * as Utils from '../utilities';
 import { ArgumentError, ValueError } from '../function-error';
 

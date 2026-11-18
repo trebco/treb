@@ -20,7 +20,7 @@
  */
 
 
-import { Measurement } from 'treb-utils';
+import { Measurement } from '#treb-utils';
 import { type Color } from './style';
 import { type Theme, ResolveThemeColor } from './theme';
 import { ColorFunctions } from './color';

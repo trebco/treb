@@ -1,6 +1,6 @@
-import { Box, type UnionValue } from 'treb-base-types';
-import type { FunctionMap } from 'treb-calculator';
-import { ValueError, NAError } from 'treb-calculator';
+import { Box, type UnionValue } from '#treb-base-types';
+import type { FunctionMap } from '#treb-calculator';
+import { ValueError, NAError } from '#treb-calculator';
 
 function FlattenToStrings(v: UnionValue): string[] {
   const result: string[] = [];

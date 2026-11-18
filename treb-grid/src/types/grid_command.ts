@@ -19,10 +19,10 @@
  * 
  */
 
-import type { ICellAddress, IArea, CellStyle, Color, CellValue, Table, TableSortType, TableTheme, IRectangle } from 'treb-base-types';
-import type { ExpressionUnit } from 'treb-parser';
+import type { ICellAddress, IArea, CellStyle, Color, CellValue, Table, TableSortType, TableTheme, IRectangle } from '#treb-base-types';
+import type { ExpressionUnit } from '#treb-parser';
 import type { BorderConstants } from './border_constants';
-import type { Annotation, AnnotationData, ConditionalFormat, Sheet } from 'treb-data-model';
+import type { Annotation, AnnotationData, ConditionalFormat, Sheet } from '#treb-data-model';
 
 /**
  * switching to an exec-command based model, so we can serialize

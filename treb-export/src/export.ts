@@ -34,11 +34,11 @@ import { PixelsToColumnWidth } from './column-width';
 const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`;
 
 import { template } from './template-2';
-import type { SerializedModel, SerializedSheet } from 'treb-data-model';
+import type { SerializedModel, SerializedSheet } from '#treb-data-model';
 
 import type { IArea, ICellAddress, CellStyle,
-         AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle, Color } from 'treb-base-types';
-import { Area, Cells, HasValueType, Style, IsHTMLColor, IsThemeColor, ThemeColorIndex } from 'treb-base-types';
+         AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle, Color } from '#treb-base-types';
+import { Area, Cells, HasValueType, Style, IsHTMLColor, IsThemeColor, ThemeColorIndex } from '#treb-base-types';
 
 // import * as xmlparser from 'fast-xml-parser';
 import type { XmlBuilderOptions} from 'fast-xml-parser';
@@ -52,8 +52,8 @@ import type { RelationshipMap} from './relationship';
 import { AddRel } from './relationship';
 import { type DOMContent, PatchXMLBuilder } from './xml-utils';
 
-import type { UnitAddress, UnitRange, ExpressionUnit} from 'treb-parser';
-import { Parser } from 'treb-parser';
+import type { UnitAddress, UnitRange, ExpressionUnit} from '#treb-parser';
+import { Parser } from '#treb-parser';
 
 // FIXME: move
 import type { ChartOptions } from './drawing/chart';
@@ -62,7 +62,7 @@ import type { ImageOptions } from './drawing/embedded-image';
 import type { TwoCellAnchor } from './drawing/drawing';
 import { Drawing } from './drawing/drawing';
 import { ConditionalFormatOperators, type TableDescription, type TableFooterType } from './workbook';
-import type { AnnotationData } from 'treb-data-model/src/annotation';
+import type { AnnotationData } from '#treb-data-model/src/annotation';
 import { ZipWrapper } from './zip-wrapper';
 import { ooxml_parser } from './ooxml';
 

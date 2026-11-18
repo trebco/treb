@@ -1,12 +1,12 @@
 
-import { Area, Errors, type IArea } from 'treb-base-types';
+import { Area, Errors, type IArea } from '#treb-base-types';
 import { type GraphCallbacks, SpreadsheetVertexBase } from './spreadsheet_vertex_base';
 import { SpreadsheetVertex } from './spreadsheet_vertex';
 import { Color } from './vertex';
 
-import type { Cell, CellValue, ICellAddress, UnionValue } from 'treb-base-types';
-import { Box } from 'treb-base-types';
-import type { ExpressionUnit } from 'treb-parser';
+import type { Cell, CellValue, ICellAddress, UnionValue } from '#treb-base-types';
+import { Box } from '#treb-base-types';
+import type { ExpressionUnit } from '#treb-parser';
 // import { ErrorType } from '../function-error';
 
 export const SpreadsheetError = {

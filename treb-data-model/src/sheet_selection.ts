@@ -19,7 +19,7 @@
  * 
  */
 
-import { Area, type IArea, type ICellAddress } from 'treb-base-types';
+import { Area, type IArea, type ICellAddress } from '#treb-base-types';
 
 /**
  * FIXME: this is broken. we treat this as a simple javascript object,

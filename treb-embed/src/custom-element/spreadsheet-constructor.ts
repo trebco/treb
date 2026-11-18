@@ -28,13 +28,13 @@ import css from 'treb-embed/style/treb.css';
 import html from 'treb-embed/markup/layout.html';
 import toolbar_html from 'treb-embed/markup/toolbar.html';
 
-import { NumberFormatCache } from 'treb-format';
-import { ColorFunctions, type Color, IsThemeColor } from 'treb-base-types';
-import { Measurement } from 'treb-utils';
+import { NumberFormatCache } from '#treb-format';
+import { ColorFunctions, type Color, IsThemeColor } from '#treb-base-types';
+import { Measurement } from '#treb-utils';
 import type { ToolbarMessage } from '../toolbar-message';
 
-import { DOMContext } from 'treb-base-types';
-import { font_stack_labels, type FontStackType } from 'treb-base-types/src/font-stack';
+import { DOMContext } from '#treb-base-types';
+import { font_stack_labels, type FontStackType } from '#treb-base-types/src/font-stack';
 
 /** @internal */
 export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {

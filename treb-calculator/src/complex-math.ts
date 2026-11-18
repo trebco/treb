@@ -19,7 +19,7 @@
  * 
  */
 
-import type { Complex } from 'treb-base-types/src';
+import type { Complex } from '#treb-base-types';
 
 export interface ComplexMatrixType {
   array: Complex[][];

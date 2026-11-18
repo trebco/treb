@@ -35,21 +35,21 @@
  * 
  */
 
-import { EventSource } from 'treb-utils';
+import { EventSource } from '#treb-utils';
 import type { DataModel, ConditionalFormat, // MacroFunction, SerializedModel, SerializedNamedExpression, 
               ViewModel, 
-              DataValidation} from 'treb-data-model';
+              DataValidation} from '#treb-data-model';
 
-import type { Parser, UnitAddress} from 'treb-parser';
-import { type ExpressionUnit, IllegalSheetNameRegex, ParseCSV, DecimalMarkType } from 'treb-parser';
-import { Area, IsCellAddress, type ValueType, HasValueType, DefaultTableSortOptions } from 'treb-base-types';
-import type { ICellAddress, IArea, Cell, CellValue, CellStyle, Table, TableSortOptions, TableTheme, Complex, PatchOptions as PatchAreaOptions, Color } from 'treb-base-types';
+import type { Parser, UnitAddress} from '#treb-parser';
+import { type ExpressionUnit, IllegalSheetNameRegex, ParseCSV, DecimalMarkType } from '#treb-parser';
+import { Area, IsCellAddress, type ValueType, HasValueType, DefaultTableSortOptions } from '#treb-base-types';
+import type { ICellAddress, IArea, Cell, CellValue, CellStyle, Table, TableSortOptions, TableTheme, Complex, PatchOptions as PatchAreaOptions, Color } from '#treb-base-types';
 
-import { Sheet, type SerializeOptions, type Annotation } from 'treb-data-model';
+import { Sheet, type SerializeOptions, type Annotation } from '#treb-data-model';
 
 import type { FunctionDescriptor} from '../editors/autocomplete_matcher';
 import { AutocompleteMatcher } from '../editors/autocomplete_matcher';
-import { NumberFormat, ValueParser } from 'treb-format';
+import { NumberFormat, ValueParser } from '#treb-format';
 
 import type { DataEvent, GridEvent, StyleEvent } from './grid_events';
 import type { ErrorCode } from './grid_events';
@@ -60,9 +60,9 @@ import { DefaultGridOptions, type GridOptions } from './grid_options';
 import type { Command, ActivateSheetCommand, 
                DeleteSheetCommand, UpdateBordersCommand, SheetSelection } from './grid_command';
 import type { UpdateFlags } from './update_flags';
-import type { FreezePane, LegacySerializedSheet } from 'treb-data-model';
+import type { FreezePane, LegacySerializedSheet } from '#treb-data-model';
 import type { ClipboardCellData } from './clipboard_data';
-import { default_ui_strings } from 'treb-base-types';
+import { default_ui_strings } from '#treb-base-types';
 
 interface PatchOptions extends PatchAreaOptions {
   sheet: Sheet;

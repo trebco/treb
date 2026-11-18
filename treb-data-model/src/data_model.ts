@@ -21,16 +21,16 @@
 
 import { Sheet } from './sheet';
 import { SheetCollection } from './sheet_collection';
-import { type UnitAddress, type UnitStructuredReference, type UnitRange, Parser, QuotedSheetNameRegex, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
-import type { IArea, ICellAddress, Table, CellStyle, CellValue, ValueType } from 'treb-base-types';
-import { Errors, Is2DArray, Localization } from 'treb-base-types';
-import { Area, IsCellAddress, Style } from 'treb-base-types';
+import { type UnitAddress, type UnitStructuredReference, type UnitRange, Parser, QuotedSheetNameRegex, DecimalMarkType, ArgumentSeparatorType } from '#treb-parser';
+import type { IArea, ICellAddress, Table, CellStyle, CellValue, ValueType } from '#treb-base-types';
+import { Errors, Is2DArray, Localization } from '#treb-base-types';
+import { Area, IsCellAddress, Style } from '#treb-base-types';
 import type { SerializedNamed } from './named';
 import { NamedRangeManager } from './named';
 import type { ConnectedElementType, MacroFunction } from './types';
 import type { LanguageModel } from './language-model';
-import { default_error_messages, default_formula_errors } from 'treb-base-types';
-import { NumberFormatCache } from 'treb-format';
+import { default_error_messages, default_formula_errors } from '#treb-base-types';
+import { NumberFormatCache } from '#treb-format';
 
 /**
  * 

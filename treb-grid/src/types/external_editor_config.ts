@@ -20,7 +20,7 @@
  */
 
 
-import type { IArea, ICellAddress } from 'treb-base-types';
+import type { IArea, ICellAddress } from '#treb-base-types';
 
 export type DependencyList = Array<IArea|ICellAddress|undefined>;
 export type ExternalEditorCallback = (selection?: string) => DependencyList|undefined;

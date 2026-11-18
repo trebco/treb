@@ -19,8 +19,8 @@
  * 
  */
 
-import { DOMContext } from 'treb-base-types';
-import type { Theme, Rectangle } from 'treb-base-types';
+import { DOMContext } from '#treb-base-types';
+import type { Theme, Rectangle } from '#treb-base-types';
 import type { AutocompleteExecResult, FunctionDescriptor } from './autocomplete_matcher';
 
 export interface AutocompleteResult {

@@ -19,7 +19,7 @@
  * 
  */
 
-import { DOMContext, type Theme } from 'treb-base-types';
+import { DOMContext, type Theme } from '#treb-base-types';
 
 export type Orientation = 'horizontal'|'vertical';
 

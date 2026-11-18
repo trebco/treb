@@ -20,8 +20,8 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import type { CellValue, FunctionUnion, UnionValue} from 'treb-base-types';
-import { Box } from 'treb-base-types';
+import type { CellValue, FunctionUnion, UnionValue} from '#treb-base-types';
+import { Box } from '#treb-base-types';
 import { ArgumentError, ValueError } from '../function-error';
 import { FlattenCellValues } from '../utilities';
 

@@ -19,16 +19,16 @@
  * 
  */
 
-import * as OOXML from 'ooxml-types';
+import * as OOXML from '#ooxml-types';
 import { MapTags } from './ooxml';
 
 
 // import * as ElementTree from 'elementtree';
 // import { Element, ElementTree as Tree } from 'elementtree';
 
-import { type CompositeBorderEdge, Style, type CellStyle, type PropertyKeys, type Color, IsHTMLColor, IsThemeColor, type ThemeColor, type HTMLColor, ThemeColorIndex } from 'treb-base-types';
+import { type CompositeBorderEdge, Style, type CellStyle, type PropertyKeys, type Color, IsHTMLColor, IsThemeColor, type ThemeColor, type HTMLColor, ThemeColorIndex } from '#treb-base-types';
 import { Theme } from './workbook-theme';
-import { NumberFormatCache } from 'treb-format';
+import { NumberFormatCache } from '#treb-format';
 // import { XMLUtils } from './xml-utils';
 
 import { Unescape } from './unescape_xml';

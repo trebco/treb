@@ -19,7 +19,7 @@
  * 
  */
 
-// import type { FunctionDescriptor } from 'treb-grid';
+// import type { FunctionDescriptor } from '#treb-grid';
 
 /**
  * this is similar to a function descriptor, but we need a lot less

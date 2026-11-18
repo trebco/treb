@@ -19,9 +19,9 @@
  * 
  */
 
-import { DOMContext } from 'treb-base-types';
-import { NumberFormat, NumberFormatCache, ValueParser } from 'treb-format';
-import { EventSource } from 'treb-utils';
+import { DOMContext } from '#treb-base-types';
+import { NumberFormat, NumberFormatCache, ValueParser } from '#treb-format';
+import { EventSource } from '#treb-utils';
 
 export interface ScaleEvent {
   type: 'scale';

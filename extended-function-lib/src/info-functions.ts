@@ -1,6 +1,6 @@
-import { Box, Errors, type UnionValue } from 'treb-base-types';
-import type { FunctionMap } from 'treb-calculator';
-import { NAError, ValueError } from 'treb-calculator';
+import { Box, Errors, type UnionValue } from '#treb-base-types';
+import type { FunctionMap } from '#treb-calculator';
+import { NAError, ValueError } from '#treb-calculator';
 
 export default {
   'ISEVEN': {

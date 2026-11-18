@@ -19,13 +19,13 @@
  * 
  */
 
-import type { DataModel, ViewModel, Sheet } from 'treb-data-model';
-import { EventSource } from 'treb-utils';
+import type { DataModel, ViewModel, Sheet } from '#treb-data-model';
+import { EventSource } from '#treb-utils';
 import type { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
 import type { GridOptions } from './grid_options';
 import { type ScaleEvent, ScaleControl } from './scale-control';
-import { DOMContext, ResolveThemeColor, type Theme } from 'treb-base-types';
+import { DOMContext, ResolveThemeColor, type Theme } from '#treb-base-types';
 
 export interface ActivateSheetEvent {
   type: 'activate-sheet';

@@ -19,8 +19,8 @@
  * 
  */
 
-import type { Annotation, GridSelection, Sheet } from 'treb-data-model';
-import type { Area } from 'treb-base-types';
+import type { Annotation, GridSelection, Sheet } from '#treb-data-model';
+import type { Area } from '#treb-base-types';
 
 export type ErrorCode =
 

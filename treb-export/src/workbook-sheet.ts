@@ -47,7 +47,7 @@ import type { SharedStrings } from './shared-strings';
 import type { Drawing } from './drawing/drawing';
 import type { RelationshipMap } from './relationship';
 
-import * as OOXML from 'ooxml-types';
+import * as OOXML from '#ooxml-types';
 
 export interface SheetOptions {
   name?: string;

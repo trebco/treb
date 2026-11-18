@@ -19,15 +19,15 @@
  * 
  */
 
-import type { ImportedSheetData } from 'treb-base-types';
-import type { SerializedModel } from 'treb-data-model';
+import type { ImportedSheetData } from '#treb-base-types';
+import type { SerializedModel } from '#treb-data-model';
 
 import * as Messages from './import-export-messages';
 
 import { Exporter } from './export';
 import { Importer } from './import';
 
-import { GetWorkerContext } from 'treb-base-types';
+import { GetWorkerContext } from '#treb-base-types';
 
 export function AttachInProcess() {
   console.info("AOP");

@@ -20,7 +20,7 @@
  */
 
 
-import type { IArea, CellValue } from 'treb-base-types';
+import type { IArea, CellValue } from '#treb-base-types';
 
 /** @internal */
 export interface DataValidationRange {

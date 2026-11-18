@@ -22,10 +22,10 @@
 
 import type { SerializedSheet } from './sheet_types';
 import type { Sheet } from './sheet';
-import type { IArea } from 'treb-base-types';
+import type { IArea } from '#treb-base-types';
 import type { SerializedNamed } from './named';
-import type { Table } from 'treb-base-types';
-import type { ExpressionUnit } from 'treb-parser';
+import type { Table } from '#treb-base-types';
+import type { ExpressionUnit } from '#treb-parser';
 
 export interface ConnectedElementType {
   formula: string;

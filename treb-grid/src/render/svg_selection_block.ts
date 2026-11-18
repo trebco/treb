@@ -19,7 +19,7 @@
  * 
  */
 
-import { type Theme, type Rectangle, DOMContext } from 'treb-base-types';
+import { type Theme, type Rectangle, DOMContext } from '#treb-base-types';
 
 /**
  * the original selections -- a canvas overlaid over the tile canvases --

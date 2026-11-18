@@ -19,8 +19,8 @@
  * 
  */
 
-import type { Complex } from 'treb-base-types';
-import { type ValueType, Localization } from 'treb-base-types';
+import type { Complex } from '#treb-base-types';
+import { type ValueType, Localization } from '#treb-base-types';
 import { UnlotusDate } from './format';
 
 /**

@@ -1,7 +1,7 @@
 
-import { Box, type UnionValue } from 'treb-base-types';
-import type { FunctionMap } from 'treb-calculator';
-import { ValueError } from 'treb-calculator';
+import { Box, type UnionValue } from '#treb-base-types';
+import type { FunctionMap } from '#treb-calculator';
+import { ValueError } from '#treb-calculator';
 import { Lgamma, RegularizedGammaP } from './stats-special-functions';
 
 function ChiSquaredCDF(x: number, df: number): number {

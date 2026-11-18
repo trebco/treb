@@ -1,6 +1,6 @@
-import { Box, type UnionValue } from 'treb-base-types';
-import type { FunctionMap } from 'treb-calculator';
-import { ValueError, NAError } from 'treb-calculator';
+import { Box, type UnionValue } from '#treb-base-types';
+import type { FunctionMap } from '#treb-calculator';
+import { ValueError, NAError } from '#treb-calculator';
 import { DateToSerial, SerialToDate, DaysInMonth, Days360Us, Days360Eu, YearFrac } from './finance-date-utils';
 import { extractNumbers } from './stats-array-utils';
 

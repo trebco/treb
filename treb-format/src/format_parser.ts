@@ -20,8 +20,8 @@
  */
 
 import { NumberFormatSection } from './number_format_section';
-import type { TextPart } from 'treb-base-types';
-import { TextPartFlag } from 'treb-base-types';
+import type { TextPart } from '#treb-base-types';
+import { TextPartFlag } from '#treb-base-types';
 // import { NumberFormat } from './format';
 
 const ASTERISK = 0x2A;  // TODO

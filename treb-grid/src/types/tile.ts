@@ -19,7 +19,7 @@
  * 
  */
 
-import type { Point, Size, Position } from 'treb-base-types';
+import type { Point, Size, Position } from '#treb-base-types';
 
 /**
  * tile adds some metadata to canvas

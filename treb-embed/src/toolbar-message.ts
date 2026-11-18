@@ -20,7 +20,7 @@
  */
 
 
-import type { Color } from 'treb-base-types';
+import type { Color } from '#treb-base-types';
 
 /* 
  * this is an attempt to lock down toolbar commands, and better 

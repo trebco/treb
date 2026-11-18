@@ -22,7 +22,7 @@
 
 import type { ChartRenderer } from './renderer-type';
 import type { ChartData } from './chart-types';
-import type { ExtendedUnion, UnionValue } from 'treb-base-types';
+import type { ExtendedUnion, UnionValue } from '#treb-base-types';
 import * as ChartUtils from './chart-utils';
 import { DefaultChartRenderer } from './default-chart-renderer';
 import type { ChartFunction } from './chart-functions';

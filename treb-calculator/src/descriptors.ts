@@ -19,8 +19,8 @@
  * 
  */
 
-import type { RenderFunction, ClickFunction, UnionValue, ICellAddress, IArea, FunctionUnion } from 'treb-base-types';
-import type { ExpressionUnit } from 'treb-parser';
+import type { RenderFunction, ClickFunction, UnionValue, ICellAddress, IArea, FunctionUnion } from '#treb-base-types';
+import type { ExpressionUnit } from '#treb-parser';
 
 /**
  * FIXME: possible to add stuff in here if we need it

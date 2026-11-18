@@ -30,7 +30,7 @@ import type {
   Complex,
   Color,
   CellStyle,
-  IRectangle } from 'treb-base-types';
+  IRectangle } from '#treb-base-types';
   
 import {
   Area, 
@@ -45,21 +45,21 @@ import {
   TextPartFlag,
   IsArea,
   Style,
-} from 'treb-base-types';
+} from '#treb-base-types';
 
-import { Heuristics } from 'treb-data-model';
+import { Heuristics } from '#treb-data-model';
 
-import type { ExpressionUnit, RenderOptions, UnitAddress } from 'treb-parser';
+import type { ExpressionUnit, RenderOptions, UnitAddress } from '#treb-parser';
 import { 
   DecimalMarkType, 
   ArgumentSeparatorType, 
   QuotedSheetNameRegex, 
   MDParser,
-} from 'treb-parser';
+} from '#treb-parser';
 
-import { SerializeHTML } from 'treb-utils';
-import type { ParseResult as ParseResult2 } from 'treb-format';
-import { NumberFormatCache, LotusDate, ValueParser, type Hints, NumberFormat } from 'treb-format';
+import { SerializeHTML } from '#treb-utils';
+import type { ParseResult as ParseResult2 } from '#treb-format';
+import { NumberFormatCache, LotusDate, ValueParser, type Hints, NumberFormat } from '#treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
 
 import { TabBar } from './tab_bar';
@@ -87,8 +87,8 @@ import type {
   DataModel, 
   GridSelection,
   LegacySerializedSheet, 
-} from 'treb-data-model';
-import { Annotation, type AnnotationData, Sheet } from 'treb-data-model';
+} from '#treb-data-model';
+import { Annotation, type AnnotationData, Sheet } from '#treb-data-model';
 
 import { FormulaBar } from '../editors/formula_bar';
 import type { GridOptions } from './grid_options';
@@ -110,7 +110,7 @@ import type {
   ShowGridLinesCommand
 } from './grid_command';
 
-import { DOMContext } from 'treb-base-types';
+import { DOMContext } from '#treb-base-types';
 import { GridBase } from './grid_base';
 import type { SetRangeOptions } from './set_range_options';
 import type { ClipboardCellData } from './clipboard_data';
@@ -118,7 +118,7 @@ import type { ClipboardCellData } from './clipboard_data';
 import type { ExternalEditorConfig } from './external_editor_config';
 import { ExternalEditor } from '../editors/external_editor';
 import type { ClipboardData, PasteOptions } from './clipboard_data2';
-import { default_ui_strings } from 'treb-base-types';
+import { default_ui_strings } from '#treb-base-types';
 
 interface DoubleClickData {
   timeout?: number;

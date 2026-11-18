@@ -20,8 +20,8 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import type { ArrayUnion, Complex, UnionValue} from 'treb-base-types';
-import { ComplexOrReal } from 'treb-base-types';
+import type { ArrayUnion, Complex, UnionValue} from '#treb-base-types';
+import { ComplexOrReal } from '#treb-base-types';
 import { ArgumentError, ValueError } from '../function-error';
 import * as ComplexMath from '../complex-math';
 

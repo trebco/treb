@@ -19,13 +19,13 @@
  * 
  */
 
-import type { Theme, ICellAddress } from 'treb-base-types';
-import { Rectangle } from 'treb-base-types';
+import type { Theme, ICellAddress } from '#treb-base-types';
+import { Rectangle } from '#treb-base-types';
 import type { BaseLayout } from '../layout/base_layout';
 import type { SelectionOffset } from './svg_selection_block';
 import { SVGSelectionBlock } from './svg_selection_block';
 import { HeaderOverlay } from './svg_header_overlay';
-import type { GridSelection, DataModel, ViewModel } from 'treb-data-model';
+import type { GridSelection, DataModel, ViewModel } from '#treb-data-model';
 
 // const SVGNS = 'http://www.w3.org/2000/svg';
 

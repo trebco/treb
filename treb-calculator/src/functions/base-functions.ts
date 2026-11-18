@@ -26,10 +26,10 @@ import { ReferenceError, NAError, ArgumentError, DivideByZeroError, ValueError }
 import type { UnionValue, 
          RenderFunctionResult, RenderFunctionOptions, Complex, CellValue, 
         // ICellAddress
-        } from 'treb-base-types';
-import { Box, GetValueType, ComplexOrReal, IsComplex, Area, Errors } from 'treb-base-types';
+        } from '#treb-base-types';
+import { Box, GetValueType, ComplexOrReal, IsComplex, Area, Errors } from '#treb-base-types';
 import { Sparkline } from './sparkline';
-import { LotusDate, UnlotusDate } from 'treb-format';
+import { LotusDate, UnlotusDate } from '#treb-format';
 
 import { ClickCheckbox, RenderCheckbox } from './checkbox';
 import { UnionIsMetadata } from '../expression-calculator';
@@ -38,7 +38,7 @@ import { Exp as ComplexExp, Power as ComplexPower, Multiply as ComplexMultply } 
 import * as ComplexMath from '../complex-math';
 
 import { CoerceComplex } from './function-utilities';
-import type { UnitAddress, UnitRange } from 'treb-parser';
+import type { UnitAddress, UnitRange } from '#treb-parser';
 import { ConstructDate } from './date-utils';
 
 // import type { CalculationContext } from '../descriptors';

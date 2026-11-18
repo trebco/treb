@@ -20,7 +20,7 @@
  */
 
 
-import type { UnionValue, Complex } from 'treb-base-types';
+import type { UnionValue, Complex } from '#treb-base-types';
 
 export const CoerceComplex = (value: UnionValue): Complex|false => {
 

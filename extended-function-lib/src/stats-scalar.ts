@@ -1,6 +1,6 @@
-import { Box, type UnionValue } from 'treb-base-types';
-import type { FunctionMap } from 'treb-calculator';
-import { ValueError } from 'treb-calculator';
+import { Box, type UnionValue } from '#treb-base-types';
+import type { FunctionMap } from '#treb-calculator';
+import { ValueError } from '#treb-calculator';
 
 // High-precision erf using Cephes rational approximation (~15 digits)
 function polevl(x: number, coef: number[]): number {

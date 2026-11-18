@@ -10,6 +10,128 @@
   "main": "dist/treb-spreadsheet.mjs",
   "types": "dist/treb.d.ts",
   "type": "module",
+  "imports": {
+    "#treb-base-types": {
+      "treb-source": "./treb-base-types/src/index.ts",
+      "types": "./build/treb-base-types/src/index.d.ts",
+      "default": "./treb-base-types/src/index.ts"
+    },
+    "#treb-base-types/*": {
+      "treb-source": "./treb-base-types/*.ts",
+      "types": "./build/treb-base-types/*.d.ts",
+      "default": "./treb-base-types/*.ts"
+    },
+    "#treb-calculator": {
+      "treb-source": "./treb-calculator/src/index.ts",
+      "types": "./build/treb-calculator/src/index.d.ts",
+      "default": "./treb-calculator/src/index.ts"
+    },
+    "#treb-calculator/*": {
+      "treb-source": "./treb-calculator/*.ts",
+      "types": "./build/treb-calculator/*.d.ts",
+      "default": "./treb-calculator/*.ts"
+    },
+    "#treb-charts": {
+      "treb-source": "./treb-charts/src/index.ts",
+      "types": "./build/treb-charts/src/index.d.ts",
+      "default": "./treb-charts/src/index.ts"
+    },
+    "#treb-charts/*": {
+      "treb-source": "./treb-charts/*.ts",
+      "types": "./build/treb-charts/*.d.ts",
+      "default": "./treb-charts/*.ts"
+    },
+    "#treb-data-model": {
+      "treb-source": "./treb-data-model/src/index.ts",
+      "types": "./build/treb-data-model/src/index.d.ts",
+      "default": "./treb-data-model/src/index.ts"
+    },
+    "#treb-data-model/*": {
+      "treb-source": "./treb-data-model/*.ts",
+      "types": "./build/treb-data-model/*.d.ts",
+      "default": "./treb-data-model/*.ts"
+    },
+    "#treb-export": {
+      "treb-source": "./treb-export/src/index.ts",
+      "types": "./build/treb-export/src/index.d.ts",
+      "default": "./treb-export/src/index.ts"
+    },
+    "#treb-export/*": {
+      "treb-source": "./treb-export/*.ts",
+      "types": "./build/treb-export/*.d.ts",
+      "default": "./treb-export/*.ts"
+    },
+    "#treb-format": {
+      "treb-source": "./treb-format/src/index.ts",
+      "types": "./build/treb-format/src/index.d.ts",
+      "default": "./treb-format/src/index.ts"
+    },
+    "#treb-format/*": {
+      "treb-source": "./treb-format/*.ts",
+      "types": "./build/treb-format/*.d.ts",
+      "default": "./treb-format/*.ts"
+    },
+    "#treb-grid": {
+      "treb-source": "./treb-grid/src/index.ts",
+      "types": "./build/treb-grid/src/index.d.ts",
+      "default": "./treb-grid/src/index.ts"
+    },
+    "#treb-grid/*": {
+      "treb-source": "./treb-grid/*.ts",
+      "types": "./build/treb-grid/*.d.ts",
+      "default": "./treb-grid/*.ts"
+    },
+    "#treb-parser": {
+      "treb-source": "./treb-parser/src/index.ts",
+      "types": "./build/treb-parser/src/index.d.ts",
+      "default": "./treb-parser/src/index.ts"
+    },
+    "#treb-parser/*": {
+      "treb-source": "./treb-parser/*.ts",
+      "types": "./build/treb-parser/*.d.ts",
+      "default": "./treb-parser/*.ts"
+    },
+    "#treb-utils": {
+      "treb-source": "./treb-utils/src/index.ts",
+      "types": "./build/treb-utils/src/index.d.ts",
+      "default": "./treb-utils/src/index.ts"
+    },
+    "#treb-utils/*": {
+      "treb-source": "./treb-utils/*.ts",
+      "types": "./build/treb-utils/*.d.ts",
+      "default": "./treb-utils/*.ts"
+    },
+    "#treb-embed": {
+      "treb-source": "./treb-embed/src/index.ts",
+      "types": "./build/treb-embed/src/index.d.ts",
+      "default": "./treb-embed/src/index.ts"
+    },
+    "#treb-embed/*": {
+      "treb-source": "./treb-embed/*.ts",
+      "types": "./build/treb-embed/*.d.ts",
+      "default": "./treb-embed/*.ts"
+    },
+    "#ooxml-types": {
+      "treb-source": "./ooxml-types/src/types/index.ts",
+      "types": "./build/ooxml-types/src/types/index.d.ts",
+      "default": "./ooxml-types/src/types/index.ts"
+    },
+    "#ooxml-types/*": {
+      "treb-source": "./ooxml-types/*.ts",
+      "types": "./build/ooxml-types/*.d.ts",
+      "default": "./ooxml-types/*.ts"
+    },
+    "#extended-function-lib": {
+      "treb-source": "./extended-function-lib/src/index.ts",
+      "types": "./build/extended-function-lib/src/index.d.ts",
+      "default": "./extended-function-lib/src/index.ts"
+    },
+    "#extended-function-lib/*": {
+      "treb-source": "./extended-function-lib/*.ts",
+      "types": "./build/extended-function-lib/*.d.ts",
+      "default": "./extended-function-lib/*.ts"
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/treb.d.ts",
@@ -80,8 +202,8 @@
       "import": "./ooxml-types/src/types/index.ts"
     },
     "./extended-function-lib": {
-      "types": "./build/extended-function-lib/src/types/index.d.ts",
-      "import": "./extended-function-lib/src/types/index.ts"
+      "types": "./build/extended-function-lib/src/index.d.ts",
+      "import": "./extended-function-lib/src/index.ts"
     },
     "./esbuild-utils.mjs": "./esbuild-utils.mjs",
     "./package.json": "./package.json"
@@ -105,12 +227,12 @@
     "clean": "rm -fr build dist",
     "watch": "node --watch esbuild-composite.mjs --watch --dev",
     "watch-production": "node --watch esbuild-composite.mjs --watch",
-    "tsc": "tsc -b treb-embed/tsconfig.json",
-    "rebuild-tsc": "tsc -b --force treb-embed/tsconfig.json",
-    "watch-tsc": "tsc -b treb-embed/tsconfig.json -w",
+    "tsc": "tsc",
+    "rebuild-tsc": "rm -rf build && tsc",
+    "watch-tsc": "tsc -w",
     "watch-api": "tsx --watch api-generator/api-generator.ts --config api-config.json",
     "generate-api": "tsx api-generator/api-generator.ts --config api-config.json",
-    "release": "npm run clean && npm run rebuild-tsc && npm run build && npm run generate-api && npx tsx postprocess.ts",
+    "release": "npm run clean && npm run rebuild-tsc && npm run build && npm run generate-api",
     "coverage-test": "npm run build && cd coverage-test && bun run main.ts",
     "lint:sonar": "eslint -c eslint.sonar.config.js \"treb-*/src/**/*.ts\"",
     "lint:sonar-dist": "eslint -c eslint.sonar.config.js \"dist/**/*.mjs\""

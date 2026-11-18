@@ -20,8 +20,8 @@
  */
 
 import { Editor, type NodeDescriptor } from './editor';
-import { Area, Cell, type CellStyle, type CellValue, Rectangle, Style, type Theme, ResolveThemeColor } from 'treb-base-types';
-import { DataModel, type ViewModel, type GridSelection } from 'treb-data-model';
+import { Area, Cell, type CellStyle, type CellValue, Rectangle, Style, type Theme, ResolveThemeColor } from '#treb-base-types';
+import { DataModel, type ViewModel, type GridSelection } from '#treb-data-model';
 import { Autocomplete } from './autocomplete';
 import { UA } from '../util/ua';
 

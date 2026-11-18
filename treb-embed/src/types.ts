@@ -19,12 +19,12 @@
  * 
  */
 
-import type { IArea, Table, TableTheme } from 'treb-base-types';
+import type { IArea, Table, TableTheme } from '#treb-base-types';
 import type { 
   SerializedNamedExpression, 
   SerializedSheet,
   SerializedMacroFunction,
-  SerializedNamed } from 'treb-data-model';
+  SerializedNamed } from '#treb-data-model';
 
 export const SaveFileType = {
   json: 'json',

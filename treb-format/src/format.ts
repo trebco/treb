@@ -23,10 +23,10 @@
 
 import { FormatParser } from './format_parser';
 import { NumberFormatSection } from './number_format_section';
-import type { TextPart, Complex, DimensionedQuantity, CellValue} from 'treb-base-types';
+import type { TextPart, Complex, DimensionedQuantity, CellValue} from '#treb-base-types';
 import { 
     Localization, TextPartFlag, IsDimensionedQuantity,
-  } from 'treb-base-types';
+  } from '#treb-base-types';
 
 //
 // excel time is explicitly universal, so we need all dates in and out 

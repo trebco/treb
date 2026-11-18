@@ -19,9 +19,9 @@
  * 
  */
 
-// import type { UnionValue } from 'treb-base-types';
-import type { RangeScale} from 'treb-utils';
-import { Scale } from 'treb-utils';
+// import type { UnionValue } from '#treb-base-types';
+import type { RangeScale} from '#treb-utils';
+import { Scale } from '#treb-utils';
 
 export class Util {
 

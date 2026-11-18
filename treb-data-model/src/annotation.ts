@@ -19,8 +19,8 @@
  * 
  */
 
-import type { ICellAddress, AnnotationLayout, IRectangle, CellStyle } from 'treb-base-types';
-import { Rectangle } from 'treb-base-types';
+import type { ICellAddress, AnnotationLayout, IRectangle, CellStyle } from '#treb-base-types';
+import { Rectangle } from '#treb-base-types';
 
 /**
  * new annotation class. annotations are arbitrary content

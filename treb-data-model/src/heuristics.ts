@@ -19,7 +19,7 @@
  * 
  */
 
-import { Area, type IArea } from 'treb-base-types';
+import { Area, type IArea } from '#treb-base-types';
 import { Sheet } from './sheet';
 import { type ConstantStep, DetectConstantStep } from './timeline';
 

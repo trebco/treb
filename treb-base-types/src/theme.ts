@@ -24,7 +24,7 @@ import { ColorFunctions } from './color';
 // import * as LCHColorFunctions from './color2';
 
 import { DOMContext } from './dom-utilities';
-import { Measurement } from 'treb-utils';
+import { Measurement } from '#treb-utils';
 
 // import { font_stack_names, type FontStack, GenerateFontStack } from './font-stack';
 

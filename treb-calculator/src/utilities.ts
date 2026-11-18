@@ -19,8 +19,8 @@
  * 
  */
 
-import type { ArrayUnion, CellValue, UnionValue} from 'treb-base-types';
-import { type ValueType } from 'treb-base-types';
+import type { ArrayUnion, CellValue, UnionValue} from '#treb-base-types';
+import { type ValueType } from '#treb-base-types';
 
 export const DAY_MS = 1000 * 60 * 60 * 24;
 

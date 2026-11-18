@@ -35,7 +35,7 @@
  * 
  */
 
-import { Localization } from 'treb-base-types';
+import { Localization } from '#treb-base-types';
 
 export interface ArgumentDescriptor {
   name?: string;

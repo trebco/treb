@@ -19,10 +19,10 @@
  * 
  */
 
-import type { ICellAddress } from 'treb-base-types';
+import type { ICellAddress } from '#treb-base-types';
 import type { TREBDocument } from './types';
-import type { ChartRenderer } from 'treb-charts';
-import type { StatsFunction } from 'treb-grid';
+import type { ChartRenderer } from '#treb-charts';
+import type { StatsFunction } from '#treb-grid';
 
 /**
  * factory type for chart renderer, if you want instances (pass a constructor)

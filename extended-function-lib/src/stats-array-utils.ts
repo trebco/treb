@@ -1,4 +1,4 @@
-import type { UnionValue } from 'treb-base-types';
+import type { UnionValue } from '#treb-base-types';
 
 export function extractNumbers(v: UnionValue): number[] {
   const result: number[] = [];

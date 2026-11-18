@@ -24,7 +24,7 @@ import type { ValueType } from './value-type';
 import type { IArea } from './area';
 import type { AnnotationLayout } from './layout';
 import type { Table } from './table';
-import type { DataValidation, AnnotationType, ConditionalFormat } from 'treb-data-model';
+import type { DataValidation, AnnotationType, ConditionalFormat } from '#treb-data-model';
 
 export interface CellParseResult {
   row: number;

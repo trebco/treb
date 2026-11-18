@@ -20,7 +20,7 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import { Box, IsCellAddress, type UnionValue } from 'treb-base-types';
+import { Box, IsCellAddress, type UnionValue } from '#treb-base-types';
 import { UnionIsMetadata } from '../expression-calculator';
 
 const match_arguments = [{

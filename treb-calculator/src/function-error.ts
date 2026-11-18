@@ -19,8 +19,8 @@
  * 
  */
 
-import type { ErrorUnion, UnionValue} from 'treb-base-types';
-import { type ErrorValue, Errors } from 'treb-base-types';
+import type { ErrorUnion, UnionValue} from '#treb-base-types';
+import { type ErrorValue, Errors } from '#treb-base-types';
 
 export interface FunctionError {
   error: ErrorValue;

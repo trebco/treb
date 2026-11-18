@@ -22,7 +22,7 @@
 import type { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ValueError, ArgumentError, NAError } from '../function-error';
-import { type Complex, type UnionValue, type CellValue, ComplexOrReal } from 'treb-base-types';
+import { type Complex, type UnionValue, type CellValue, ComplexOrReal } from '#treb-base-types';
 import * as ComplexMath from '../complex-math';
 
 import { BetaCDF, BetaPDF, InverseBeta, LnGamma } from './beta';

@@ -1,6 +1,6 @@
-import { Box, type UnionValue } from 'treb-base-types';
-import type { FunctionMap } from 'treb-calculator';
-import { DivideByZeroError, ValueError } from 'treb-calculator';
+import { Box, type UnionValue } from '#treb-base-types';
+import type { FunctionMap } from '#treb-calculator';
+import { DivideByZeroError, ValueError } from '#treb-calculator';
 import { extractNumbers, extractNumberPairs, mean } from './stats-array-utils';
 
 function linearRegression(xs: number[], ys: number[]): { slope: number; intercept: number; meanX: number; meanY: number } {

@@ -19,7 +19,7 @@
  * 
  */
 
-import type { CellValue, IArea, CellStyle } from 'treb-base-types';
+import type { CellValue, IArea, CellStyle } from '#treb-base-types';
 
 
 /**

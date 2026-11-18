@@ -25,24 +25,24 @@ import { BytesToBase64 } from './base64';
 
 import type { AnchoredChartDescription, AnchoredImageDescription, AnchoredTextBoxDescription} from './workbook';
 import { ConditionalFormatOperators, Workbook } from './workbook';
-import type { ExpressionUnit, ParseResult, UnitCall } from 'treb-parser';
-import { DecimalMarkType, Parser } from 'treb-parser';
+import type { ExpressionUnit, ParseResult, UnitCall } from '#treb-parser';
+import { DecimalMarkType, Parser } from '#treb-parser';
 import type { RangeType, AddressType, HyperlinkType } from './address-type';
 import { is_range, ShiftRange, InRange, is_address } from './address-type';
-import { type ImportedSheetData, type AnchoredAnnotation, type CellParseResult, type AnnotationLayout, type Corner as LayoutCorner, type IArea, type GradientStop, type Color, type HTMLColor, type ThemeColor, Area } from 'treb-base-types';
-import type { ValueType } from 'treb-base-types';
+import { type ImportedSheetData, type AnchoredAnnotation, type CellParseResult, type AnnotationLayout, type Corner as LayoutCorner, type IArea, type GradientStop, type Color, type HTMLColor, type ThemeColor, Area } from '#treb-base-types';
+import type { ValueType } from '#treb-base-types';
 import type { Sheet} from './workbook-sheet';
 import type { CellAnchor } from './drawing/drawing';
 // import { type GenericDOMElement, XMLUtils } from './xml-utils';
 
 // import { one_hundred_pixels } from './constants';
 import { ColumnWidthToPixels } from './column-width';
-import type { DataValidation, AnnotationType } from 'treb-data-model';
+import type { DataValidation, AnnotationType } from '#treb-data-model';
 import { ZipWrapper } from './zip-wrapper';
-import type { ConditionalFormat } from 'treb-data-model';
+import type { ConditionalFormat } from '#treb-data-model';
 import { LookupMetadata, type MetadataFlags } from './metadata';
 
-import * as OOXML from 'ooxml-types';
+import * as OOXML from '#ooxml-types';
 import { EnsureArray, FirstTag, IterateTags } from './ooxml';
 
 
