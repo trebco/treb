@@ -956,7 +956,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           return ValueError();
         }
 
-        const flat = Utils.FlattenBoxed(args);
+        // ?? // const flat = Utils.FlattenBoxed(args);
         let true_count = 0;
 
         for (const arg of args) {
@@ -2141,7 +2141,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         ////////
 
-        let rng: Area|undefined;
+        // let rng: Area|undefined;
         
         // FIXME: we could I suppose be more graceful about single values
         // if passed instead of arrays

@@ -22,11 +22,14 @@
 import type { RenderFunctionOptions, ClickFunctionOptions, ClickFunctionResult, RenderFunctionResult } from '#treb-base-types';
 
 export const ClickCheckbox = (options: ClickFunctionOptions): ClickFunctionResult => {
+
   const { x, y, width, height, cell } = options;
   const result: ClickFunctionResult = {};
 
   const offset = 3;
   const scaled = Math.round(16 * (options.scale || 1));
+
+  console.info('this?', this);
 
   // console.info('options', options);
 
