@@ -29,8 +29,6 @@ export const ClickCheckbox = (options: ClickFunctionOptions): ClickFunctionResul
   const offset = 3;
   const scaled = Math.round(16 * (options.scale || 1));
 
-  console.info('this?', this);
-
   // console.info('options', options);
 
   if (cell && width && height && x && y) {
